@@ -1,0 +1,13 @@
+{
+  "home": {
+    "eyebrow": "Hoş geldin",
+    "title": "SuomiSocial",
+    "subtitle": "Finlandiya'ya özgü özel günler için otomatik içerik üretimi, sosyal medya paylaşımı ve AI destekli reklam yönetimi."
+  },
+  "common": {
+    "loading": "Yükleniyor...",
+    "error": "Bir hata oluştu",
+    "save": "Kaydet",
+    "cancel": "İptal"
+  }
+}

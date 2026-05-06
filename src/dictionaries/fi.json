@@ -1,0 +1,13 @@
+{
+  "home": {
+    "eyebrow": "Tervetuloa",
+    "title": "SuomiSocial",
+    "subtitle": "Automaattinen sisällöntuotanto, sosiaalisen median julkaisut ja tekoälyavusteinen mainosten hallinta suomalaisia juhlapyhiä ja nimipäiviä varten."
+  },
+  "common": {
+    "loading": "Ladataan...",
+    "error": "Jotain meni pieleen",
+    "save": "Tallenna",
+    "cancel": "Peruuta"
+  }
+}

@@ -1,0 +1,13 @@
+{
+  "home": {
+    "eyebrow": "Welcome",
+    "title": "SuomiSocial",
+    "subtitle": "Automated content generation, social media posting, and AI-powered ad management for Finnish-specific holidays and name days."
+  },
+  "common": {
+    "loading": "Loading...",
+    "error": "Something went wrong",
+    "save": "Save",
+    "cancel": "Cancel"
+  }
+}
