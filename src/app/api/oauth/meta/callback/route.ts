@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { createServiceClient } from '@/lib/supabase/service'
 import { getUserOrgId } from '@/lib/supabase/get-org'
-import { storeToken } from '@/lib/vault'
+import { upsertToken } from '@/lib/vault'
 
 const GRAPH = 'https://graph.facebook.com/v21.0'
 
@@ -32,9 +33,12 @@ export async function GET(request: NextRequest) {
     platform = Buffer.from(state!, 'base64url').toString().split(':')[1] ?? 'instagram'
   } catch { /* default */ }
 
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const authClient = await createClient()
+  const { data: { user } } = await authClient.auth.getUser()
   if (!user) return NextResponse.redirect(new URL(`/${lang}/login`, request.url))
+
+  // DB işlemleri için service role (RLS bypass)
+  const supabase = createServiceClient()
 
   const appId       = process.env.META_APP_ID!
   const appSecret   = process.env.META_APP_SECRET!
@@ -71,14 +75,25 @@ export async function GET(request: NextRequest) {
     const orgId = await getUserOrgId()
     if (!orgId) throw new Error('Organizasyon bulunamadı')
 
+    // Mevcut vault ID'lerini bul (yeniden bağlama durumunda upsert için)
+    const { data: existingAccounts } = await supabase
+      .from('social_accounts')
+      .select('platform, platform_account_id, access_token_vault_id')
+      .eq('organization_id', orgId)
+
+    const getExistingVaultId = (plt: string, accId: string) =>
+      existingAccounts?.find(
+        (a) => a.platform === plt && a.platform_account_id === accId,
+      )?.access_token_vault_id ?? null
+
     let savedCount = 0
 
     for (const page of pages) {
       // ── 3a. Facebook sayfası ────────────────────────────────────────────────
       if (platform === 'facebook') {
-        // Token'ı vault'a şifreli kaydet
-        const vaultId = await storeToken(
+        const vaultId = await upsertToken(
           page.access_token,
+          getExistingVaultId('facebook', page.id),
           `fb_page_${orgId}_${page.id}`,
         )
 
@@ -88,8 +103,8 @@ export async function GET(request: NextRequest) {
             platform:              'facebook',
             platform_account_id:   page.id,
             platform_username:     page.name,
-            access_token:          null,             // plaintext YOK
-            access_token_vault_id: vaultId,          // 🔐 vault referansı
+            access_token:          null,
+            access_token_vault_id: vaultId,
             token_expires_at:      expiresAt,
             is_active:             true,
             metadata:              { page_category: page.category ?? '' },
@@ -110,9 +125,9 @@ export async function GET(request: NextRequest) {
           `${GRAPH}/${igAccountId}?fields=username,name&access_token=${page.access_token}`,
         ).then((r) => r.json())
 
-        // Token'ı vault'a şifreli kaydet
-        const vaultId = await storeToken(
+        const vaultId = await upsertToken(
           page.access_token,
+          getExistingVaultId('instagram', igAccountId),
           `ig_${orgId}_${igAccountId}`,
         )
 
@@ -122,8 +137,8 @@ export async function GET(request: NextRequest) {
             platform:              'instagram',
             platform_account_id:   igAccountId,
             platform_username:     igInfo.username ?? igInfo.name ?? '',
-            access_token:          null,             // plaintext YOK
-            access_token_vault_id: vaultId,          // 🔐 vault referansı
+            access_token:          null,
+            access_token_vault_id: vaultId,
             token_expires_at:      expiresAt,
             is_active:             true,
             metadata:              { linked_page_id: page.id, page_name: page.name },

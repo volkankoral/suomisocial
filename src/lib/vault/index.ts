@@ -41,6 +41,21 @@ export async function storeToken(value: string, name?: string): Promise<string> 
 }
 
 /**
+ * Mevcut vault ID varsa güncelle, yoksa yeni oluştur → UUID döner
+ */
+export async function upsertToken(
+  value: string,
+  existingVaultId: string | null | undefined,
+  name?: string,
+): Promise<string> {
+  if (existingVaultId) {
+    await updateToken(existingVaultId, value)
+    return existingVaultId
+  }
+  return storeToken(value, name)
+}
+
+/**
  * Vault UUID'sinden token'ı çöz → string | null
  * Null: secret bulunamadı veya silinmiş
  */
