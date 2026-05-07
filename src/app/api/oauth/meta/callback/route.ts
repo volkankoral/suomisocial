@@ -136,6 +136,12 @@ export async function GET(request: NextRequest) {
 
     console.log(`Meta OAuth: ${savedCount} hesap vault'a şifreli kaydedildi (org: ${orgId})`)
 
+    if (savedCount === 0) {
+      return NextResponse.redirect(
+        new URL(`/${lang}/social?error=no_pages_found`, request.url),
+      )
+    }
+
     const response = NextResponse.redirect(
       new URL(`/${lang}/social?connected=${platform}`, request.url),
     )
@@ -143,9 +149,10 @@ export async function GET(request: NextRequest) {
     return response
 
   } catch (err) {
-    console.error('Meta OAuth callback hatası:', err)
+    const msg = err instanceof Error ? err.message : String(err)
+    console.error('Meta OAuth callback hatası:', msg)
     return NextResponse.redirect(
-      new URL(`/${lang}/social?error=oauth_failed`, request.url),
+      new URL(`/${lang}/social?error=${encodeURIComponent(msg)}`, request.url),
     )
   }
 }

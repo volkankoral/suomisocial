@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase/server'
+import { createServiceClient } from '@/lib/supabase/service'
 import { getUserOrgId } from '@/lib/supabase/get-org'
 import { ConnectButton } from './_components/ConnectButton'
 import { DisconnectButton } from './_components/DisconnectButton'
@@ -58,13 +58,14 @@ const ERROR_MESSAGES: Record<string, string> = {
   oauth_failed:        'Meta bağlantısı başarısız. Uygulama ayarlarını kontrol et.',
   no_code:             'Yetkilendirme iptal edildi.',
   access_denied:       'Meta erişimi reddedildi.',
+  no_pages_found:      'Hesabına bağlı Facebook Sayfası bulunamadı. Önce bir Facebook Sayfası oluştur, sonra tekrar dene.',
 }
 
 export default async function SocialPage({ params, searchParams }: Props) {
   const { lang }                    = await params
   const { connected, error, info }  = await searchParams
 
-  const supabase = await createClient()
+  const supabase = createServiceClient()
   const orgId    = await getUserOrgId()
 
   const { data: accounts } = orgId
