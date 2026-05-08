@@ -1,15 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { createServiceClient } from '@/lib/supabase/service'
 import { generateContent } from '@/lib/ai/generate-content'
 import { buildImageUrl } from '@/lib/ai/generate-image'
 
 export async function POST(req: NextRequest) {
-  // Auth kontrolü
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  // Auth kontrolü (anon client)
+  const authClient = await createClient()
+  const { data: { user } } = await authClient.auth.getUser()
   if (!user) {
     return NextResponse.json({ error: 'Oturum açılmamış' }, { status: 401 })
   }
+  // DB işlemleri service role ile
+  const supabase = createServiceClient()
 
   // Body parse
   const body = await req.json().catch(() => null)

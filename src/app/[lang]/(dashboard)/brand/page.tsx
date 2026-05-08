@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase/server'
+import { createServiceClient } from '@/lib/supabase/service'
 import { getUserOrgId } from '@/lib/supabase/get-org'
 import { BrandForm } from './_components/BrandForm'
 import { Animate } from '@/components/ui/animate'
@@ -9,7 +9,7 @@ interface Props {
 
 export default async function BrandPage({ params }: Props) {
   await params
-  const supabase = await createClient()
+  const supabase = createServiceClient()
   const orgId    = await getUserOrgId()
 
   const { data: brand } = orgId
