@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase/server'
+import { createServiceClient } from '@/lib/supabase/service'
 import { getUserOrgId } from '@/lib/supabase/get-org'
 import { getUpcomingSpecialDays } from '@/lib/calendar'
 import { GenerateButton } from './_components/GenerateButton'
@@ -18,7 +18,7 @@ const STATUS_CONFIG: Record<string, { label: string; cls: string }> = {
 
 export default async function ContentPage({ params }: Props) {
   await params
-  const supabase = await createClient()
+  const supabase = createServiceClient()
   const orgId    = await getUserOrgId()
 
   const { data: drafts } = orgId
