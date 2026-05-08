@@ -3,6 +3,7 @@ import { getUserOrgId } from '@/lib/supabase/get-org'
 import { getUpcomingSpecialDays } from '@/lib/calendar'
 import { GenerateButton } from './_components/GenerateButton'
 import { DraftActions } from './_components/DraftActions'
+import { PreviewModal } from './_components/PreviewModal'
 import { Animate, Stagger, FadeUpItem } from '@/components/ui/animate'
 
 interface Props {
@@ -194,7 +195,10 @@ export default async function ContentPage({ params }: Props) {
                             </p>
                           )}
 
-                          <DraftActions draftId={draft.id} currentStatus={draft.status} />
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <DraftActions draftId={draft.id} currentStatus={draft.status} />
+                            <PreviewModal draft={draft} />
+                          </div>
                         </div>
                       </div>
                     </div>

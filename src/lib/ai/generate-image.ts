@@ -21,7 +21,7 @@ export function buildImageUrl(prompt: string, opts: ImageOptions = {}): string {
   const {
     width = 1080,
     height = 1080,
-    model = 'flux',
+    model = 'flux-realism',
   } = opts
 
   const encoded = encodeURIComponent(prompt)

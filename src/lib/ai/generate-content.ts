@@ -57,7 +57,7 @@ Ohjeet:
 - caption_fi: Fince, 150-220 merkki, emoji sopii, ravintolaan liittyvä viesti
 - caption_tr: Türkçe çeviri (sahip için referans)
 - hashtags: 5-8 kpl, ilman #-merkkiä, suomenkieliset + ravintola-aiheiset
-- image_prompt: Yksityiskohtainen englanninkielinen kuvaus (50-80 sanaa). Ei tekstiä kuvaan.`
+- image_prompt: Detailed English description (50-80 words). MUST start with "Professional food photography," or "Cozy restaurant interior photo,". Realistic, photographic style. No text, no cartoons, no illustrations.`
 
   const userPrompt = `Erikoispäivä: ${day.labelTr} / ${day.labelFi}
 Päivämäärä: ${day.date}
