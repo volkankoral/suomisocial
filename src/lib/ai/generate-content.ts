@@ -1,9 +1,7 @@
 /**
- * Claude Haiku ile sosyal medya içeriği üretimi.
- * Model: claude-3-5-haiku-20241022 (~$0.001 / üretim)
+ * Groq (Llama 3) ile sosyal medya içeriği üretimi.
+ * Model: llama-3.3-70b-versatile (ücretsiz tier)
  */
-
-import Anthropic from '@anthropic-ai/sdk'
 
 export interface BrandContext {
   business_name: string
@@ -13,36 +11,32 @@ export interface BrandContext {
 }
 
 export interface SpecialDayContext {
-  date: string        // YYYY-MM-DD
-  labelFi: string     // Fince ad
-  labelTr: string     // Türkçe ad
+  date: string
+  labelFi: string
+  labelTr: string
   descriptionTr: string
   isBankHoliday: boolean
-  category: string    // bankholiday | observed | flagday
+  category: string
 }
 
 export interface GeneratedContent {
-  caption_fi: string    // Instagram/FB için Fince caption (150-220 karakter)
-  caption_tr: string    // Sahip referansı için Türkçe
-  hashtags: string[]    // 5-8 hashtag, # işaretsiz
-  image_prompt: string  // FLUX/Pollinations için İngilizce görsel prompt
+  caption_fi: string
+  caption_tr: string
+  hashtags: string[]
+  image_prompt: string
 }
 
 export async function generateContent(
   brand: BrandContext,
   day: SpecialDayContext,
 ): Promise<GeneratedContent> {
-  const client = new Anthropic({
-    apiKey: process.env.ANTHROPIC_API_KEY,
-  })
-
   const productsStr = Array.isArray(brand.products)
     ? (brand.products as string[]).join(', ')
     : typeof brand.products === 'string'
     ? brand.products
     : 'pizza, pasta'
 
-  const system = `Olet suomalaisen ravintolan sosiaalisen median sisällöntuottaja.
+  const systemPrompt = `Olet suomalaisen ravintolan sosiaalisen median sisällöntuottaja.
 
 Ravintola: ${brand.business_name}
 Kuvaus: ${brand.description ?? 'Pizzeria Finlandiyassa'}
@@ -63,23 +57,38 @@ Ohjeet:
 - caption_fi: Fince, 150-220 merkki, emoji sopii, ravintolaan liittyvä viesti
 - caption_tr: Türkçe çeviri (sahip için referans)
 - hashtags: 5-8 kpl, ilman #-merkkiä, suomenkieliset + ravintola-aiheiset
-- image_prompt: Yksityiskohtainen englanninkielinen kuvaus (50-80 sanaa), jossa näkyy ${brand.business_name} ravintolan tunnelma + erikoispäivän teema. Ei tekstiä kuvaan. Laadukas ruokakuva tai tunnelmakuva.`
+- image_prompt: Yksityiskohtainen englanninkielinen kuvaus (50-80 sanaa). Ei tekstiä kuvaan.`
 
-  const user = `Erikoispäivä: ${day.labelTr} / ${day.labelFi}
+  const userPrompt = `Erikoispäivä: ${day.labelTr} / ${day.labelFi}
 Päivämäärä: ${day.date}
 Taustatietoa: ${day.descriptionTr}
 Tyyppi: ${day.isBankHoliday ? 'Resmi Tatil' : day.category === 'flagday' ? 'Bayrak Günü' : 'Tanınan Gün'}`
 
-  const response = await client.messages.create({
-    model: 'claude-3-5-haiku-20241022',
-    max_tokens: 1024,
-    system,
-    messages: [{ role: 'user', content: user }],
+  const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${process.env.GROQ_API_KEY}`,
+    },
+    body: JSON.stringify({
+      model: 'llama-3.3-70b-versatile',
+      max_tokens: 1024,
+      temperature: 0.7,
+      messages: [
+        { role: 'system', content: systemPrompt },
+        { role: 'user',   content: userPrompt },
+      ],
+    }),
   })
 
-  const raw = response.content[0].type === 'text' ? response.content[0].text.trim() : ''
+  if (!res.ok) {
+    const err = await res.text()
+    throw new Error(`Groq API hatası: ${err}`)
+  }
 
-  // JSON'u markdown bloğundan çıkar (varsa)
+  const data = await res.json()
+  const raw  = data.choices?.[0]?.message?.content?.trim() ?? ''
+
   const jsonStr = raw.replace(/^```json\s*/i, '').replace(/```\s*$/, '').trim()
 
   try {
