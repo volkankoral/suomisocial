@@ -2,7 +2,6 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { createClient } from '@/lib/supabase/client'
 
 interface BrandData {
   id?: string
@@ -44,17 +43,17 @@ export function BrandForm({ orgId, brand }: Props) {
     setSaving(true)
     setSaved(false)
 
-    const supabase = createClient()
-    const update = {
-      organization_id: orgId,
-      business_name: form.business_name,
-      description: form.description,
-      tone: form.tone,
-      primary_color: form.primary_color,
-      products: form.products.split(',').map((p) => p.trim()).filter(Boolean),
-    }
-
-    await supabase.from('brand_settings').upsert(update, { onConflict: 'organization_id' })
+    await fetch('/api/brand', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        business_name: form.business_name,
+        description: form.description,
+        tone: form.tone,
+        primary_color: form.primary_color,
+        products: form.products.split(',').map((p) => p.trim()).filter(Boolean),
+      }),
+    })
 
     setSaving(false)
     setSaved(true)
