@@ -42,16 +42,32 @@ export async function storeToken(value: string, name?: string): Promise<string> 
 
 /**
  * Mevcut vault ID varsa güncelle, yoksa yeni oluştur → UUID döner
+ * Orphan vault secret'ları da ele alır (isim çakışması)
  */
 export async function upsertToken(
   value: string,
   existingVaultId: string | null | undefined,
   name?: string,
 ): Promise<string> {
+  // 1. Bilinen vault ID varsa doğrudan güncelle
   if (existingVaultId) {
     await updateToken(existingVaultId, value)
     return existingVaultId
   }
+
+  // 2. İsme göre orphan secret ara
+  if (name) {
+    const { data: orphanId } = await adminClient().rpc(
+      'find_vault_secret_id_by_name',
+      { p_name: name },
+    )
+    if (orphanId) {
+      await updateToken(orphanId as string, value)
+      return orphanId as string
+    }
+  }
+
+  // 3. Hiç yoksa yeni oluştur
   return storeToken(value, name)
 }
 
