@@ -33,7 +33,7 @@ export async function POST(req: NextRequest) {
   // Facebook hesabını çek
   const { data: fbAccount } = await supabase
     .from('social_accounts')
-    .select('platform_account_id, access_token_vault_id, access_token')
+    .select('id, platform_account_id, access_token_vault_id, access_token')
     .eq('organization_id', orgId)
     .eq('platform', 'facebook')
     .eq('is_active', true)
@@ -88,6 +88,8 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: msg }, { status: 500 })
   }
 
+  const fbPostId = fbData.id ?? fbData.post_id
+
   // Durumu 'posted' yap
   await supabase
     .from('content_drafts')
@@ -97,5 +99,22 @@ export async function POST(req: NextRequest) {
     })
     .eq('id', draftId)
 
-  return NextResponse.json({ ok: true, fbPostId: fbData.id ?? fbData.post_id })
+  // posts tablosuna kayıt ekle
+  await supabase.from('posts').upsert(
+    {
+      organization_id:    orgId,
+      draft_id:           draftId,
+      social_account_id:  fbAccount.id ?? null,
+      platform:           'facebook',
+      platform_post_id:   fbPostId,
+      caption:            caption,
+      hashtags:           draft.hashtags ?? [],
+      image_url:          draft.image_url ?? null,
+      status:             'posted',
+      posted_at:          new Date().toISOString(),
+    },
+    { onConflict: 'platform_post_id' },
+  )
+
+  return NextResponse.json({ ok: true, fbPostId })
 }
