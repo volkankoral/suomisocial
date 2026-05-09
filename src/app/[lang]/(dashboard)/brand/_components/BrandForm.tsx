@@ -13,19 +13,26 @@ interface BrandData {
   languages?: string[] | null
 }
 
+interface CountryOption {
+  code: string
+  name: string
+}
+
 interface Props {
   orgId: string
   brand: BrandData | null
+  countryCode: string
+  countries: CountryOption[]
 }
 
 const TONE_OPTIONS = [
-  { value: 'samimi ve sıcak', label: 'Samimi & Sıcak' },
-  { value: 'profesyonel', label: 'Profesyonel' },
-  { value: 'eğlenceli ve renkli', label: 'Eğlenceli & Renkli' },
-  { value: 'minimalist', label: 'Minimalist' },
+  { value: 'samimi ve sıcak',     label: 'Samimi & Sıcak' },
+  { value: 'profesyonel',          label: 'Profesyonel' },
+  { value: 'eğlenceli ve renkli',  label: 'Eğlenceli & Renkli' },
+  { value: 'minimalist',           label: 'Minimalist' },
 ]
 
-export function BrandForm({ orgId, brand }: Props) {
+export function BrandForm({ brand, countryCode, countries }: Props) {
   const router = useRouter()
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
@@ -34,8 +41,9 @@ export function BrandForm({ orgId, brand }: Props) {
     business_name: brand?.business_name ?? '',
     description: brand?.description ?? '',
     tone: brand?.tone ?? 'samimi ve sıcak',
-    primary_color: brand?.primary_color ?? '#e63946',
+    primary_color: brand?.primary_color ?? '#f97316',
     products: Array.isArray(brand?.products) ? (brand.products as string[]).join(', ') : '',
+    country_code: countryCode,
   })
 
   async function handleSave(e: React.FormEvent) {
@@ -48,10 +56,11 @@ export function BrandForm({ orgId, brand }: Props) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         business_name: form.business_name,
-        description: form.description,
-        tone: form.tone,
+        description:   form.description,
+        tone:          form.tone,
         primary_color: form.primary_color,
-        products: form.products.split(',').map((p) => p.trim()).filter(Boolean),
+        products:      form.products.split(',').map((p) => p.trim()).filter(Boolean),
+        country_code:  form.country_code,
       }),
     })
 
@@ -63,9 +72,33 @@ export function BrandForm({ orgId, brand }: Props) {
 
   return (
     <form onSubmit={handleSave} className="max-w-xl space-y-6">
+
+      {/* Ülke (Lokasyon) */}
+      <div>
+        <label className="block text-sm font-medium text-foreground mb-1.5">
+          📍 İşletmenin Bulunduğu Ülke
+          <span className="text-muted-foreground font-normal ml-1">(takvimi belirler)</span>
+        </label>
+        <select
+          value={form.country_code}
+          onChange={(e) => setForm((f) => ({ ...f, country_code: e.target.value }))}
+          className="w-full rounded-lg border border-white/10 bg-card px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-orange-500/40"
+        >
+          {countries.map((c) => (
+            <option key={c.code} value={c.code} className="bg-zinc-900">
+              {c.name} ({c.code})
+            </option>
+          ))}
+        </select>
+        <p className="text-xs text-muted-foreground mt-1.5">
+          Bu ülkenin resmi tatilleri ve özel günleri takvim olarak kullanılacak. AI içerik üretimi de
+          bu ülkeye özgü kültürel bağlamla yapılır.
+        </p>
+      </div>
+
       {/* İşletme adı */}
       <div>
-        <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1.5">
+        <label className="block text-sm font-medium text-foreground mb-1.5">
           İşletme Adı
         </label>
         <input
@@ -73,29 +106,29 @@ export function BrandForm({ orgId, brand }: Props) {
           required
           value={form.business_name}
           onChange={(e) => setForm((f) => ({ ...f, business_name: e.target.value }))}
-          className="w-full rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2 text-sm text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-zinc-500"
-          placeholder="Golden Pizzeria"
+          className="w-full rounded-lg border border-white/10 bg-card px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-orange-500/40"
+          placeholder="Örn. Bella Pizzeria"
         />
       </div>
 
       {/* Açıklama */}
       <div>
-        <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1.5">
+        <label className="block text-sm font-medium text-foreground mb-1.5">
           Açıklama
-          <span className="text-zinc-400 font-normal ml-1">(AI bu metni kullanır)</span>
+          <span className="text-muted-foreground font-normal ml-1">(AI bu metni kullanır)</span>
         </label>
         <textarea
           rows={3}
           value={form.description}
           onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
-          className="w-full rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2 text-sm text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-zinc-500 resize-none"
-          placeholder="Finlandiya'da otantik İtalyan pizza ve makarna sunan aile restoranı..."
+          className="w-full rounded-lg border border-white/10 bg-card px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-orange-500/40 resize-none"
+          placeholder="Otantik İtalyan pizza ve makarna sunan aile restoranı..."
         />
       </div>
 
       {/* Ton */}
       <div>
-        <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1.5">
+        <label className="block text-sm font-medium text-foreground mb-1.5">
           İçerik Tonu
         </label>
         <div className="grid grid-cols-2 gap-2">
@@ -104,8 +137,8 @@ export function BrandForm({ orgId, brand }: Props) {
               key={opt.value}
               className={`flex items-center gap-2 rounded-lg border px-3 py-2 cursor-pointer text-sm transition-colors ${
                 form.tone === opt.value
-                  ? 'border-zinc-900 bg-zinc-900 text-white dark:border-zinc-100 dark:bg-zinc-100 dark:text-zinc-900'
-                  : 'border-zinc-200 bg-white dark:border-zinc-700 dark:bg-zinc-900 text-zinc-700 dark:text-zinc-300 hover:border-zinc-400'
+                  ? 'border-orange-500/50 bg-orange-500/10 text-foreground'
+                  : 'border-white/10 bg-card text-muted-foreground hover:border-white/20 hover:text-foreground'
               }`}
             >
               <input
@@ -124,22 +157,22 @@ export function BrandForm({ orgId, brand }: Props) {
 
       {/* Ürünler */}
       <div>
-        <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1.5">
+        <label className="block text-sm font-medium text-foreground mb-1.5">
           Ürünler / Menü
-          <span className="text-zinc-400 font-normal ml-1">(virgülle ayır)</span>
+          <span className="text-muted-foreground font-normal ml-1">(virgülle ayır)</span>
         </label>
         <input
           type="text"
           value={form.products}
           onChange={(e) => setForm((f) => ({ ...f, products: e.target.value }))}
-          className="w-full rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2 text-sm text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-zinc-500"
+          className="w-full rounded-lg border border-white/10 bg-card px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-orange-500/40"
           placeholder="pizza, pasta, risotto, tiramisu"
         />
       </div>
 
       {/* Ana renk */}
       <div>
-        <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1.5">
+        <label className="block text-sm font-medium text-foreground mb-1.5">
           Ana Renk
         </label>
         <div className="flex items-center gap-3">
@@ -147,9 +180,9 @@ export function BrandForm({ orgId, brand }: Props) {
             type="color"
             value={form.primary_color}
             onChange={(e) => setForm((f) => ({ ...f, primary_color: e.target.value }))}
-            className="h-10 w-16 rounded-lg border border-zinc-300 dark:border-zinc-700 cursor-pointer"
+            className="h-10 w-16 rounded-lg border border-white/10 cursor-pointer"
           />
-          <span className="text-sm font-mono text-zinc-500">{form.primary_color}</span>
+          <span className="text-sm font-mono text-muted-foreground">{form.primary_color}</span>
         </div>
       </div>
 
@@ -158,12 +191,12 @@ export function BrandForm({ orgId, brand }: Props) {
         <button
           type="submit"
           disabled={saving}
-          className="px-5 py-2 rounded-lg bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900 text-sm font-medium hover:opacity-80 transition-opacity disabled:opacity-40"
+          className="px-5 py-2 rounded-lg bg-gradient-to-r from-orange-500 to-pink-600 text-white text-sm font-medium hover:opacity-90 transition-opacity disabled:opacity-40"
         >
           {saving ? 'Kaydediliyor…' : 'Kaydet'}
         </button>
         {saved && (
-          <p className="text-sm text-green-600 dark:text-green-400 font-medium">✓ Kaydedildi</p>
+          <p className="text-sm text-green-400 font-medium">✓ Kaydedildi</p>
         )}
       </div>
     </form>

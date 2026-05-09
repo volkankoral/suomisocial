@@ -1,62 +1,87 @@
 /**
- * Finnish calendar utilities — resmi tatiller + bayrak/kültür günleri.
- * Nimipäivä bu sistemde YOK.
+ * Çok ülkeli takvim — ISO 3166-1 alpha-2 ülke koduna göre resmi tatiller.
+ * `date-holidays` paketi 200+ ülkeyi destekler.
  */
 
-import {
-  getFinnishHolidays,
-  getHolidayForDate,
-  type FinnishHoliday,
-  type HolidayCategory,
-} from './finnish-holidays'
+import Holidays from 'date-holidays'
 
-export type { FinnishHoliday, HolidayCategory }
+export type HolidayCategory = 'public' | 'bank' | 'school' | 'optional' | 'observance'
 
 export interface SpecialDay {
   date: string              // YYYY-MM-DD
-  holiday: FinnishHoliday
-  label: string             // = holiday.name (Fince)
-  labelEn: string           // = holiday.nameEn
-  labelTr: string           // = holiday.nameTr
-  isHighPriority: boolean   // = holiday.isBankHoliday (AI için öncelikli içerik)
+  name: string              // Yerel ad (orijinal dil)
+  type: HolidayCategory     // public / bank / school / optional / observance
+  isBankHoliday: boolean    // 'public' veya 'bank' ise true
+  countryCode: string       // ISO 3166-1 alpha-2
+  rule?: string
 }
 
-function toSpecialDay(h: FinnishHoliday): SpecialDay {
+interface RawHoliday {
+  date: string                    // "2026-05-01 00:00:00" gibi
+  name: string
+  type: HolidayCategory
+  rule?: string
+}
+
+function normalizeDate(raw: string): string {
+  // "2026-05-01 00:00:00" → "2026-05-01"
+  return raw.split(' ')[0]
+}
+
+function toSpecialDay(h: RawHoliday, countryCode: string): SpecialDay {
+  const isBankHoliday = h.type === 'public' || h.type === 'bank'
   return {
-    date: h.date,
-    holiday: h,
-    label: h.name,
-    labelEn: h.nameEn,
-    labelTr: h.nameTr,
-    isHighPriority: h.isBankHoliday,
+    date:        normalizeDate(h.date),
+    name:        h.name,
+    type:        h.type,
+    isBankHoliday,
+    countryCode,
+    rule:        h.rule,
   }
 }
 
-/** Bir yılın tüm özel günleri (tarihe göre sıralı) */
-export function getSpecialDays(year: number): SpecialDay[] {
-  return getFinnishHolidays(year).map(toSpecialDay)
+/** Tek yıl */
+export function getSpecialDays(year: number, countryCode: string = 'FI'): SpecialDay[] {
+  const hd = new Holidays(countryCode)
+  const holidays = (hd.getHolidays(year) ?? []) as RawHoliday[]
+  return holidays
+    .map((h) => toSpecialDay(h, countryCode))
+    .sort((a, b) => a.date.localeCompare(b.date))
 }
 
-/** Bugünden itibaren yaklaşan özel günler (en fazla `limit` adet) */
-export function getUpcomingSpecialDays(limit = 14): SpecialDay[] {
+/** Bugünden itibaren yaklaşan özel günler */
+export function getUpcomingSpecialDays(limit = 14, countryCode: string = 'FI'): SpecialDay[] {
   const today = new Date()
   today.setHours(0, 0, 0, 0)
   const year = today.getFullYear()
 
   const all = [
-    ...getFinnishHolidays(year),
-    ...getFinnishHolidays(year + 1),
-  ].sort((a, b) => a.date.localeCompare(b.date))
+    ...getSpecialDays(year,     countryCode),
+    ...getSpecialDays(year + 1, countryCode),
+  ]
 
   return all
     .filter((h) => new Date(h.date + 'T00:00:00') >= today)
     .slice(0, limit)
-    .map(toSpecialDay)
 }
 
-/** Belirli bir tarih için özel günleri döndürür */
-export function getSpecialDaysForDate(date: Date): SpecialDay[] {
-  const holiday = getHolidayForDate(date)
-  if (!holiday) return []
-  return [toSpecialDay(holiday)]
+/** Belirli bir tarih için özel gün */
+export function getSpecialDaysForDate(date: Date, countryCode: string = 'FI'): SpecialDay[] {
+  const ymd  = date.toISOString().split('T')[0]
+  const year = date.getFullYear()
+  return getSpecialDays(year, countryCode).filter((h) => h.date === ymd)
+}
+
+/** Desteklenen ülkelerin listesi */
+export interface CountryOption {
+  code: string
+  name: string
+}
+
+export function getSupportedCountries(): CountryOption[] {
+  const hd        = new Holidays()
+  const countries = hd.getCountries() as Record<string, string>
+  return Object.entries(countries)
+    .map(([code, name]) => ({ code, name }))
+    .sort((a, b) => a.name.localeCompare(b.name))
 }

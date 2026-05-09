@@ -1,5 +1,5 @@
 import { createServiceClient } from '@/lib/supabase/service'
-import { getUserOrgId } from '@/lib/supabase/get-org'
+import { getUserOrgId, getUserOrgCountry } from '@/lib/supabase/get-org'
 import { getUpcomingSpecialDays } from '@/lib/calendar'
 import { GenerateButton } from './_components/GenerateButton'
 import { DraftActions } from './_components/DraftActions'
@@ -30,7 +30,8 @@ export default async function ContentPage({ params }: Props) {
         .order('special_day_date', { ascending: true })
     : { data: [] }
 
-  const upcoming     = getUpcomingSpecialDays(10)
+  const countryCode  = await getUserOrgCountry()
+  const upcoming     = getUpcomingSpecialDays(10, countryCode)
   const draftedDates = new Set((drafts ?? []).map((d: { special_day_date: string }) => d.special_day_date))
 
   return (
@@ -77,26 +78,21 @@ export default async function ContentPage({ params }: Props) {
                 const hasDraft = draftedDates.has(day.date)
                 return (
                   <div
-                    key={day.date}
+                    key={day.date + day.name}
                     className="rounded-xl border border-white/8 bg-card px-4 py-3 hover:border-white/14 transition-colors"
                   >
                     <div className="flex items-start justify-between gap-2">
                       <div className="min-w-0">
                         <p className="text-[10px] font-mono text-muted-foreground">
-                          {d.toLocaleDateString('fi-FI', { day: 'numeric', month: 'short', year: 'numeric' })}
+                          {d.toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' })}
                         </p>
                         <p className="text-sm font-medium text-foreground leading-snug mt-0.5">
-                          {day.labelTr}
+                          {day.name}
                         </p>
                         <div className="flex gap-1 mt-1.5 flex-wrap">
-                          {day.holiday.isBankHoliday && (
+                          {day.isBankHoliday && (
                             <span className="text-[9px] bg-amber-500/15 text-amber-400 border border-amber-500/20 px-1.5 py-0.5 rounded-md font-medium">
                               Resmi Tatil
-                            </span>
-                          )}
-                          {day.holiday.category === 'flagday' && (
-                            <span className="text-[9px] bg-blue-500/15 text-blue-400 border border-blue-500/20 px-1.5 py-0.5 rounded-md font-medium">
-                              🏳 Bayrak
                             </span>
                           )}
                         </div>
@@ -108,7 +104,7 @@ export default async function ContentPage({ params }: Props) {
                             Üretildi
                           </span>
                         ) : orgId ? (
-                          <GenerateButton day={day} orgId={orgId} />
+                          <GenerateButton day={day} orgId={orgId} countryCode={countryCode} />
                         ) : null}
                       </div>
                     </div>

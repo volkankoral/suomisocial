@@ -1,5 +1,6 @@
 import { createServiceClient } from '@/lib/supabase/service'
-import { getUserOrgId } from '@/lib/supabase/get-org'
+import { getUserOrgId, getUserOrgCountry } from '@/lib/supabase/get-org'
+import { getSupportedCountries } from '@/lib/calendar'
 import { BrandForm } from './_components/BrandForm'
 import { Animate } from '@/components/ui/animate'
 
@@ -9,8 +10,10 @@ interface Props {
 
 export default async function BrandPage({ params }: Props) {
   await params
-  const supabase = createServiceClient()
-  const orgId    = await getUserOrgId()
+  const supabase    = createServiceClient()
+  const orgId       = await getUserOrgId()
+  const countryCode = await getUserOrgCountry()
+  const countries   = getSupportedCountries()
 
   const { data: brand } = orgId
     ? await supabase
@@ -26,14 +29,19 @@ export default async function BrandPage({ params }: Props) {
         <div>
           <h1 className="text-3xl font-bold tracking-tight gradient-text">Marka Ayarları</h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            AI içerik üretiminde kullanılacak işletme bilgilerini buradan düzenle
+            Lokasyonunu, marka kimliğini ve AI içerik bağlamını buradan yönet
           </p>
         </div>
       </Animate>
 
       <Animate delay={0.08}>
         {orgId ? (
-          <BrandForm orgId={orgId} brand={brand} />
+          <BrandForm
+            orgId={orgId}
+            brand={brand}
+            countryCode={countryCode}
+            countries={countries}
+          />
         ) : (
           <div className="rounded-xl border border-white/8 bg-card p-8 text-center">
             <p className="text-muted-foreground text-sm">Organizasyon bulunamadı.</p>

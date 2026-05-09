@@ -14,8 +14,21 @@ export async function POST(request: NextRequest) {
   const body = await request.json()
   const supabase = createServiceClient()
 
+  // country_code'u organizations tablosuna yaz, gerisini brand_settings'e
+  const { country_code, ...brandFields } = body as {
+    country_code?: string
+    [k: string]: unknown
+  }
+
+  if (country_code && /^[A-Za-z]{2}$/.test(country_code)) {
+    await supabase
+      .from('organizations')
+      .update({ country_code: country_code.toUpperCase() })
+      .eq('id', orgId)
+  }
+
   const { error } = await supabase.from('brand_settings').upsert(
-    { ...body, organization_id: orgId },
+    { ...brandFields, organization_id: orgId },
     { onConflict: 'organization_id' },
   )
 

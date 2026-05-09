@@ -1,7 +1,7 @@
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { createServiceClient } from '@/lib/supabase/service'
-import { getUserOrgId } from '@/lib/supabase/get-org'
+import { getUserOrgId, getUserOrgCountry } from '@/lib/supabase/get-org'
 import { getUpcomingSpecialDays } from '@/lib/calendar'
 import { Animate, Stagger, FadeUpItem } from '@/components/ui/animate'
 
@@ -10,7 +10,8 @@ export default async function DashboardPage({ params }: { params: Promise<{ lang
   const authClient = await createClient()
   const { data: { user } } = await authClient.auth.getUser()
 
-  const upcoming = getUpcomingSpecialDays(5)
+  const countryCode = await getUserOrgCountry()
+  const upcoming    = getUpcomingSpecialDays(5, countryCode)
 
   // Gerçek metrikler
   const supabase = createServiceClient()
@@ -167,36 +168,30 @@ export default async function DashboardPage({ params }: { params: Promise<{ lang
             <Stagger className="grid gap-2.5 sm:grid-cols-2 lg:grid-cols-5">
               {upcoming.map((day) => {
                 const d = new Date(day.date + 'T00:00:00')
-                const isBankHoliday = day.holiday.isBankHoliday
                 return (
-                  <FadeUpItem key={day.date}>
+                  <FadeUpItem key={day.date + day.name}>
                     <div
                       className={`rounded-2xl border px-4 py-3.5 transition-all duration-200 hover:border-white/15 ${
-                        isBankHoliday
+                        day.isBankHoliday
                           ? 'bg-amber-950/15 border-amber-500/20 hover:border-amber-500/35'
                           : 'bg-card border-white/8 hover:bg-card/80'
                       }`}
                     >
                       <p className="text-[10px] font-mono text-muted-foreground mb-1.5">
-                        {d.toLocaleDateString('fi-FI', { day: 'numeric', month: 'short' })}
+                        {d.toLocaleDateString('en-US', { day: 'numeric', month: 'short' })}
                       </p>
                       <p className="text-sm font-medium text-foreground leading-snug">
-                        {day.labelTr}
+                        {day.name}
                       </p>
                       <div className="flex gap-1 mt-2 flex-wrap">
-                        {isBankHoliday && (
+                        {day.isBankHoliday && (
                           <span className="text-[9px] bg-amber-500/15 text-amber-400 border border-amber-500/20 px-1.5 py-0.5 rounded-md font-medium">
                             Resmi Tatil
                           </span>
                         )}
-                        {day.holiday.category === 'flagday' && (
-                          <span className="text-[9px] bg-blue-500/15 text-blue-400 border border-blue-500/20 px-1.5 py-0.5 rounded-md font-medium">
-                            🏳 Bayrak
-                          </span>
-                        )}
-                        {day.holiday.category === 'observed' && (
+                        {day.type === 'observance' && (
                           <span className="text-[9px] bg-zinc-500/15 text-zinc-400 border border-zinc-500/20 px-1.5 py-0.5 rounded-md font-medium">
-                            Tanınan
+                            Anma
                           </span>
                         )}
                       </div>

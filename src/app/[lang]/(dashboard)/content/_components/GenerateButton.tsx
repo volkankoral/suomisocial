@@ -7,9 +7,10 @@ import type { SpecialDay } from '@/lib/calendar'
 interface Props {
   day: SpecialDay
   orgId: string
+  countryCode: string
 }
 
-export function GenerateButton({ day, orgId }: Props) {
+export function GenerateButton({ day, orgId, countryCode }: Props) {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const router = useRouter()
@@ -23,12 +24,11 @@ export function GenerateButton({ day, orgId }: Props) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           organizationId: orgId,
+          countryCode,
           specialDayDate: day.date,
-          specialDayLabel: day.label,
-          specialDayLabelTr: day.labelTr,
-          specialDayDescriptionTr: day.holiday.descriptionTr,
-          isBankHoliday: day.holiday.isBankHoliday,
-          category: day.holiday.category,
+          specialDayName: day.name,
+          isBankHoliday:  day.isBankHoliday,
+          type:           day.type,
         }),
       })
       const json = await res.json()
@@ -46,7 +46,7 @@ export function GenerateButton({ day, orgId }: Props) {
       <button
         onClick={handleGenerate}
         disabled={loading}
-        className="text-xs px-3 py-1.5 rounded-lg bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900 font-medium hover:opacity-80 transition-opacity disabled:opacity-40"
+        className="text-xs px-3 py-1.5 rounded-lg bg-gradient-to-r from-orange-500 to-pink-600 text-white font-medium hover:opacity-90 transition-opacity disabled:opacity-40"
       >
         {loading ? '⏳ Üretiliyor…' : '✨ İçerik Üret'}
       </button>
