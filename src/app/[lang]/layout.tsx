@@ -15,9 +15,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "SuomiSocial",
+  title: "Postino — AI sosyal medya & reklam otomasyonu",
   description:
-    "Finlandiya'ya özgü özel günler için otomatik AI sosyal medya & reklam yönetimi",
+    "Yerel özel günleri yakalayan, AI ile içerik üreten ve reklamlarını optimize eden sosyal medya otomasyon platformu.",
 };
 
 export function generateStaticParams() {

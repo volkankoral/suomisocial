@@ -24,11 +24,11 @@ export function NavBar({ links, email }: Props) {
 
         {/* Logo */}
         <Link href={links[0]?.href ?? '#'} className="flex items-center gap-2.5 shrink-0 mr-2">
-          <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center shadow-md shadow-blue-900/40">
-            <span className="text-white text-[10px] font-bold tracking-tight">SS</span>
+          <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-orange-500 to-pink-600 flex items-center justify-center shadow-md shadow-orange-900/40">
+            <span className="text-white text-[11px] font-bold tracking-tight">Po</span>
           </div>
           <span className="font-semibold text-sm tracking-tight text-foreground hidden sm:block">
-            SuomiSocial
+            Postino
           </span>
         </Link>
 
@@ -62,7 +62,7 @@ export function NavBar({ links, email }: Props) {
 
         {/* User badge */}
         <div className="shrink-0 flex items-center gap-2 px-3 py-1.5 rounded-lg border border-white/8 bg-white/4">
-          <div className="w-5 h-5 rounded-full bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center text-[9px] font-bold text-white shrink-0">
+          <div className="w-5 h-5 rounded-full bg-gradient-to-br from-orange-500 to-pink-600 flex items-center justify-center text-[9px] font-bold text-white shrink-0">
             {email.charAt(0).toUpperCase()}
           </div>
           <span className="text-xs text-muted-foreground font-mono hidden sm:block max-w-[140px] truncate">

@@ -35,7 +35,7 @@ export default function LoginPage() {
 
       {/* Ambient glow */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden">
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] rounded-full bg-blue-600/8 blur-[120px]" />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] rounded-full bg-orange-500/10 blur-[120px]" />
       </div>
 
       <motion.div
@@ -46,10 +46,10 @@ export default function LoginPage() {
       >
         {/* Logo */}
         <div className="flex flex-col items-center mb-8">
-          <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center shadow-xl shadow-blue-900/40 mb-4">
-            <span className="text-white text-lg font-bold tracking-tight">SS</span>
+          <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-orange-500 to-pink-600 flex items-center justify-center shadow-xl shadow-orange-900/40 mb-4">
+            <span className="text-white text-base font-bold tracking-tight">Po</span>
           </div>
-          <h1 className="text-2xl font-bold tracking-tight gradient-text">SuomiSocial</h1>
+          <h1 className="text-2xl font-bold tracking-tight gradient-text">Postino</h1>
           <p className="text-sm text-muted-foreground mt-1">Yönetim paneline giriş yap</p>
         </div>
 
@@ -101,7 +101,7 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full px-4 py-2.5 rounded-xl bg-primary text-primary-foreground font-semibold text-sm hover:opacity-90 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg shadow-blue-900/25 mt-2"
+              className="w-full px-4 py-2.5 rounded-xl bg-gradient-to-r from-orange-500 to-pink-600 text-white font-semibold text-sm hover:opacity-90 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg shadow-orange-900/25 mt-2"
             >
               {loading ? (
                 <span className="flex items-center justify-center gap-2">
@@ -117,7 +117,7 @@ export default function LoginPage() {
         </div>
 
         <p className="text-center text-xs text-muted-foreground/50 mt-6">
-          SuomiSocial · Golden Pizzeria · 🇫🇮
+          Postino · AI sosyal medya & reklam otomasyonu
         </p>
       </motion.div>
     </main>
