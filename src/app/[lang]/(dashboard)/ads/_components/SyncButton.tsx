@@ -3,7 +3,12 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 
-export function SyncButton() {
+interface Props {
+  hasGoogle: boolean
+  hasMeta:   boolean
+}
+
+export function SyncButton({ hasGoogle, hasMeta }: Props) {
   const [loading, setLoading] = useState(false)
   const [result, setResult]   = useState<string | null>(null)
   const router = useRouter()
@@ -11,11 +16,25 @@ export function SyncButton() {
   async function sync() {
     setLoading(true)
     setResult(null)
+    let totalSynced = 0
+    const errors: string[] = []
+
     try {
-      const res  = await fetch('/api/ads/sync', { method: 'POST' })
-      const json = await res.json()
-      if (!res.ok) throw new Error(json.error ?? 'Senkronizasyon hatası')
-      setResult(`✓ ${json.synced} kampanya senkronize edildi`)
+      if (hasMeta) {
+        const res  = await fetch('/api/ads/sync', { method: 'POST' })
+        const json = await res.json()
+        if (res.ok) totalSynced += json.synced ?? 0
+        else errors.push(`Meta: ${json.error}`)
+      }
+      if (hasGoogle) {
+        const res  = await fetch('/api/ads/sync-google', { method: 'POST' })
+        const json = await res.json()
+        if (res.ok) totalSynced += json.synced ?? 0
+        else errors.push(`Google: ${json.error}`)
+      }
+
+      if (errors.length) setResult(`✕ ${errors.join(' | ')}`)
+      else setResult(`✓ ${totalSynced} kampanya senkronize edildi`)
       router.refresh()
     } catch (err) {
       setResult(`✕ ${err instanceof Error ? err.message : 'Hata'}`)

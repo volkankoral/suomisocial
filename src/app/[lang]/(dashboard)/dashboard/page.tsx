@@ -1,24 +1,41 @@
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
+import { createServiceClient } from '@/lib/supabase/service'
+import { getUserOrgId } from '@/lib/supabase/get-org'
 import { getUpcomingSpecialDays } from '@/lib/calendar'
 import { Animate, Stagger, FadeUpItem } from '@/components/ui/animate'
 
 export default async function DashboardPage({ params }: { params: Promise<{ lang: string }> }) {
   const { lang } = await params
-  const supabase = await createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+  const authClient = await createClient()
+  const { data: { user } } = await authClient.auth.getUser()
 
   const upcoming = getUpcomingSpecialDays(5)
+
+  // Gerçek metrikler
+  const supabase = createServiceClient()
+  const orgId    = await getUserOrgId()
+
+  const [draftsRes, postsRes, accountsRes] = await Promise.all([
+    orgId ? supabase.from('content_drafts').select('id, status').eq('organization_id', orgId) : { data: [] },
+    orgId ? supabase.from('posts').select('id').eq('organization_id', orgId) : { data: [] },
+    orgId ? supabase.from('social_accounts').select('platform').eq('organization_id', orgId).eq('is_active', true) : { data: [] },
+  ])
+
+  const drafts   = draftsRes.data ?? []
+  const posts    = postsRes.data ?? []
+  const accounts = accountsRes.data ?? []
+
+  const pendingCount  = drafts.filter((d: { status: string }) => d.status === 'pending').length
+  const approvedCount = drafts.filter((d: { status: string }) => d.status === 'approved').length
 
   const phases = [
     { label: 'Faz 0', desc: 'Foundation — auth, DB, deploy',              done: true,  href: null },
     { label: 'Faz 1', desc: 'Finnish takvim (tatiller + bayrak günleri)', done: true,  href: `/${lang}/calendar` },
     { label: 'Faz 2', desc: 'AI içerik üretimi (caption + görsel)',        done: true,  href: `/${lang}/content` },
-    { label: 'Faz 3', desc: 'Instagram + Facebook paylaşımı',              done: false, href: `/${lang}/social` },
+    { label: 'Faz 3', desc: 'Facebook paylaşımı',                          done: true,  href: `/${lang}/social` },
     { label: 'Faz 4', desc: 'TikTok entegrasyonu',                         done: false, href: `/${lang}/social` },
-    { label: 'Faz 5', desc: 'Reklam monitoring (Google + Meta + TikTok)',  done: false, href: `/${lang}/ads` },
+    { label: 'Faz 5', desc: 'Meta Ads monitoring',                         done: true,  href: `/${lang}/ads` },
     { label: 'Faz 6', desc: 'AI reklam optimizasyonu',                     done: false, href: `/${lang}/ads` },
     { label: 'Faz 7', desc: 'SaaS dönüşümü (Stripe + onboarding)',         done: false, href: null },
   ]
@@ -58,6 +75,26 @@ export default async function DashboardPage({ params }: { params: Promise<{ lang
               <p className="text-[10px] text-muted-foreground">{doneCount} faz tamamlandı</p>
             </div>
           </div>
+        </div>
+      </Animate>
+
+      {/* Stats */}
+      <Animate delay={0.04}>
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+          {[
+            { icon: '📝', label: 'Bekleyen Taslak',   value: pendingCount,  href: `/${lang}/content`, color: pendingCount > 0 ? 'text-amber-400' : undefined },
+            { icon: '✅', label: 'Onaylı Taslak',      value: approvedCount, href: `/${lang}/content`, color: approvedCount > 0 ? 'text-green-400' : undefined },
+            { icon: '📤', label: 'Toplam Paylaşım',    value: posts.length,  href: `/${lang}/posts`,   color: undefined },
+            { icon: '🔗', label: 'Bağlı Hesap',        value: accounts.length, href: `/${lang}/social`, color: accounts.length > 0 ? 'text-blue-400' : undefined },
+          ].map((s) => (
+            <Link key={s.label} href={s.href} className="rounded-xl border border-white/8 bg-card px-4 py-3 flex items-center gap-3 hover:border-white/15 transition-colors">
+              <span className="text-2xl">{s.icon}</span>
+              <div>
+                <p className="text-xs text-muted-foreground">{s.label}</p>
+                <p className={`text-xl font-bold ${s.color ?? 'text-foreground'}`}>{s.value}</p>
+              </div>
+            </Link>
+          ))}
         </div>
       </Animate>
 

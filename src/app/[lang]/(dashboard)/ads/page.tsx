@@ -40,6 +40,7 @@ export default async function AdsPage({ params }: Props) {
   const activeAccounts     = (adAccounts ?? []).filter((a: { is_active: boolean }) => a.is_active)
   const connectedPlatforms = new Set(activeAccounts.map((a: { platform: string }) => a.platform))
   const metaConnected      = connectedPlatforms.has('meta')
+  const googleConnected    = connectedPlatforms.has('google')
 
   // Toplam metrikler
   const totalSpend  = (campaigns ?? []).reduce((s: number, c: { spend: number | null }) => s + (c.spend ?? 0), 0)
@@ -58,7 +59,9 @@ export default async function AdsPage({ params }: Props) {
             Meta reklam kampanyaları — harcama, gösterim ve tıklama verileri
           </p>
         </div>
-        {metaConnected && <SyncButton />}
+        {(metaConnected || googleConnected) && (
+          <SyncButton hasGoogle={googleConnected} hasMeta={metaConnected} />
+        )}
       </div>
 
       {/* KPI kartları */}
@@ -128,20 +131,45 @@ export default async function AdsPage({ params }: Props) {
             </div>
           </div>
 
-          {/* Google Ads (yakında) */}
-          <div className="rounded-xl border border-white/8 bg-card overflow-hidden opacity-50">
+          {/* Google Ads */}
+          <div className="rounded-xl border border-white/8 bg-card overflow-hidden">
             <div className="h-1.5 bg-gradient-to-r from-blue-500 to-green-400" />
             <div className="p-4">
               <div className="flex items-center justify-between mb-2">
                 <span className="text-2xl">🔍</span>
-                <span className="text-xs text-muted-foreground font-mono">Yakında</span>
+                {googleConnected && (
+                  <span className="text-[10px] bg-green-500/15 text-green-400 border border-green-500/20 px-2 py-0.5 rounded-lg font-medium">
+                    Bağlı
+                  </span>
+                )}
               </div>
               <p className="font-medium text-foreground text-sm">Google Ads</p>
-              <div className="mt-3">
-                <button disabled className="w-full text-xs px-3 py-1.5 rounded-lg border border-dashed border-white/20 text-muted-foreground cursor-not-allowed">
-                  + Bağla (yakında)
-                </button>
-              </div>
+              {googleConnected ? (
+                <div className="mt-2 space-y-1">
+                  {activeAccounts
+                    .filter((a: { platform: string }) => a.platform === 'google')
+                    .map((a: { id: string; account_name: string | null; account_id: string }) => (
+                      <p key={a.id} className="text-xs text-muted-foreground truncate">
+                        {a.account_name ?? a.account_id}
+                      </p>
+                    ))}
+                  <a
+                    href="/api/oauth/google-ads"
+                    className="inline-block mt-2 text-xs text-blue-400 hover:text-blue-300 underline-offset-2 hover:underline"
+                  >
+                    Yeniden bağla
+                  </a>
+                </div>
+              ) : (
+                <div className="mt-3">
+                  <a
+                    href="/api/oauth/google-ads"
+                    className="block w-full text-center text-xs px-3 py-1.5 rounded-lg bg-gradient-to-r from-blue-600 to-green-600 text-white font-medium hover:opacity-90 transition-opacity"
+                  >
+                    + Google Ads Bağla
+                  </a>
+                </div>
+              )}
             </div>
           </div>
 
