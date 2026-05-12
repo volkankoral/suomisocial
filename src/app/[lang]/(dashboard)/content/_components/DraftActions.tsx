@@ -44,6 +44,25 @@ export function DraftActions({ draftId, currentStatus }: Props) {
     }
   }
 
+  async function publishToTikTok() {
+    setPublishing(true)
+    setPubError(null)
+    try {
+      const res  = await fetch('/api/post/tiktok', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ draftId }),
+      })
+      const json = await res.json()
+      if (!res.ok) throw new Error(json.error ?? 'Paylaşım hatası')
+      router.refresh()
+    } catch (err) {
+      setPubError(err instanceof Error ? err.message : 'Hata')
+    } finally {
+      setPublishing(false)
+    }
+  }
+
   async function deleteDraft() {
     if (!confirm('Bu taslağı silmek istediğine emin misin?')) return
     setLoading(true)
@@ -73,6 +92,13 @@ export function DraftActions({ draftId, currentStatus }: Props) {
               className="text-xs px-3 py-1.5 rounded-lg bg-blue-600 text-white font-medium hover:bg-blue-700 transition-colors disabled:opacity-40 flex items-center gap-1.5"
             >
               {publishing ? '⏳ Paylaşılıyor…' : '🔵 Facebook\'a Paylaş'}
+            </button>
+            <button
+              onClick={publishToTikTok}
+              disabled={publishing}
+              className="text-xs px-3 py-1.5 rounded-lg bg-purple-600 text-white font-medium hover:bg-purple-700 transition-colors disabled:opacity-40 flex items-center gap-1.5"
+            >
+              {publishing ? '⏳ Paylaşılıyor…' : '🎵 TikTok\'a Paylaş'}
             </button>
             <button
               onClick={() => updateStatus('pending')}

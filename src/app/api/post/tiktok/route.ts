@@ -11,15 +11,63 @@ export async function POST(request: NextRequest) {
   const orgId = await getUserOrgId()
   if (!orgId) return NextResponse.json({ error: 'Organizasyon bulunamadı' }, { status: 403 })
 
+  const supabase = createServiceClient()
   const body = await request.json()
-  const { caption, video_url, thumbnail_url } = body as {
-    caption: string
-    video_url: string
-    thumbnail_url?: string
-  }
 
-  if (!caption || !video_url) {
-    return NextResponse.json({ error: 'Caption ve video_url gerekli' }, { status: 400 })
+  // Support both direct posting and draft-based posting
+  let caption: string
+  let video_url: string | null
+  let thumbnail_url: string | undefined
+  let draftId: string | undefined
+
+  if (body.draftId) {
+    // Draft-based posting
+    draftId = body.draftId
+    const { data: draft, error: draftErr } = await supabase
+      .from('content_drafts')
+      .select('*')
+      .eq('id', draftId)
+      .eq('organization_id', orgId)
+      .single()
+
+    if (draftErr || !draft) {
+      return NextResponse.json({ error: 'Taslak bulunamadı' }, { status: 404 })
+    }
+
+    if (draft.status !== 'approved') {
+      return NextResponse.json({ error: 'Sadece onaylı taslaklar paylaşılabilir' }, { status: 400 })
+    }
+
+    caption = [
+      draft.caption_fi,
+      draft.hashtags?.length ? draft.hashtags.map((h: string) => `#${h}`).join(' ') : '',
+    ].filter(Boolean).join('\n\n')
+
+    // TikTok requires video, but we have image. For now, we'll create a simple video from the image
+    // or return an error asking for video upload
+    if (draft.image_url && !draft.video_url) {
+      return NextResponse.json({
+        error: 'TikTok video gerekli. Şu anda sadece fotoğraf var. Video yükleyin veya Remotion ile video üretin.'
+      }, { status: 400 })
+    }
+
+    video_url = draft.video_url
+    thumbnail_url = draft.image_url || undefined
+  } else {
+    // Direct posting with explicit parameters
+    const { caption: c, video_url: v, thumbnail_url: t } = body as {
+      caption?: string
+      video_url?: string
+      thumbnail_url?: string
+    }
+
+    if (!c || !v) {
+      return NextResponse.json({ error: 'Caption ve video_url gerekli' }, { status: 400 })
+    }
+
+    caption = c
+    video_url = v
+    thumbnail_url = t
   }
 
   try {
@@ -106,11 +154,23 @@ export async function POST(request: NextRequest) {
     const { data: publishData } = await publishResponse.json()
     const tiktokVideoId = publishData.item_id
 
+    // Update draft status if it's draft-based posting
+    if (draftId) {
+      await supabase
+        .from('content_drafts')
+        .update({
+          status: 'posted',
+          platforms: ['tiktok'],
+        })
+        .eq('id', draftId)
+    }
+
     // Save to posts table
     const { data: post, error: saveError } = await supabase
       .from('posts')
       .insert({
         organization_id: orgId,
+        draft_id: draftId || null,
         platform: 'tiktok',
         platform_account_id: account.platform_user_id,
         platform_post_id: tiktokVideoId,
