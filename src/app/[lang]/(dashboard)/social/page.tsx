@@ -43,12 +43,12 @@ const PLATFORMS = [
     id: 'tiktok' as const,
     name: 'TikTok',
     icon: '🎵',
-    gradient: 'from-zinc-600/15 to-zinc-800/10',
-    border: 'border-white/10 hover:border-white/20',
-    glow: 'shadow-zinc-900/10',
+    gradient: 'from-purple-600/20 to-pink-600/10',
+    border: 'border-purple-500/25 hover:border-purple-500/45',
+    glow: 'shadow-purple-900/20',
     desc: 'Kısa video paylaşımı (9:16)',
     phase: 'Faz 4',
-    active: false,
+    active: true,
   },
 ]
 
@@ -99,6 +99,7 @@ export default async function SocialPage({ params, searchParams }: Props) {
             <p className="text-sm text-emerald-300 font-medium">
               {connected === 'instagram' && 'Instagram hesabı başarıyla bağlandı!'}
               {connected === 'facebook'  && 'Facebook sayfası başarıyla bağlandı!'}
+              {connected === 'tiktok'    && 'TikTok hesabı başarıyla bağlandı!'}
             </p>
           </div>
         </Animate>

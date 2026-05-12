@@ -84,8 +84,8 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: error.message }, { status: 500 })
     }
 
-    // Redirect to dashboard
-    return NextResponse.redirect(`${process.env.NEXT_PUBLIC_APP_URL || 'https://postino.vercel.app'}/tr/ads?tiktok=connected`)
+    // Redirect to social accounts page
+    return NextResponse.redirect(`${process.env.NEXT_PUBLIC_APP_URL || 'https://postino.vercel.app'}/tr/social?connected=tiktok`)
   } catch (err) {
     console.error('OAuth error:', err)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })

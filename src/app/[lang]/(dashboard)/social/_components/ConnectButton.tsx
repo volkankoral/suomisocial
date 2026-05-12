@@ -14,7 +14,7 @@ export function ConnectButton({ platform, lang }: Props) {
     if (platform === 'instagram' || platform === 'facebook') {
       window.location.href = `/api/oauth/meta?platform=${platform}`
     } else if (platform === 'tiktok') {
-      router.push(`/${lang}/social?info=tiktok_coming_soon`)
+      window.location.href = '/api/oauth/tiktok'
     }
   }
 
