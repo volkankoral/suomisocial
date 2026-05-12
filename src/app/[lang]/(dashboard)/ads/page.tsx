@@ -1,6 +1,7 @@
 import { createServiceClient } from '@/lib/supabase/service'
 import { getUserOrgId } from '@/lib/supabase/get-org'
 import { SyncButton } from './_components/SyncButton'
+import { TikTokButton } from './_components/TikTokButton'
 
 interface Props { params: Promise<{ lang: string }> }
 
@@ -37,10 +38,21 @@ export default async function AdsPage({ params }: Props) {
         .limit(50)
     : { data: [] }
 
+  // Get TikTok account
+  const { data: tiktokAccount } = orgId
+    ? await supabase
+        .from('social_accounts')
+        .select('id, platform, display_name, is_connected')
+        .eq('organization_id', orgId)
+        .eq('platform', 'tiktok')
+        .single()
+    : { data: null }
+
   const activeAccounts     = (adAccounts ?? []).filter((a: { is_active: boolean }) => a.is_active)
   const connectedPlatforms = new Set(activeAccounts.map((a: { platform: string }) => a.platform))
   const metaConnected      = connectedPlatforms.has('meta')
   const googleConnected    = connectedPlatforms.has('google')
+  const tiktokConnected    = !!tiktokAccount?.is_connected
 
   // Toplam metrikler
   const totalSpend  = (campaigns ?? []).reduce((s: number, c: { spend: number | null }) => s + (c.spend ?? 0), 0)
@@ -173,20 +185,36 @@ export default async function AdsPage({ params }: Props) {
             </div>
           </div>
 
-          {/* TikTok Ads (yakında) */}
-          <div className="rounded-xl border border-white/8 bg-card overflow-hidden opacity-50">
-            <div className="h-1.5 bg-gradient-to-r from-zinc-600 to-zinc-400" />
+          {/* TikTok */}
+          <div className="rounded-xl border border-white/8 bg-card overflow-hidden">
+            <div className="h-1.5 bg-gradient-to-r from-purple-600 to-pink-600" />
             <div className="p-4">
               <div className="flex items-center justify-between mb-2">
                 <span className="text-2xl">🎵</span>
-                <span className="text-xs text-muted-foreground font-mono">Yakında</span>
+                {tiktokConnected && (
+                  <span className="text-[10px] bg-green-500/15 text-green-400 border border-green-500/20 px-2 py-0.5 rounded-lg font-medium">
+                    Bağlı
+                  </span>
+                )}
               </div>
-              <p className="font-medium text-foreground text-sm">TikTok Ads</p>
-              <div className="mt-3">
-                <button disabled className="w-full text-xs px-3 py-1.5 rounded-lg border border-dashed border-white/20 text-muted-foreground cursor-not-allowed">
-                  + Bağla (yakında)
-                </button>
-              </div>
+              <p className="font-medium text-foreground text-sm">TikTok</p>
+              {tiktokConnected ? (
+                <div className="mt-2 space-y-1">
+                  <p className="text-xs text-muted-foreground truncate">
+                    {tiktokAccount?.display_name}
+                  </p>
+                  <a
+                    href="/api/oauth/tiktok"
+                    className="inline-block mt-2 text-xs text-purple-400 hover:text-purple-300 underline-offset-2 hover:underline"
+                  >
+                    Yeniden bağla
+                  </a>
+                </div>
+              ) : (
+                <div className="mt-3">
+                  <TikTokButton hasTikTok={false} />
+                </div>
+              )}
             </div>
           </div>
 
