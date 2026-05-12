@@ -23,8 +23,8 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    // Exchange code for access token
-    const tokenResponse = await fetch('https://open.tiktokapi.com/v1/oauth/token/', {
+    // Exchange code for access token (TikTok v2)
+    const tokenResponse = await fetch('https://open.tiktokapi.com/v2/oauth/token/', {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       body: new URLSearchParams({
@@ -32,7 +32,7 @@ export async function GET(request: NextRequest) {
         client_secret: process.env.TIKTOK_CLIENT_SECRET!,
         code,
         grant_type: 'authorization_code',
-        redirect_uri: `${process.env.NEXT_PUBLIC_APP_URL || 'https://postino.vercel.app'}/api/oauth/tiktok/callback`,
+        redirect_uri: `${process.env.NEXT_PUBLIC_APP_URL || 'https://suomisocial-ruby.vercel.app'}/api/oauth/tiktok/callback`,
       }).toString(),
     })
 
@@ -44,8 +44,8 @@ export async function GET(request: NextRequest) {
 
     const { access_token, open_id, expires_in } = await tokenResponse.json()
 
-    // Get user info
-    const userResponse = await fetch('https://open.tiktokapi.com/v1/user/info/', {
+    // Get user info (TikTok v2)
+    const userResponse = await fetch('https://open.tiktokapi.com/v2/user/info/?fields=display_name,avatar_url', {
       method: 'GET',
       headers: {
         Authorization: `Bearer ${access_token}`,

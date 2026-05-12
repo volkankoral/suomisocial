@@ -14,9 +14,15 @@ export async function GET(request: NextRequest) {
   const state = crypto.randomBytes(16).toString('hex')
 
   // Store state in cookie
-  const response = NextResponse.redirect(
-    `https://www.tiktok.com/oauth/authorize?client_key=${clientKey}&scope=video.upload,user.info&response_type=code&redirect_uri=${encodeURIComponent(redirectUri)}&state=${state}`
-  )
+  // TikTok v2 auth URL (Login Kit)
+  const authUrl = new URL('https://www.tiktok.com/v2/auth/authorize/')
+  authUrl.searchParams.set('client_key', clientKey!)
+  authUrl.searchParams.set('scope', 'user.info.basic,video.upload,video.publish')
+  authUrl.searchParams.set('response_type', 'code')
+  authUrl.searchParams.set('redirect_uri', redirectUri)
+  authUrl.searchParams.set('state', state)
+
+  const response = NextResponse.redirect(authUrl.toString())
 
   response.cookies.set('tiktok_oauth_state', state, {
     httpOnly: true,
