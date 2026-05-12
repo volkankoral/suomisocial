@@ -16,7 +16,7 @@ export async function POST(request: NextRequest) {
 
   // Support both direct posting and draft-based posting
   let caption: string
-  let video_url: string | null
+  let video_url: string
   let thumbnail_url: string | undefined
   let draftId: string | undefined
 
