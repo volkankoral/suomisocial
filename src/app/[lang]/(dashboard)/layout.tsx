@@ -35,6 +35,7 @@ export default async function DashboardLayout({ children, params }: Props) {
     { href: `/${lang}/social`,    label: 'Hesaplar',  icon: '🔗' },
     { href: `/${lang}/ads`,       label: 'Reklamlar', icon: '📊' },
     { href: `/${lang}/brand`,     label: 'Marka',     icon: '⚙️' },
+    { href: `/${lang}/billing`,   label: 'Abonelik',  icon: '💳' },
     ...(isAdmin ? [{ href: `/${lang}/admin`, label: 'Admin', icon: '🛡️' }] : []),
   ]
 

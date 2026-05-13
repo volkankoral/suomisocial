@@ -2,8 +2,24 @@
 
 import Link from 'next/link'
 import { motion } from 'framer-motion'
+import { PricingSection } from './PricingSection'
 
-interface Props { lang: string }
+interface Plan {
+  id: string
+  name: string
+  description: string | null
+  price_monthly: number
+  price_yearly: number | null
+  features: string[]
+  is_featured: boolean
+  stripe_price_id_monthly?: string | null
+  stripe_price_id_yearly?: string | null
+}
+
+interface Props {
+  lang: string
+  plans?: Plan[]
+}
 
 const FEATURES = [
   {
@@ -46,7 +62,7 @@ const item = {
   show:   { opacity: 1, y: 0 },
 }
 
-export function LandingPage({ lang }: Props) {
+export function LandingPage({ lang, plans = [] }: Props) {
   return (
     <div className="min-h-screen bg-background overflow-hidden">
 
@@ -157,6 +173,9 @@ export function LandingPage({ lang }: Props) {
           ))}
         </motion.div>
       </section>
+
+      {/* Pricing */}
+      {plans.length > 0 && <PricingSection plans={plans} lang={lang} />}
 
       {/* Bottom CTA strip */}
       <motion.section

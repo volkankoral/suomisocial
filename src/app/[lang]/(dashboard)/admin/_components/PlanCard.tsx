@@ -14,6 +14,8 @@ interface Plan {
   is_active: boolean
   is_featured: boolean
   sort_order: number
+  stripe_price_id_monthly?: string | null
+  stripe_price_id_yearly?: string | null
 }
 
 export function PlanCard({ plan }: { plan: Plan }) {
@@ -26,6 +28,8 @@ export function PlanCard({ plan }: { plan: Plan }) {
     price_yearly: plan.price_yearly ?? '',
     is_active: plan.is_active,
     is_featured: plan.is_featured,
+    stripe_price_id_monthly: plan.stripe_price_id_monthly ?? '',
+    stripe_price_id_yearly:  plan.stripe_price_id_yearly  ?? '',
   })
 
   async function save() {
@@ -33,7 +37,12 @@ export function PlanCard({ plan }: { plan: Plan }) {
     await fetch(`/api/admin/plans/${plan.id}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(form),
+      body: JSON.stringify({
+        ...form,
+        price_yearly: form.price_yearly === '' ? null : Number(form.price_yearly),
+        stripe_price_id_monthly: form.stripe_price_id_monthly || null,
+        stripe_price_id_yearly:  form.stripe_price_id_yearly  || null,
+      }),
     })
     setLoading(false)
     setEditing(false)
@@ -50,6 +59,8 @@ export function PlanCard({ plan }: { plan: Plan }) {
     setLoading(false)
     router.refresh()
   }
+
+  const hasStripe = !!(plan.stripe_price_id_monthly || plan.stripe_price_id_yearly)
 
   return (
     <div className={`rounded-xl border bg-card overflow-hidden ${plan.is_featured ? 'border-primary/40' : 'border-white/8'}`}>
@@ -82,6 +93,13 @@ export function PlanCard({ plan }: { plan: Plan }) {
                 : 'bg-white/8 text-muted-foreground border-white/10'
             }`}>
               {plan.is_active ? 'Aktif' : 'Pasif'}
+            </span>
+            <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium border ${
+              hasStripe
+                ? 'bg-purple-500/15 text-purple-400 border-purple-500/20'
+                : 'bg-white/5 text-zinc-600 border-white/8'
+            }`}>
+              {hasStripe ? '💳 Stripe ✓' : '💳 Stripe —'}
             </span>
           </div>
         </div>
@@ -120,8 +138,33 @@ export function PlanCard({ plan }: { plan: Plan }) {
           </div>
         </div>
 
+        {/* Stripe Price IDs */}
+        {editing && (
+          <div className="space-y-2 border-t border-white/8 pt-3">
+            <p className="text-[10px] text-purple-400 uppercase tracking-wider font-semibold">Stripe Price IDs</p>
+            <div>
+              <p className="text-[10px] text-muted-foreground mb-1">Aylık Price ID (price_xxx…)</p>
+              <input
+                className="w-full bg-white/8 border border-white/15 rounded-lg px-3 py-2 text-foreground text-xs font-mono"
+                placeholder="price_..."
+                value={form.stripe_price_id_monthly}
+                onChange={e => setForm(f => ({ ...f, stripe_price_id_monthly: e.target.value }))}
+              />
+            </div>
+            <div>
+              <p className="text-[10px] text-muted-foreground mb-1">Yıllık Price ID (price_xxx…)</p>
+              <input
+                className="w-full bg-white/8 border border-white/15 rounded-lg px-3 py-2 text-foreground text-xs font-mono"
+                placeholder="price_..."
+                value={form.stripe_price_id_yearly}
+                onChange={e => setForm(f => ({ ...f, stripe_price_id_yearly: e.target.value }))}
+              />
+            </div>
+          </div>
+        )}
+
         {/* Özellikler */}
-        {plan.features && plan.features.length > 0 && (
+        {!editing && plan.features && plan.features.length > 0 && (
           <ul className="space-y-1">
             {plan.features.map((f: string, i: number) => (
               <li key={i} className="text-xs text-muted-foreground flex items-center gap-2">

@@ -104,13 +104,16 @@ export default async function AdminPage({ params }: Props) {
                 id: string
                 status: string
                 created_at: string
-                organizations: { name: string } | null
-                plans: { name: string; price_monthly: number } | null
-              }) => (
+                organizations: { name: string }[] | { name: string } | null
+                plans: { name: string; price_monthly: number }[] | { name: string; price_monthly: number } | null
+              }) => {
+                const org  = Array.isArray(s.organizations) ? s.organizations[0] : s.organizations
+                const plan = Array.isArray(s.plans) ? s.plans[0] : s.plans
+                return (
                 <tr key={s.id} className="border-b border-white/6 last:border-0 hover:bg-white/2 transition-colors">
-                  <td className="px-4 py-3 font-medium text-foreground">{s.organizations?.name ?? '—'}</td>
-                  <td className="px-4 py-3 text-muted-foreground">{s.plans?.name ?? '—'}</td>
-                  <td className="px-4 py-3 text-foreground">€{s.plans?.price_monthly?.toFixed(2) ?? '—'}</td>
+                  <td className="px-4 py-3 font-medium text-foreground">{org?.name ?? '—'}</td>
+                  <td className="px-4 py-3 text-muted-foreground">{plan?.name ?? '—'}</td>
+                  <td className="px-4 py-3 text-foreground">€{plan?.price_monthly?.toFixed(2) ?? '—'}</td>
                   <td className="px-4 py-3">
                     <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium border ${
                       s.status === 'active' ? 'bg-green-500/15 text-green-400 border-green-500/20' : 'bg-white/8 text-muted-foreground border-white/10'
@@ -120,7 +123,8 @@ export default async function AdminPage({ params }: Props) {
                     {new Date(s.created_at).toLocaleDateString('tr-TR')}
                   </td>
                 </tr>
-              ))}
+                )
+              })}
               {(!recentSubs || recentSubs.length === 0) && (
                 <tr><td colSpan={5} className="px-4 py-8 text-center text-muted-foreground text-sm">Henüz abonelik yok</td></tr>
               )}

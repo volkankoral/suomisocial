@@ -46,19 +46,17 @@ export default async function AdminUsersPage({ params }: Props) {
             </tr>
           </thead>
           <tbody>
-            {(orgs ?? []).map((o: {
-              id: string
-              name: string
-              created_at: string
-              subscriptions: Array<{
-                id: string
-                status: string
-                billing_cycle: string
-                current_period_end: string | null
+            {(orgs ?? []).map((o) => {
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              const rawSub = (o.subscriptions as any)?.[0]
+              const sub = rawSub ? {
+                ...rawSub,
+                plans: Array.isArray(rawSub.plans) ? rawSub.plans[0] : rawSub.plans,
+              } as {
+                id: string; status: string; billing_cycle: string;
+                current_period_end: string | null;
                 plans: { name: string; price_monthly: number } | null
-              }>
-            }) => {
-              const sub = o.subscriptions?.[0]
+              } : null
               return (
                 <tr key={o.id} className="border-b border-white/6 last:border-0 hover:bg-white/2 transition-colors">
                   <td className="px-4 py-3 font-medium text-foreground">{o.name}</td>
