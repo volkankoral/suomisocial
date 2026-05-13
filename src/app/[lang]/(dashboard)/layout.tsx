@@ -1,5 +1,7 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
+import { createServiceClient } from '@/lib/supabase/service'
+import { getUserOrgId } from '@/lib/supabase/get-org'
 import { NavBar } from './_components/NavBar'
 
 interface Props {
@@ -16,6 +18,15 @@ export default async function DashboardLayout({ children, params }: Props) {
 
   if (!user) redirect(`/${lang}/login`)
 
+  // Admin kontrolü
+  const orgId = await getUserOrgId()
+  let isAdmin = false
+  if (orgId) {
+    const serviceClient = createServiceClient()
+    const { data: org } = await serviceClient.from('organizations').select('is_admin').eq('id', orgId).single()
+    isAdmin = !!org?.is_admin
+  }
+
   const navLinks = [
     { href: `/${lang}/dashboard`, label: 'Dashboard', icon: '⬡' },
     { href: `/${lang}/calendar`,  label: 'Takvim',    icon: '🇫🇮' },
@@ -24,6 +35,7 @@ export default async function DashboardLayout({ children, params }: Props) {
     { href: `/${lang}/social`,    label: 'Hesaplar',  icon: '🔗' },
     { href: `/${lang}/ads`,       label: 'Reklamlar', icon: '📊' },
     { href: `/${lang}/brand`,     label: 'Marka',     icon: '⚙️' },
+    ...(isAdmin ? [{ href: `/${lang}/admin`, label: 'Admin', icon: '🛡️' }] : []),
   ]
 
   return (
