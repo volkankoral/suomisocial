@@ -1,6 +1,7 @@
 import { createServiceClient } from '@/lib/supabase/service'
 import { getUserOrgId } from '@/lib/supabase/get-org'
 import { redirect } from 'next/navigation'
+import { Suspense } from 'react'
 import { BillingClient } from './_components/BillingClient'
 
 interface Props { params: Promise<{ lang: string }> }
@@ -36,10 +37,12 @@ export default async function BillingPage({ params }: Props) {
     .single()
 
   return (
-    <BillingClient
-      subscription={subscription}
-      plans={plans ?? []}
-      hasStripeCustomer={!!org?.stripe_customer_id}
-    />
+    <Suspense fallback={<div className="text-muted-foreground text-sm p-8">Yükleniyor…</div>}>
+      <BillingClient
+        subscription={subscription}
+        plans={plans ?? []}
+        hasStripeCustomer={!!org?.stripe_customer_id}
+      />
+    </Suspense>
   )
 }
