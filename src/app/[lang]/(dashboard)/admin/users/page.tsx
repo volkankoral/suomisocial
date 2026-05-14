@@ -34,7 +34,7 @@ export default async function AdminUsersPage({ params }: Props) {
         <p className="mt-1 text-sm text-muted-foreground">Tüm organizasyonlar ve abonelik durumları</p>
       </div>
 
-      <div className="rounded-xl border border-white/8 overflow-hidden">
+      <div className="rounded-xl border border-white/8 overflow-visible">
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-white/8 bg-white/2">

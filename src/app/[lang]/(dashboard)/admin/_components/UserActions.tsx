@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 
 interface Plan { id: string; name: string }
@@ -17,6 +17,15 @@ export function UserActions({ orgId, currentPlanId, plans }: Props) {
   const [loading, setLoading] = useState(false)
   const [selectedPlan, setSelectedPlan] = useState(currentPlanId ?? '')
   const [note, setNote] = useState('')
+  const btnRef = useRef<HTMLButtonElement>(null)
+  const [pos, setPos] = useState({ top: 0, right: 0 })
+
+  useEffect(() => {
+    if (open && btnRef.current) {
+      const rect = btnRef.current.getBoundingClientRect()
+      setPos({ top: rect.bottom + window.scrollY + 4, right: window.innerWidth - rect.right })
+    }
+  }, [open])
 
   async function assignPlan() {
     if (!selectedPlan) return
@@ -46,6 +55,7 @@ export function UserActions({ orgId, currentPlanId, plans }: Props) {
   return (
     <div className="relative">
       <button
+        ref={btnRef}
         onClick={() => setOpen(!open)}
         className="text-xs px-3 py-1.5 rounded-lg border border-white/12 text-muted-foreground hover:text-foreground hover:border-white/25 transition-all"
       >
@@ -53,7 +63,10 @@ export function UserActions({ orgId, currentPlanId, plans }: Props) {
       </button>
 
       {open && (
-        <div className="absolute right-0 top-8 z-50 w-64 rounded-xl border border-white/15 bg-zinc-900 shadow-2xl p-4 space-y-3">
+        <div
+          className="fixed z-[9999] w-64 rounded-xl border border-white/15 bg-zinc-900 shadow-2xl p-4 space-y-3"
+          style={{ top: pos.top, right: pos.right }}
+        >
           <p className="text-xs font-semibold text-foreground uppercase tracking-wider">Plan Ata (Manuel)</p>
 
           <select
