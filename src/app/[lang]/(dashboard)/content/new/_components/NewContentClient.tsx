@@ -96,8 +96,9 @@ export function NewContentClient({
         return
       }
 
-      // Başarılıysa içerik listesine git (henüz preview modali yok)
+      // Başarılıysa içerik listesine git — önbelleği temizleyerek
       router.push(`/${lang}/content?new=${data.draft.id}`)
+      router.refresh()
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Beklenmeyen hata')
       setLoading(false)
