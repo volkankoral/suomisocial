@@ -19,6 +19,9 @@ import { FI_SPECIAL_DAYS, FI_WEEKLY_ROUTINES, resolveSpecialDays } from '@/lib/f
  * Opsiyonel: aspect ('square' | 'portrait' | 'story'), platforms (string[])
  */
 
+// FLUX + Groq üretimi 10sn'yi aşabilir — Vercel fonksiyon süresini uzat
+export const maxDuration = 60
+
 interface Body {
   category: 'weekly_routine' | 'special_day' | 'campaign'
   routineId?: string

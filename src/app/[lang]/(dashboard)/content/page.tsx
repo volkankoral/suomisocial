@@ -10,6 +10,9 @@ interface Props {
   params: Promise<{ lang: string }>
 }
 
+// Yeni üretilen taslakların hemen görünmesi için her istekte taze veri
+export const dynamic = 'force-dynamic'
+
 const STATUS_CONFIG: Record<string, { label: string; cls: string }> = {
   pending:  { label: 'Bekliyor',   cls: 'bg-yellow-500/15 text-yellow-400 border-yellow-500/20' },
   approved: { label: 'Onaylandı', cls: 'bg-emerald-500/15 text-emerald-400 border-emerald-500/20' },
