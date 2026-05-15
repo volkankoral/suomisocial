@@ -1,236 +1,239 @@
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { createServiceClient } from '@/lib/supabase/service'
-import { getUserOrgId, getUserOrgCountry } from '@/lib/supabase/get-org'
-import { getUpcomingSpecialDays } from '@/lib/calendar'
-import { Animate, Stagger, FadeUpItem } from '@/components/ui/animate'
+import { getUserOrgId } from '@/lib/supabase/get-org'
+import { upcomingSpecialDays, nextFriday } from '@/lib/fi-special-days'
 
 export default async function DashboardPage({ params }: { params: Promise<{ lang: string }> }) {
   const { lang } = await params
   const authClient = await createClient()
   const { data: { user } } = await authClient.auth.getUser()
 
-  const countryCode = await getUserOrgCountry()
-  const upcoming    = getUpcomingSpecialDays(5, countryCode)
-
-  // Gerçek metrikler
   const supabase = createServiceClient()
   const orgId    = await getUserOrgId()
 
-  const [draftsRes, postsRes, accountsRes] = await Promise.all([
-    orgId ? supabase.from('content_drafts').select('id, status').eq('organization_id', orgId) : { data: [] },
-    orgId ? supabase.from('posts').select('id').eq('organization_id', orgId) : { data: [] },
-    orgId ? supabase.from('social_accounts').select('platform').eq('organization_id', orgId).eq('is_active', true) : { data: [] },
-  ])
+  // Bekleyen taslakları çek (kategori bazlı)
+  const draftsRes = orgId ? await supabase
+    .from('content_drafts')
+    .select('id, category, status, special_day_id, special_day_label, special_day_date, image_url')
+    .eq('organization_id', orgId)
+    .in('status', ['pending', 'approved', 'scheduled'])
+    .order('special_day_date', { ascending: true })
+    : { data: [] }
 
-  const drafts   = draftsRes.data ?? []
-  const posts    = postsRes.data ?? []
-  const accounts = accountsRes.data ?? []
+  const drafts = draftsRes.data ?? []
 
-  const pendingCount  = drafts.filter((d: { status: string }) => d.status === 'pending').length
-  const approvedCount = drafts.filter((d: { status: string }) => d.status === 'approved').length
+  const accountsRes = orgId ? await supabase
+    .from('social_accounts')
+    .select('platform')
+    .eq('organization_id', orgId)
+    .eq('is_active', true)
+    : { data: [] }
+  const connectedPlatforms = (accountsRes.data ?? []).map((a: { platform: string }) => a.platform)
 
-  const phases = [
-    { label: 'Faz 0', desc: 'Foundation — auth, DB, deploy',              done: true,  href: null },
-    { label: 'Faz 1', desc: 'Finnish takvim (tatiller + bayrak günleri)', done: true,  href: `/${lang}/calendar` },
-    { label: 'Faz 2', desc: 'AI içerik üretimi (caption + görsel)',        done: true,  href: `/${lang}/content` },
-    { label: 'Faz 3', desc: 'Facebook paylaşımı',                          done: true,  href: `/${lang}/social` },
-    { label: 'Faz 4', desc: 'TikTok entegrasyonu',                         done: false, href: `/${lang}/social` },
-    { label: 'Faz 5', desc: 'Meta Ads monitoring',                         done: true,  href: `/${lang}/ads` },
-    { label: 'Faz 6', desc: 'AI reklam optimizasyonu',                     done: false, href: `/${lang}/ads` },
-    { label: 'Faz 7', desc: 'SaaS dönüşümü (Stripe + onboarding)',         done: false, href: null },
-  ]
+  // Bu ay paylaşılan post sayısı
+  const monthStart = new Date(); monthStart.setUTCDate(1); monthStart.setUTCHours(0, 0, 0, 0)
+  const postsRes = orgId ? await supabase
+    .from('content_drafts')
+    .select('id', { count: 'exact', head: true })
+    .eq('organization_id', orgId)
+    .eq('status', 'posted')
+    .gte('updated_at', monthStart.toISOString())
+    : { count: 0 }
+  const monthlyPosted = (postsRes as { count: number | null }).count ?? 0
 
-  const doneCount = phases.filter((p) => p.done).length
+  // Yaklaşan özel günler (önümüzdeki 30 gün)
+  const upcoming = upcomingSpecialDays(30).slice(0, 3)
+
+  // Bu hafta sonu için Cuma postu var mı?
+  const friday = nextFriday()
+  const fridayKey = friday.toISOString().slice(0, 10)
+  const weekendDraft = drafts.find((d: { category: string; special_day_date: string }) =>
+    d.category === 'weekly_routine' && d.special_day_date === fridayKey
+  )
+
+  // Özel gün için draft var mı kontrolü
+  const draftSpecialIds = new Set(
+    drafts
+      .filter((d: { category: string }) => d.category === 'special_day')
+      .map((d: { special_day_id: string | null }) => d.special_day_id)
+  )
 
   return (
-    <div className="space-y-10">
+    <div className="space-y-8">
 
       {/* Header */}
-      <Animate>
-        <div className="flex items-start justify-between gap-4">
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight gradient-text">Dashboard</h1>
-            <p className="mt-1 text-sm text-muted-foreground">
-              Hoş geldin, <span className="text-foreground font-medium">{user?.email}</span>
-            </p>
+      <div>
+        <h1 className="text-3xl font-bold tracking-tight gradient-text">Tervetuloa, {user?.email?.split('@')[0]}!</h1>
+        <p className="mt-1 text-sm text-muted-foreground">Bu ay <span className="text-foreground font-semibold">{monthlyPosted}</span> paylaşım yaptın</p>
+      </div>
+
+      {/* 3 ana kart */}
+      <div className="grid gap-4 md:grid-cols-3">
+
+        {/* 1. Hafta sonu rutini */}
+        <Link
+          href={`/${lang}/content/new?category=weekly_routine&routineId=hyvaa-viikonloppua`}
+          className="group rounded-2xl border border-white/8 bg-gradient-to-br from-amber-950/30 to-card p-5 hover:border-amber-500/30 transition-all duration-200"
+        >
+          <div className="flex items-start justify-between mb-3">
+            <span className="text-3xl">📅</span>
+            <span className="text-[10px] uppercase tracking-wider text-amber-400 font-semibold">
+              Cuma {friday.toLocaleDateString('fi-FI', { day: 'numeric', month: 'short' })}
+            </span>
           </div>
-          {/* Progress pill */}
-          <div className="shrink-0 flex items-center gap-3 px-4 py-2 rounded-xl card-premium">
-            <div className="relative w-8 h-8">
-              <svg className="w-8 h-8 -rotate-90" viewBox="0 0 32 32">
-                <circle cx="16" cy="16" r="12" fill="none" stroke="currentColor" strokeWidth="3" className="text-white/8" />
-                <circle
-                  cx="16" cy="16" r="12" fill="none" stroke="currentColor" strokeWidth="3"
-                  strokeDasharray={`${(doneCount / phases.length) * 75.4} 75.4`}
-                  strokeLinecap="round"
-                  className="text-primary"
-                />
-              </svg>
-              <span className="absolute inset-0 flex items-center justify-center text-[9px] font-bold text-primary">
-                {doneCount}/{phases.length}
+          <h3 className="text-base font-bold text-foreground mb-1">Hyvää viikonloppua</h3>
+          {weekendDraft ? (
+            <p className="text-xs text-green-400">✓ Hazırlandı, onayını bekliyor</p>
+          ) : (
+            <p className="text-xs text-muted-foreground">Bu hafta sonu için içerik yok</p>
+          )}
+          <p className="text-xs text-amber-400/80 mt-3 group-hover:text-amber-400 transition-colors font-medium">
+            {weekendDraft ? 'Düzenle →' : 'Hemen Hazırla →'}
+          </p>
+        </Link>
+
+        {/* 2. Yaklaşan özel gün */}
+        {upcoming.length > 0 ? (
+          <Link
+            href={`/${lang}/content/new?category=special_day&specialDayId=${upcoming[0].id}`}
+            className="group rounded-2xl border border-white/8 bg-gradient-to-br from-pink-950/30 to-card p-5 hover:border-pink-500/30 transition-all duration-200"
+          >
+            <div className="flex items-start justify-between mb-3">
+              <span className="text-3xl">🎉</span>
+              <span className="text-[10px] uppercase tracking-wider text-pink-400 font-semibold">
+                {upcoming[0].daysUntil} gün sonra
               </span>
             </div>
-            <div>
-              <p className="text-xs font-semibold text-foreground">Yol haritası</p>
-              <p className="text-[10px] text-muted-foreground">{doneCount} faz tamamlandı</p>
-            </div>
+            <h3 className="text-base font-bold text-foreground mb-1">{upcoming[0].name_fi}</h3>
+            {draftSpecialIds.has(upcoming[0].id) ? (
+              <p className="text-xs text-green-400">✓ İçerik hazırlandı</p>
+            ) : (
+              <p className="text-xs text-muted-foreground">{upcoming[0].name_tr}</p>
+            )}
+            <p className="text-xs text-pink-400/80 mt-3 group-hover:text-pink-400 transition-colors font-medium">
+              {draftSpecialIds.has(upcoming[0].id) ? 'Görüntüle →' : 'İçerik Hazırla →'}
+            </p>
+          </Link>
+        ) : (
+          <div className="rounded-2xl border border-white/8 bg-card p-5 opacity-60">
+            <span className="text-3xl block mb-3">🎉</span>
+            <h3 className="text-base font-bold text-foreground mb-1">Özel gün yok</h3>
+            <p className="text-xs text-muted-foreground">Önümüzdeki 30 gün içinde yaklaşan özel gün bulunmadı</p>
           </div>
-        </div>
-      </Animate>
+        )}
 
-      {/* Stats */}
-      <Animate delay={0.04}>
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-          {[
-            { icon: '📝', label: 'Bekleyen Taslak',   value: pendingCount,  href: `/${lang}/content`, color: pendingCount > 0 ? 'text-amber-400' : undefined },
-            { icon: '✅', label: 'Onaylı Taslak',      value: approvedCount, href: `/${lang}/content`, color: approvedCount > 0 ? 'text-green-400' : undefined },
-            { icon: '📤', label: 'Toplam Paylaşım',    value: posts.length,  href: `/${lang}/posts`,   color: undefined },
-            { icon: '🔗', label: 'Bağlı Hesap',        value: accounts.length, href: `/${lang}/social`, color: accounts.length > 0 ? 'text-blue-400' : undefined },
-          ].map((s) => (
-            <Link key={s.label} href={s.href} className="rounded-xl border border-white/8 bg-card px-4 py-3 flex items-center gap-3 hover:border-white/15 transition-colors">
-              <span className="text-2xl">{s.icon}</span>
-              <div>
-                <p className="text-xs text-muted-foreground">{s.label}</p>
-                <p className={`text-xl font-bold ${s.color ?? 'text-foreground'}`}>{s.value}</p>
-              </div>
-            </Link>
-          ))}
-        </div>
-      </Animate>
+        {/* 3. Yeni kampanya */}
+        <Link
+          href={`/${lang}/content/new?category=campaign`}
+          className="group rounded-2xl border border-white/8 bg-gradient-to-br from-purple-950/30 to-card p-5 hover:border-purple-500/30 transition-all duration-200"
+        >
+          <div className="flex items-start justify-between mb-3">
+            <span className="text-3xl">🎨</span>
+            <span className="text-[10px] uppercase tracking-wider text-purple-400 font-semibold">
+              Sen başlat
+            </span>
+          </div>
+          <h3 className="text-base font-bold text-foreground mb-1">Yeni Kampanya</h3>
+          <p className="text-xs text-muted-foreground">Promosyon, indirim, yeni menü</p>
+          <p className="text-xs text-purple-400/80 mt-3 group-hover:text-purple-400 transition-colors font-medium">
+            Hemen Oluştur →
+          </p>
+        </Link>
 
-      {/* Phase roadmap */}
-      <Animate delay={0.05}>
-        <div className="space-y-3">
-          <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">
-            Yol Haritası
-          </h2>
-          <Stagger className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-            {phases.map((phase) => {
-              const inner = (
-                <div
-                  className={`group relative rounded-2xl border p-4 h-full transition-all duration-200 overflow-hidden ${
-                    phase.done
-                      ? 'bg-blue-950/20 border-blue-500/20 hover:border-blue-500/40'
-                      : 'bg-card border-white/8 hover:border-white/15 hover:bg-card/80'
-                  } ${phase.href ? 'cursor-pointer' : 'cursor-default'}`}
-                >
-                  {/* Done glow */}
-                  {phase.done && (
-                    <div className="absolute inset-0 bg-gradient-to-br from-blue-600/5 to-transparent pointer-events-none" />
-                  )}
-                  <p className="text-[10px] font-mono text-muted-foreground mb-1.5">{phase.label}</p>
-                  <p className="text-sm font-medium text-foreground leading-snug">{phase.desc}</p>
-                  {phase.done ? (
-                    <div className="mt-3 flex items-center gap-1.5">
-                      <span className="w-4 h-4 rounded-full bg-blue-500/20 flex items-center justify-center">
-                        <span className="text-[9px] text-blue-400">✓</span>
-                      </span>
-                      <span className="text-[11px] text-blue-400 font-medium">Tamamlandı</span>
-                    </div>
-                  ) : (
-                    <div className="mt-3">
-                      <span className="text-[11px] text-muted-foreground/60">Yakında</span>
-                    </div>
-                  )}
-                </div>
-              )
-              return phase.href ? (
-                <FadeUpItem key={phase.label}>
-                  <Link href={phase.href} className="block h-full">{inner}</Link>
-                </FadeUpItem>
-              ) : (
-                <FadeUpItem key={phase.label}>{inner}</FadeUpItem>
-              )
-            })}
-          </Stagger>
-        </div>
-      </Animate>
+      </div>
 
-      {/* Upcoming special days */}
-      <Animate delay={0.1}>
-        <div className="space-y-3">
+      {/* Bekleyen taslaklar */}
+      {drafts.filter((d: { status: string }) => d.status === 'pending' || d.status === 'approved').length > 0 && (
+        <section className="space-y-3">
           <div className="flex items-center justify-between">
             <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">
-              Yaklaşan Özel Günler
+              Bekleyen Onaylar
             </h2>
-            <Link
-              href={`/${lang}/calendar`}
-              className="text-xs text-primary hover:text-primary/80 transition-colors font-medium"
-            >
-              Tüm takvim →
+            <Link href={`/${lang}/content`} className="text-xs text-primary hover:text-primary/80 font-medium">
+              Hepsini Gör →
             </Link>
           </div>
 
-          {upcoming.length === 0 ? (
-            <p className="text-sm text-muted-foreground">Yaklaşan özel gün yok.</p>
-          ) : (
-            <Stagger className="grid gap-2.5 sm:grid-cols-2 lg:grid-cols-5">
-              {upcoming.map((day) => {
-                const d = new Date(day.date + 'T00:00:00')
-                return (
-                  <FadeUpItem key={day.date + day.name}>
-                    <div
-                      className={`rounded-2xl border px-4 py-3.5 transition-all duration-200 hover:border-white/15 ${
-                        day.isBankHoliday
-                          ? 'bg-amber-950/15 border-amber-500/20 hover:border-amber-500/35'
-                          : 'bg-card border-white/8 hover:bg-card/80'
-                      }`}
-                    >
-                      <p className="text-[10px] font-mono text-muted-foreground mb-1.5">
-                        {d.toLocaleDateString('en-US', { day: 'numeric', month: 'short' })}
-                      </p>
-                      <p className="text-sm font-medium text-foreground leading-snug">
-                        {day.name}
-                      </p>
-                      <div className="flex gap-1 mt-2 flex-wrap">
-                        {day.isBankHoliday && (
-                          <span className="text-[9px] bg-amber-500/15 text-amber-400 border border-amber-500/20 px-1.5 py-0.5 rounded-md font-medium">
-                            Resmi Tatil
-                          </span>
-                        )}
-                        {day.type === 'observance' && (
-                          <span className="text-[9px] bg-zinc-500/15 text-zinc-400 border border-zinc-500/20 px-1.5 py-0.5 rounded-md font-medium">
-                            Anma
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                  </FadeUpItem>
-                )
-              })}
-            </Stagger>
-          )}
-        </div>
-      </Animate>
-
-      {/* Quick actions */}
-      <Animate delay={0.15}>
-        <div className="space-y-3">
-          <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">
-            Hızlı Erişim
-          </h2>
-          <div className="grid gap-2 sm:grid-cols-3">
-            {[
-              { href: `/${lang}/content`, icon: '✨', label: 'İçerik Üret', desc: 'AI ile yeni taslak oluştur' },
-              { href: `/${lang}/calendar`, icon: '🇫🇮', label: 'Takvimi Gör', desc: 'Finnish özel günleri' },
-              { href: `/${lang}/brand`, icon: '⚙️', label: 'Marka Ayarları', desc: 'AI context güncelle' },
-            ].map((action) => (
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {drafts.slice(0, 6).map((d: { id: string; status: string; special_day_label: string; special_day_date: string; image_url: string | null; category: string }) => (
               <Link
-                key={action.href}
-                href={action.href}
-                className="flex items-center gap-3 rounded-xl border border-white/8 bg-card px-4 py-3.5 hover:border-white/15 hover:bg-card/60 transition-all duration-200 group"
+                key={d.id}
+                href={`/${lang}/content`}
+                className="rounded-xl border border-white/8 bg-card overflow-hidden hover:border-white/20 transition-all"
               >
-                <span className="text-xl">{action.icon}</span>
-                <div>
-                  <p className="text-sm font-medium text-foreground group-hover:text-primary transition-colors">{action.label}</p>
-                  <p className="text-xs text-muted-foreground">{action.desc}</p>
+                {d.image_url && (
+                  <div className="aspect-square bg-zinc-900 overflow-hidden">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={d.image_url} alt="" className="w-full h-full object-cover" />
+                  </div>
+                )}
+                <div className="p-3">
+                  <p className="text-sm font-medium text-foreground truncate">{d.special_day_label}</p>
+                  <div className="flex items-center justify-between mt-1">
+                    <p className="text-[10px] text-muted-foreground">
+                      {new Date(d.special_day_date).toLocaleDateString('tr-TR')}
+                    </p>
+                    <span className={`text-[9px] px-1.5 py-0.5 rounded-full font-medium ${
+                      d.status === 'approved'
+                        ? 'bg-green-500/15 text-green-400'
+                        : 'bg-amber-500/15 text-amber-400'
+                    }`}>
+                      {d.status === 'approved' ? '✓ Onaylı' : 'Bekliyor'}
+                    </span>
+                  </div>
                 </div>
               </Link>
             ))}
           </div>
-        </div>
-      </Animate>
+        </section>
+      )}
+
+      {/* Hesaplar durumu */}
+      {connectedPlatforms.length < 2 && (
+        <section className="rounded-xl border border-amber-500/20 bg-amber-950/15 p-4">
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <p className="text-sm font-semibold text-amber-400 mb-1">⚠️ Eksik hesap bağlantısı</p>
+              <p className="text-xs text-muted-foreground">
+                {connectedPlatforms.length === 0
+                  ? 'Henüz sosyal medya hesabı bağlamadın. Paylaşım yapabilmek için en az birini bağla.'
+                  : `Bağlı: ${connectedPlatforms.join(', ')}. Diğer platformları da bağlayarak tüm hesaplara aynı anda paylaşım yap.`}
+              </p>
+            </div>
+            <Link
+              href={`/${lang}/social`}
+              className="shrink-0 text-xs px-3 py-1.5 rounded-lg bg-amber-500/20 text-amber-300 hover:bg-amber-500/30 transition-colors font-medium"
+            >
+              Hesap Bağla →
+            </Link>
+          </div>
+        </section>
+      )}
+
+      {/* Önümüzdeki özel günler liste */}
+      {upcoming.length > 1 && (
+        <section className="space-y-3">
+          <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">
+            Yaklaşan Diğer Günler
+          </h2>
+          <div className="grid gap-2.5 sm:grid-cols-2 lg:grid-cols-4">
+            {upcoming.slice(1).map((day) => (
+              <Link
+                key={day.id}
+                href={`/${lang}/content/new?category=special_day&specialDayId=${day.id}`}
+                className="rounded-xl border border-white/8 bg-card px-4 py-3 hover:border-white/15 transition-all"
+              >
+                <p className="text-[10px] font-mono text-muted-foreground mb-1">
+                  {day.resolvedDate.toLocaleDateString('fi-FI', { day: 'numeric', month: 'short' })}
+                </p>
+                <p className="text-sm font-medium text-foreground">{day.name_fi}</p>
+                <p className="text-[10px] text-muted-foreground mt-0.5">{day.daysUntil} gün</p>
+              </Link>
+            ))}
+          </div>
+        </section>
+      )}
 
     </div>
   )
