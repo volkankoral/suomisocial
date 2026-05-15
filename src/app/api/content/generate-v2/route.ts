@@ -41,7 +41,7 @@ export async function POST(req: NextRequest) {
   // Brand bilgisi al
   const { data: brand } = await supabase
     .from('brand_settings')
-    .select('business_name, description, tone, products, business_type')
+    .select('business_name, description, tone, products')
     .eq('organization_id', orgId)
     .maybeSingle()
 
