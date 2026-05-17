@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-import { createServiceClient } from '@/lib/supabase/service'
 
 export async function POST(req: NextRequest) {
   const { email, password, businessName } = await req.json()
@@ -14,14 +13,15 @@ export async function POST(req: NextRequest) {
 
   const supabase = await createClient()
 
-  // 1. Kullanıcıyı oluştur
+  // Kullanıcıyı oluştur — business_name metadata'ya kaydedilir
+  // Organizasyon, email onayı sonrası callback'te oluşturulur
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? req.nextUrl.origin
   const { data, error } = await supabase.auth.signUp({
     email,
     password,
     options: {
       data: { business_name: businessName },
-      emailRedirectTo: `${siteUrl}/auth/callback`,
+      emailRedirectTo: `${siteUrl}/tr/auth/callback`,
     },
   })
 
@@ -32,45 +32,8 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Kullanıcı oluşturulamadı' }, { status: 500 })
   }
 
-  // 2. Organizasyon oluştur (email onayı beklenmeden)
-  const admin = createServiceClient()
-
-  const slug =
-    businessName
-      .toLowerCase()
-      .replace(/[^a-z0-9]/g, '-')
-      .replace(/-+/g, '-')
-      .replace(/^-|-$/g, '')
-      .slice(0, 30) +
-    '-' +
-    Math.random().toString(36).slice(2, 6)
-
-  const { data: org, error: orgError } = await admin
-    .from('organizations')
-    .insert({ name: businessName, slug, country_code: 'FI' })
-    .select()
-    .single()
-
-  if (orgError) {
-    return NextResponse.json({ error: 'Organizasyon oluşturulamadı: ' + orgError.message }, { status: 500 })
-  }
-
-  // 3. Kullanıcıyı owner olarak ekle
-  const { error: memberError } = await admin.from('organization_members').insert({
-    user_id: data.user.id,
-    organization_id: org.id,
-    role: 'owner',
-  })
-
-  if (memberError) {
-    return NextResponse.json({ error: 'Üyelik oluşturulamadı: ' + memberError.message }, { status: 500 })
-  }
-
-  // email_confirmed_at yoksa email onayı bekleniyor demektir
-  const needsEmailConfirm = !data.session
-
   return NextResponse.json({
     ok: true,
-    needsEmailConfirm,
+    needsEmailConfirm: !data.session,
   })
 }
