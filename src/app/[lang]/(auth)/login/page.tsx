@@ -1,7 +1,8 @@
 'use client'
 
 import { useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useParams } from 'next/navigation'
+import Link from 'next/link'
 import { motion } from 'framer-motion'
 import { createClient } from '@/lib/supabase/client'
 
@@ -11,6 +12,8 @@ export default function LoginPage() {
   const [error, setError]       = useState<string | null>(null)
   const [loading, setLoading]   = useState(false)
   const router = useRouter()
+  const params = useParams()
+  const lang   = (params?.lang as string) ?? 'tr'
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -46,11 +49,8 @@ export default function LoginPage() {
       >
         {/* Logo */}
         <div className="flex flex-col items-center mb-8">
-          <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-orange-500 to-pink-600 flex items-center justify-center shadow-xl shadow-orange-900/40 mb-4">
-            <span className="text-white text-base font-bold tracking-tight">Po</span>
-          </div>
-          <h1 className="text-2xl font-bold tracking-tight gradient-text">Postino</h1>
-          <p className="text-sm text-muted-foreground mt-1">Yönetim paneline giriş yap</p>
+          <img src="/logo.svg" alt="Occaly" className="h-10 w-auto mb-3" />
+          <p className="text-sm text-muted-foreground">Yönetim paneline giriş yap</p>
         </div>
 
         {/* Card */}
@@ -113,11 +113,18 @@ export default function LoginPage() {
               )}
             </button>
 
+            <p className="text-center text-xs text-muted-foreground pt-1">
+              Hesabın yok mu?{' '}
+              <Link href={`/${lang}/signup`} className="text-primary hover:text-primary/80 font-medium transition-colors">
+                Ücretsiz kayıt ol
+              </Link>
+            </p>
+
           </form>
         </div>
 
         <p className="text-center text-xs text-muted-foreground/50 mt-6">
-          Postino · AI sosyal medya & reklam otomasyonu
+          Occaly · AI sosyal medya & reklam otomasyonu
         </p>
       </motion.div>
     </main>

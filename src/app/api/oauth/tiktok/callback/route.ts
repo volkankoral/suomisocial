@@ -85,7 +85,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Redirect to social accounts page
-    return NextResponse.redirect(`${process.env.NEXT_PUBLIC_APP_URL || 'https://postino.vercel.app'}/tr/social?connected=tiktok`)
+    return NextResponse.redirect(`${process.env.NEXT_PUBLIC_APP_URL || 'https://occaly.vercel.app'}/tr/social?connected=tiktok`)
   } catch (err) {
     console.error('OAuth error:', err)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })

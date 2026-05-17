@@ -25,17 +25,59 @@ export function DraftActions({ draftId, currentStatus }: Props) {
     router.refresh()
   }
 
+  async function postTo(endpoint: string) {
+    const res  = await fetch(endpoint, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ draftId }),
+    })
+    const json = await res.json()
+    if (!res.ok) throw new Error(json.error ?? 'Paylaşım hatası')
+    return json
+  }
+
+  async function publishToInstagram() {
+    setPublishing(true)
+    setPubError(null)
+    try {
+      await postTo('/api/post/instagram')
+      router.refresh()
+    } catch (err) {
+      setPubError(err instanceof Error ? err.message : 'Hata')
+    } finally {
+      setPublishing(false)
+    }
+  }
+
   async function publishToFacebook() {
     setPublishing(true)
     setPubError(null)
     try {
-      const res  = await fetch('/api/post/facebook', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ draftId }),
+      await postTo('/api/post/facebook')
+      router.refresh()
+    } catch (err) {
+      setPubError(err instanceof Error ? err.message : 'Hata')
+    } finally {
+      setPublishing(false)
+    }
+  }
+
+  async function publishToBoth() {
+    setPublishing(true)
+    setPubError(null)
+    const errors: string[] = []
+    try {
+      const results = await Promise.allSettled([
+        postTo('/api/post/instagram'),
+        postTo('/api/post/facebook'),
+      ])
+      results.forEach((r, i) => {
+        if (r.status === 'rejected') {
+          const platform = i === 0 ? 'Instagram' : 'Facebook'
+          errors.push(`${platform}: ${r.reason?.message ?? 'hata'}`)
+        }
       })
-      const json = await res.json()
-      if (!res.ok) throw new Error(json.error ?? 'Paylaşım hatası')
+      if (errors.length > 0) setPubError(errors.join(' · '))
       router.refresh()
     } catch (err) {
       setPubError(err instanceof Error ? err.message : 'Hata')
@@ -48,13 +90,7 @@ export function DraftActions({ draftId, currentStatus }: Props) {
     setPublishing(true)
     setPubError(null)
     try {
-      const res  = await fetch('/api/post/tiktok', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ draftId }),
-      })
-      const json = await res.json()
-      if (!res.ok) throw new Error(json.error ?? 'Paylaşım hatası')
+      await postTo('/api/post/tiktok')
       router.refresh()
     } catch (err) {
       setPubError(err instanceof Error ? err.message : 'Hata')
@@ -87,18 +123,32 @@ export function DraftActions({ draftId, currentStatus }: Props) {
         {currentStatus === 'approved' && (
           <>
             <button
+              onClick={publishToBoth}
+              disabled={publishing}
+              className="text-xs px-3 py-1.5 rounded-lg bg-gradient-to-r from-pink-600 to-blue-600 text-white font-medium hover:opacity-90 transition-opacity disabled:opacity-40 flex items-center gap-1.5"
+            >
+              {publishing ? '⏳ Paylaşılıyor…' : '📲 IG + FB Paylaş'}
+            </button>
+            <button
+              onClick={publishToInstagram}
+              disabled={publishing}
+              className="text-xs px-3 py-1.5 rounded-lg bg-pink-600 text-white font-medium hover:bg-pink-700 transition-colors disabled:opacity-40"
+            >
+              {publishing ? '⏳' : '📷 IG'}
+            </button>
+            <button
               onClick={publishToFacebook}
               disabled={publishing}
-              className="text-xs px-3 py-1.5 rounded-lg bg-blue-600 text-white font-medium hover:bg-blue-700 transition-colors disabled:opacity-40 flex items-center gap-1.5"
+              className="text-xs px-3 py-1.5 rounded-lg bg-blue-600 text-white font-medium hover:bg-blue-700 transition-colors disabled:opacity-40"
             >
-              {publishing ? '⏳ Paylaşılıyor…' : '🔵 Facebook\'a Paylaş'}
+              {publishing ? '⏳' : '🔵 FB'}
             </button>
             <button
               onClick={publishToTikTok}
               disabled={publishing}
-              className="text-xs px-3 py-1.5 rounded-lg bg-purple-600 text-white font-medium hover:bg-purple-700 transition-colors disabled:opacity-40 flex items-center gap-1.5"
+              className="text-xs px-3 py-1.5 rounded-lg bg-purple-600 text-white font-medium hover:bg-purple-700 transition-colors disabled:opacity-40"
             >
-              {publishing ? '⏳ Paylaşılıyor…' : '🎵 TikTok\'a Paylaş'}
+              {publishing ? '⏳' : '🎵 TT'}
             </button>
             <button
               onClick={() => updateStatus('pending')}

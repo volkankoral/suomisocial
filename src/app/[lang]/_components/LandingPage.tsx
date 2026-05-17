@@ -27,7 +27,7 @@ const FEATURES = [
     gradient: 'from-orange-600/20 to-orange-800/10',
     border: 'group-hover:border-orange-500/30',
     title: 'Yerel Özel Günler',
-    desc: 'Resmi tatiller, isim günleri, kültürel etkinlikler — Postino her yerelliği bilir, tek bir günü kaçırmaz.',
+    desc: 'Resmi tatiller, isim günleri, kültürel etkinlikler — Occaly her yerelliği bilir, tek bir günü kaçırmaz.',
   },
   {
     icon: '✨',
@@ -80,7 +80,7 @@ export function LandingPage({ lang, plans = [] }: Props) {
             <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-orange-500 to-pink-600 flex items-center justify-center shadow-lg shadow-orange-900/40">
               <span className="text-white text-xs font-bold tracking-tight">Po</span>
             </div>
-            <span className="font-semibold text-sm tracking-tight text-foreground">Postino</span>
+            <span className="font-semibold text-sm tracking-tight text-foreground">Occaly</span>
           </div>
           <Link
             href={`/${lang}/login`}
@@ -204,7 +204,7 @@ export function LandingPage({ lang, plans = [] }: Props) {
       {/* Footer */}
       <footer className="relative z-10 border-t border-white/8 px-6 py-6 text-center">
         <p className="text-xs text-muted-foreground">
-          Postino · AI sosyal medya & reklam otomasyonu
+          Occaly · AI sosyal medya & reklam otomasyonu
         </p>
       </footer>
 

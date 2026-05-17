@@ -1,8 +1,8 @@
 import Link from 'next/link'
 
 export const metadata = {
-  title: 'Privacy Policy — Postino',
-  description: 'Postino privacy policy and data protection information.',
+  title: 'Privacy Policy — Occaly',
+  description: 'Occaly privacy policy and data protection information.',
 }
 
 export default async function PrivacyPage({
@@ -22,7 +22,7 @@ export default async function PrivacyPage({
             <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-orange-500 to-pink-600 flex items-center justify-center">
               <span className="text-white text-[10px] font-bold">Po</span>
             </div>
-            <span className="font-semibold text-sm tracking-tight">Postino</span>
+            <span className="font-semibold text-sm tracking-tight">Occaly</span>
           </Link>
           <span className="text-xs text-muted-foreground">Privacy Policy</span>
         </div>
@@ -41,13 +41,13 @@ export default async function PrivacyPage({
 
           <Section title="1. Introduction">
             <p>
-              Postino (&quot;we&quot;, &quot;our&quot;, &quot;us&quot;) provides an AI-powered social media
+              Occaly (&quot;we&quot;, &quot;our&quot;, &quot;us&quot;) provides an AI-powered social media
               automation platform for businesses operating in Finland. This Privacy Policy explains
               how we collect, use, store, and protect your information when you use our service at{' '}
-              <span className="text-primary font-mono">postino.app</span>.
+              <span className="text-primary font-mono">occaly.app</span>.
             </p>
             <p>
-              By using Postino, you agree to the collection and use of information in
+              By using Occaly, you agree to the collection and use of information in
               accordance with this policy.
             </p>
           </Section>
@@ -64,7 +64,7 @@ export default async function PrivacyPage({
           </Section>
 
           <Section title="3. How We Use Your Information">
-            <p>We use your information solely to provide and improve the Postino service:</p>
+            <p>We use your information solely to provide and improve the Occaly service:</p>
             <ul className="list-disc list-inside space-y-1.5 text-zinc-400 mt-3">
               <li>Authenticate and manage your account</li>
               <li>Generate AI content tailored to your brand and Finnish special days</li>
@@ -85,7 +85,7 @@ export default async function PrivacyPage({
                 Your social media access tokens are <strong>never stored in plaintext</strong> in our
                 database. All tokens are encrypted using <strong>AES-256-GCM (pgsodium)</strong> via
                 Supabase Vault before storage. The master encryption key is managed by Supabase
-                infrastructure — not accessible to Postino team members or any third party.
+                infrastructure — not accessible to Occaly team members or any third party.
               </p>
             </div>
             <p>
@@ -101,7 +101,7 @@ export default async function PrivacyPage({
           </Section>
 
           <Section title="5. Third-Party Services">
-            <p>Postino uses the following third-party services:</p>
+            <p>Occaly uses the following third-party services:</p>
             <div className="space-y-3 mt-3">
               {[
                 { name: 'Supabase', purpose: 'Database, authentication, and encrypted token storage', link: 'https://supabase.com/privacy' },
@@ -156,7 +156,7 @@ export default async function PrivacyPage({
 
           <Section title="8. Cookies">
             <p>
-              Postino uses strictly necessary cookies for authentication (session management)
+              Occaly uses strictly necessary cookies for authentication (session management)
               only. We do not use tracking, advertising, or analytics cookies. No third-party
               cookies are set by our application.
             </p>
@@ -177,7 +177,7 @@ export default async function PrivacyPage({
           <Section title="10. Changes to This Policy">
             <p>
               We may update this Privacy Policy from time to time. We will notify you of significant
-              changes via email or a prominent notice in the application. Continued use of Postino
+              changes via email or a prominent notice in the application. Continued use of Occaly
               after changes constitutes acceptance of the updated policy.
             </p>
           </Section>
@@ -187,7 +187,7 @@ export default async function PrivacyPage({
               For privacy-related questions or requests, contact:
             </p>
             <div className="rounded-xl border border-white/8 bg-card px-4 py-4 mt-3">
-              <p className="text-foreground font-medium">Postino</p>
+              <p className="text-foreground font-medium">Occaly</p>
               <p className="text-muted-foreground text-xs mt-1">Helsinki, Finland</p>
               <a href="mailto:volkankoral@gmail.com" className="text-primary text-sm hover:underline mt-1 block">
                 volkankoral@gmail.com
@@ -200,7 +200,7 @@ export default async function PrivacyPage({
 
       <footer className="border-t border-white/8 px-6 py-6 text-center">
         <p className="text-xs text-muted-foreground">
-          Postino · Helsinki, Finland · 🇫🇮
+          Occaly · Helsinki, Finland · 🇫🇮
         </p>
       </footer>
     </div>

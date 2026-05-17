@@ -8,7 +8,7 @@ export async function GET(request: NextRequest) {
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const clientKey = process.env.TIKTOK_CLIENT_KEY
-  const redirectUri = `${process.env.NEXT_PUBLIC_APP_URL || 'https://postino.vercel.app'}/api/oauth/tiktok/callback`
+  const redirectUri = `${process.env.NEXT_PUBLIC_APP_URL || 'https://occaly.vercel.app'}/api/oauth/tiktok/callback`
 
   // Generate state for security
   const state = crypto.randomBytes(16).toString('hex')

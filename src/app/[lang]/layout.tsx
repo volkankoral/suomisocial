@@ -15,9 +15,14 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Postino — AI sosyal medya & reklam otomasyonu",
+  title: "Occaly — AI sosyal medya & reklam otomasyonu",
   description:
     "Yerel özel günleri yakalayan, AI ile içerik üreten ve reklamlarını optimize eden sosyal medya otomasyon platformu.",
+  icons: {
+    icon: "/logo-icon.svg",
+    shortcut: "/logo-icon.svg",
+    apple: "/logo-icon.svg",
+  },
 };
 
 export function generateStaticParams() {

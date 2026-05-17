@@ -23,13 +23,8 @@ export function NavBar({ links, email }: Props) {
       <div className="mx-auto max-w-7xl flex items-center gap-4 h-14">
 
         {/* Logo */}
-        <Link href={links[0]?.href ?? '#'} className="flex items-center gap-2.5 shrink-0 mr-2">
-          <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-orange-500 to-pink-600 flex items-center justify-center shadow-md shadow-orange-900/40">
-            <span className="text-white text-[11px] font-bold tracking-tight">Po</span>
-          </div>
-          <span className="font-semibold text-sm tracking-tight text-foreground hidden sm:block">
-            Postino
-          </span>
+        <Link href={links[0]?.href ?? '#'} className="flex items-center shrink-0 mr-2">
+          <img src="/logo.svg" alt="Occaly" className="h-8 w-auto" />
         </Link>
 
         {/* Nav links */}
