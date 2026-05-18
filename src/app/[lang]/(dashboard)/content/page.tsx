@@ -33,6 +33,18 @@ export default async function ContentPage({ params }: Props) {
         .order('special_day_date', { ascending: true })
     : { data: [] }
 
+  // Brand adı ve IG kullanıcı adı (önizleme için)
+  const { data: brand } = orgId
+    ? await supabase.from('brand_settings').select('business_name').eq('organization_id', orgId).maybeSingle()
+    : { data: null }
+
+  const { data: igAccount } = orgId
+    ? await supabase.from('social_accounts').select('platform_username').eq('organization_id', orgId).eq('platform', 'instagram').eq('is_active', true).maybeSingle()
+    : { data: null }
+
+  const brandName  = brand?.business_name ?? 'yourbrand'
+  const igUsername = igAccount?.platform_username ?? undefined
+
   const countryCode  = await getUserOrgCountry()
   const upcoming     = getUpcomingSpecialDays(10, countryCode)
   const draftedDates = new Set((drafts ?? []).map((d: { special_day_date: string }) => d.special_day_date))
@@ -196,7 +208,7 @@ export default async function ContentPage({ params }: Props) {
 
                           <div className="flex items-center gap-2 flex-wrap">
                             <DraftActions draftId={draft.id} currentStatus={draft.status} />
-                            <PreviewModal draft={draft} />
+                            <PreviewModal draft={draft} brandName={brandName} igUsername={igUsername} />
                           </div>
                         </div>
                       </div>

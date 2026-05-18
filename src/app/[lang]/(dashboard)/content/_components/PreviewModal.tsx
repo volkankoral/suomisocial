@@ -11,9 +11,13 @@ interface Props {
     image_url: string | null
     special_day_label_tr: string
   }
+  brandName?: string
+  igUsername?: string
 }
 
-export function PreviewModal({ draft }: Props) {
+export function PreviewModal({ draft, brandName = 'yourbrand', igUsername }: Props) {
+  const displayIg = igUsername ?? brandName.toLowerCase().replace(/\s+/g, '')
+  const initials  = brandName.slice(0, 2).toUpperCase()
   const [open, setOpen] = useState(false)
   const [tab, setTab]   = useState<'instagram' | 'facebook'>('instagram')
 
@@ -72,10 +76,10 @@ export function PreviewModal({ draft }: Props) {
                   {/* Header */}
                   <div className="flex items-center gap-2.5 px-3 py-2.5">
                     <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-yellow-400 via-pink-500 to-purple-600 flex items-center justify-center text-white text-xs font-bold">
-                      GP
+                      {initials}
                     </div>
                     <div>
-                      <p className="text-xs font-semibold leading-none">goldenpizzeria</p>
+                      <p className="text-xs font-semibold leading-none">{displayIg}</p>
                       <p className="text-[10px] text-gray-500 mt-0.5">Helsinki, Finland</p>
                     </div>
                     <span className="ml-auto text-gray-400 text-lg">···</span>
@@ -106,7 +110,7 @@ export function PreviewModal({ draft }: Props) {
                   {/* Caption */}
                   <div className="px-3 pb-4 pt-1.5">
                     <p className="text-xs leading-relaxed">
-                      <span className="font-semibold">goldenpizzeria </span>
+                      <span className="font-semibold">{displayIg} </span>
                       {draft.caption_fi ?? ''}
                     </p>
                     {draft.hashtags && draft.hashtags.length > 0 && (
@@ -129,10 +133,10 @@ export function PreviewModal({ draft }: Props) {
                   {/* Header */}
                   <div className="flex items-center gap-2.5 px-3 py-2.5">
                     <div className="w-9 h-9 rounded-full bg-blue-600 flex items-center justify-center text-white text-xs font-bold">
-                      GP
+                      {initials}
                     </div>
                     <div>
-                      <p className="text-xs font-semibold leading-none">Golden Pizzeria</p>
+                      <p className="text-xs font-semibold leading-none">{brandName}</p>
                       <p className="text-[10px] text-gray-500 mt-0.5">Şimdi · 🌐</p>
                     </div>
                     <span className="ml-auto text-gray-400 text-lg">···</span>
