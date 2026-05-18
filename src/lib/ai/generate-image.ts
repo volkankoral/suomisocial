@@ -53,7 +53,7 @@ export async function generateImage(prompt: string, opts: ImageOptions = {}): Pr
 }
 
 /**
- * Replicate FLUX schnell — ~$0.003/görsel, ~2 saniye
+ * Replicate FLUX 1.1 Pro — ~$0.04/görsel, yüksek kalite
  * Synchronous mode (Prefer: wait) kullanıyoruz, polling gerekmez.
  */
 async function generateWithFlux(prompt: string, aspect: ImageAspect, seed?: number): Promise<string> {
@@ -62,7 +62,7 @@ async function generateWithFlux(prompt: string, aspect: ImageAspect, seed?: numb
 
   const ratio = ASPECT_DIMS[aspect].ratio
 
-  const res = await fetch('https://api.replicate.com/v1/models/black-forest-labs/flux-schnell/predictions', {
+  const res = await fetch('https://api.replicate.com/v1/models/black-forest-labs/flux-1.1-pro/predictions', {
     method: 'POST',
     headers: {
       'Authorization': `Bearer ${token}`,
@@ -72,11 +72,11 @@ async function generateWithFlux(prompt: string, aspect: ImageAspect, seed?: numb
     body: JSON.stringify({
       input: {
         prompt,
-        aspect_ratio:      ratio,
-        num_outputs:       1,
-        output_format:     'jpg',
-        output_quality:    90,
-        num_inference_steps: 4,
+        aspect_ratio:   ratio,
+        output_format:  'jpg',
+        output_quality: 95,
+        safety_tolerance: 2,
+        prompt_upsampling: true,
         ...(seed !== undefined ? { seed } : {}),
       },
     }),
