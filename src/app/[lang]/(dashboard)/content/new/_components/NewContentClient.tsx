@@ -2,6 +2,7 @@
 
 import { useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
+import { useT } from '@/lib/useT'
 
 type Category = 'weekly_routine' | 'special_day' | 'campaign'
 type MediaMode = 'ai' | 'upload'
@@ -48,6 +49,8 @@ export function NewContentClient({
   upcomingDays,
 }: Props) {
   const router = useRouter()
+  const t = useT()
+  const n = t.newContent
 
   const [category, setCategory] = useState<Category>(initialCategory)
   const [specialDayId, setSpecialDayId] = useState(initialSpecialDayId ?? upcomingDays[0]?.id ?? '')
@@ -101,15 +104,15 @@ export function NewContentClient({
     setError(null)
 
     if (category === 'campaign' && !campaignBrief.trim()) {
-      setError('Kampanya açıklaması zorunlu')
+      setError(n.errCampaign)
       return
     }
     if (platforms.length === 0) {
-      setError('En az bir platform seç')
+      setError(n.errPlatform)
       return
     }
     if (mediaMode === 'upload' && !uploadedMediaUrl) {
-      setError('Görsel veya video yükle ya da "AI üretsin" seçeneğine geç')
+      setError(n.errMedia)
       return
     }
 
@@ -150,18 +153,18 @@ export function NewContentClient({
   return (
     <div className="space-y-6 max-w-2xl">
       <div>
-        <h1 className="text-2xl font-bold tracking-tight gradient-text">Yeni İçerik Hazırla</h1>
-        <p className="text-sm text-muted-foreground mt-1">AI caption üretir; görseli AI üretsin ya da kendin yükle</p>
+        <h1 className="text-2xl font-bold tracking-tight gradient-text">{n.title}</h1>
+        <p className="text-sm text-muted-foreground mt-1">{n.subtitle}</p>
       </div>
 
       {/* Kategori seçimi */}
       <section className="space-y-2">
-        <label className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest">Kategori</label>
+        <label className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest">{n.category}</label>
         <div className="grid grid-cols-3 gap-2">
           {[
-            { v: 'weekly_routine', icon: '📅', label: 'Haftalık' },
-            { v: 'special_day',    icon: '🎉', label: 'Özel Gün' },
-            { v: 'campaign',       icon: '🎨', label: 'Kampanya' },
+            { v: 'weekly_routine', icon: '📅', label: n.weekly },
+            { v: 'special_day',    icon: '🎉', label: n.specialDay },
+            { v: 'campaign',       icon: '🎨', label: n.campaign },
           ].map(opt => (
             <button
               key={opt.v}
@@ -182,20 +185,20 @@ export function NewContentClient({
       {/* Kategori-özel alanlar */}
       {category === 'special_day' && (
         <section className="space-y-2">
-          <label className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest">Özel Gün</label>
+          <label className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest">{n.specialDayLbl}</label>
           <select
             className="w-full bg-white/8 border border-white/15 rounded-xl px-4 py-3 text-sm text-foreground"
             value={specialDayId}
             onChange={e => setSpecialDayId(e.target.value)}
           >
-            <optgroup label="Yaklaşan günler">
+            <optgroup label={n.upcomingDays}>
               {upcomingDays.map(d => (
                 <option key={d.id} value={d.id}>
-                  {d.name_fi} — {d.daysUntil === 0 ? 'Bugün' : `${d.daysUntil} gün sonra`}
+                  {d.name_fi} — {d.daysUntil === 0 ? n.today : `${d.daysUntil} ${n.daysLater}`}
                 </option>
               ))}
             </optgroup>
-            <optgroup label="Tüm özel günler">
+            <optgroup label={n.allDays}>
               {specialDays.map(d => (
                 <option key={d.id} value={d.id}>{d.name_fi} ({d.name_tr})</option>
               ))}
@@ -211,7 +214,7 @@ export function NewContentClient({
 
       {category === 'weekly_routine' && (
         <section className="space-y-2">
-          <label className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest">Rutin</label>
+          <label className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest">{n.routine}</label>
           <select
             className="w-full bg-white/8 border border-white/15 rounded-xl px-4 py-3 text-sm text-foreground"
             value={routineId}
@@ -226,20 +229,20 @@ export function NewContentClient({
 
       {category === 'campaign' && (
         <section className="space-y-2">
-          <label className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest">Kampanya Açıklaması</label>
+          <label className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest">{n.campaignDesc}</label>
           <textarea
             className="w-full bg-white/8 border border-white/15 rounded-xl px-4 py-3 text-sm text-foreground placeholder-muted-foreground/50 min-h-[120px]"
-            placeholder={`Örnek:\n"Cuma ve cumartesi akşamları tüm pizzalarda %30 indirim. Aile büyük boy alana 1 lt cola bedava."\n\nNe kadar detaylı yazarsan AI o kadar iyi içerik üretir.`}
+            placeholder={n.campaignPh}
             value={campaignBrief}
             onChange={e => setCampaignBrief(e.target.value)}
           />
-          <p className="text-xs text-muted-foreground">Fince üretilecek — sen Türkçe yazsan da olur.</p>
+          <p className="text-xs text-muted-foreground">{n.campaignHint}</p>
         </section>
       )}
 
       {/* Görsel / Medya modu */}
       <section className="space-y-3">
-        <label className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest">Görsel / Video</label>
+        <label className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest">{n.mediaMode}</label>
         <div className="grid grid-cols-2 gap-2">
           <button
             type="button"
@@ -251,8 +254,8 @@ export function NewContentClient({
             }`}
           >
             <span className="text-xl block mb-1">🤖</span>
-            <p className="font-medium">AI üretsin</p>
-            <p className="text-[10px] opacity-70 mt-0.5">FLUX/Pollinations ile görsel oluşturulsun</p>
+            <p className="font-medium">{n.aiGenerate}</p>
+            <p className="text-[10px] opacity-70 mt-0.5">{n.aiGenerateDesc}</p>
           </button>
           <button
             type="button"
@@ -264,15 +267,15 @@ export function NewContentClient({
             }`}
           >
             <span className="text-xl block mb-1">📁</span>
-            <p className="font-medium">Kendi medyam</p>
-            <p className="text-[10px] opacity-70 mt-0.5">Görsel veya video yükle</p>
+            <p className="font-medium">{n.ownMedia}</p>
+            <p className="text-[10px] opacity-70 mt-0.5">{n.ownMediaDesc}</p>
           </button>
         </div>
 
         {/* Görsel boyutu — sadece AI modunda */}
         {mediaMode === 'ai' && (
           <div className="space-y-2">
-            <label className="text-[10px] text-muted-foreground uppercase tracking-wider">Görsel Boyutu</label>
+            <label className="text-[10px] text-muted-foreground uppercase tracking-wider">{n.imageSize}</label>
             <div className="flex gap-2 flex-wrap">
               {[
                 { v: 'square',   label: '1:1 (Feed)',   desc: 'IG/FB feed' },
@@ -328,7 +331,7 @@ export function NewContentClient({
                   ×
                 </button>
                 <div className="px-3 py-2 text-xs text-muted-foreground border-t border-white/8">
-                  {uploadedMediaType === 'video' ? '🎬 Video yüklendi' : '🖼 Görsel yüklendi'} — AI yalnızca caption üretecek
+                  {uploadedMediaType === 'video' ? n.uploadedVid : n.uploadedImg} {n.uploadedHint}
                 </div>
               </div>
             ) : (
@@ -346,8 +349,8 @@ export function NewContentClient({
                 ) : (
                   <>
                     <span className="text-2xl">📤</span>
-                    <span className="text-sm text-foreground font-medium">Görsel veya Video Yükle</span>
-                    <span className="text-xs text-muted-foreground">JPG, PNG, WebP, MP4 · max 50 MB</span>
+                    <span className="text-sm text-foreground font-medium">{n.uploadArea}</span>
+                    <span className="text-xs text-muted-foreground">{n.uploadTypes}</span>
                   </>
                 )}
               </button>
@@ -368,7 +371,7 @@ export function NewContentClient({
 
       {/* Platformlar */}
       <section className="space-y-2">
-        <label className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest">Paylaşılacak Platformlar</label>
+        <label className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest">{n.platforms}</label>
         <div className="flex gap-2 flex-wrap">
           {[
             { v: 'instagram', icon: '📷', label: 'Instagram', color: 'pink' },
@@ -406,13 +409,11 @@ export function NewContentClient({
         className="w-full py-4 rounded-xl bg-gradient-to-r from-orange-500 to-pink-600 text-white font-semibold hover:opacity-90 transition-opacity disabled:opacity-40"
       >
         {loading
-          ? (mediaMode === 'upload' ? '✍️ Caption üretiliyor…' : '🪄 AI üretiyor, ~10 saniye sürer…')
-          : (mediaMode === 'upload' ? '✍️ Caption Üret & Taslak Oluştur' : '🪄 İçeriği Üret')}
+          ? (mediaMode === 'upload' ? n.captioningBtn : n.generatingBtn)
+          : (mediaMode === 'upload' ? n.captionBtn    : n.generateBtn)}
       </button>
 
-      <p className="text-xs text-muted-foreground text-center">
-        Üretim sonrası caption ve görseli düzenleyebilir veya yeniden üretebilirsin.
-      </p>
+      <p className="text-xs text-muted-foreground text-center">{n.afterHint}</p>
     </div>
   )
 }

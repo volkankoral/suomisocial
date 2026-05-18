@@ -5,35 +5,34 @@ import { GenerateButton } from './_components/GenerateButton'
 import { DraftActions } from './_components/DraftActions'
 import { PreviewModal } from './_components/PreviewModal'
 import { Animate, Stagger, FadeUpItem } from '@/components/ui/animate'
+import { translations, type Lang } from '@/lib/translations'
+import Link from 'next/link'
 
 interface Props {
   params: Promise<{ lang: string }>
 }
 
-// Yeni üretilen taslakların hemen görünmesi için her istekte taze veri
 export const dynamic = 'force-dynamic'
 
-const STATUS_CONFIG: Record<string, { label: string; cls: string }> = {
-  pending:  { label: 'Bekliyor',   cls: 'bg-yellow-500/15 text-yellow-400 border-yellow-500/20' },
-  approved: { label: 'Onaylandı', cls: 'bg-emerald-500/15 text-emerald-400 border-emerald-500/20' },
-  rejected: { label: 'Reddedildi',cls: 'bg-red-500/15 text-red-400 border-red-500/20' },
-  posted:   { label: 'Paylaşıldı',cls: 'bg-blue-500/15 text-blue-400 border-blue-500/20' },
+const STATUS_CLS: Record<string, string> = {
+  pending:  'bg-yellow-500/15 text-yellow-400 border-yellow-500/20',
+  approved: 'bg-emerald-500/15 text-emerald-400 border-emerald-500/20',
+  rejected: 'bg-red-500/15 text-red-400 border-red-500/20',
+  posted:   'bg-blue-500/15 text-blue-400 border-blue-500/20',
 }
 
 export default async function ContentPage({ params }: Props) {
-  await params
+  const { lang: rawLang } = await params
+  const lang = (rawLang as Lang) in translations ? (rawLang as Lang) : 'tr'
+  const t    = translations[lang]
+
   const supabase = createServiceClient()
   const orgId    = await getUserOrgId()
 
   const { data: drafts } = orgId
-    ? await supabase
-        .from('content_drafts')
-        .select('*')
-        .eq('organization_id', orgId)
-        .order('special_day_date', { ascending: true })
+    ? await supabase.from('content_drafts').select('*').eq('organization_id', orgId).order('special_day_date', { ascending: true })
     : { data: [] }
 
-  // Brand adı, logo ve IG kullanıcı adı (önizleme için)
   const { data: brand } = orgId
     ? await supabase.from('brand_settings').select('business_name, logo_url').eq('organization_id', orgId).maybeSingle()
     : { data: null }
@@ -51,29 +50,33 @@ export default async function ContentPage({ params }: Props) {
   const draftedDates = new Set((drafts ?? []).map((d: { special_day_date: string }) => d.special_day_date))
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6 sm:space-y-8">
 
       {/* Header */}
       <Animate>
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight gradient-text">İçerik Üretimi</h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            AI ile sosyal medya içeriği üret, düzenle ve onayla
-          </p>
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight gradient-text">{t.content.title}</h1>
+            <p className="mt-1 text-sm text-muted-foreground">{t.content.subtitle}</p>
+          </div>
+          <Link
+            href={`/${lang}/content/new`}
+            className="shrink-0 text-xs sm:text-sm px-3 sm:px-4 py-2 rounded-xl bg-gradient-to-r from-orange-500 to-pink-600 text-white font-medium hover:opacity-90 transition-opacity whitespace-nowrap"
+          >
+            {t.content.newContent}
+          </Link>
         </div>
       </Animate>
 
-      {/* API key uyarısı */}
+      {/* API key warning */}
       {!process.env.ANTHROPIC_API_KEY && (
         <Animate delay={0.05}>
           <div className="rounded-xl border border-amber-500/25 bg-amber-950/15 p-4 flex items-start gap-3">
             <span className="text-amber-400 text-lg shrink-0">⚠️</span>
             <div>
-              <p className="text-sm font-medium text-amber-300">ANTHROPIC_API_KEY eksik</p>
+              <p className="text-sm font-medium text-amber-300">{t.content.missingApiKey}</p>
               <p className="text-xs text-amber-400/70 mt-0.5">
-                .env.local dosyasına{' '}
-                <code className="font-mono bg-amber-500/10 px-1 rounded">ANTHROPIC_API_KEY=sk-ant-…</code>{' '}
-                ekle.
+                {t.content.missingApiHint}
               </p>
             </div>
           </div>
@@ -82,11 +85,11 @@ export default async function ContentPage({ params }: Props) {
 
       <div className="grid gap-6 lg:gap-8 lg:grid-cols-[300px_1fr]">
 
-        {/* Sol: Yaklaşan günler */}
+        {/* Yaklaşan günler */}
         <Animate delay={0.1}>
           <section className="space-y-3">
             <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">
-              Yaklaşan Günler
+              {t.content.upcomingDays}
             </h2>
             <div className="space-y-2">
               {upcoming.map((day) => {
@@ -105,19 +108,17 @@ export default async function ContentPage({ params }: Props) {
                         <p className="text-sm font-medium text-foreground leading-snug mt-0.5">
                           {day.name}
                         </p>
-                        <div className="flex gap-1 mt-1.5 flex-wrap">
-                          {day.isBankHoliday && (
-                            <span className="text-[9px] bg-amber-500/15 text-amber-400 border border-amber-500/20 px-1.5 py-0.5 rounded-md font-medium">
-                              Resmi Tatil
-                            </span>
-                          )}
-                        </div>
+                        {day.isBankHoliday && (
+                          <span className="inline-block text-[9px] bg-amber-500/15 text-amber-400 border border-amber-500/20 px-1.5 py-0.5 rounded-md font-medium mt-1.5">
+                            {t.content.bankHoliday}
+                          </span>
+                        )}
                       </div>
                       <div className="shrink-0 mt-0.5">
                         {hasDraft ? (
                           <span className="text-[11px] text-emerald-400 font-medium flex items-center gap-1">
                             <span className="w-3.5 h-3.5 rounded-full bg-emerald-500/20 flex items-center justify-center text-[8px]">✓</span>
-                            Üretildi
+                            {t.content.generated}
                           </span>
                         ) : orgId ? (
                           <GenerateButton day={day} orgId={orgId} countryCode={countryCode} />
@@ -131,11 +132,11 @@ export default async function ContentPage({ params }: Props) {
           </section>
         </Animate>
 
-        {/* Sağ: Taslaklar */}
+        {/* Taslaklar */}
         <Animate delay={0.12}>
           <section className="space-y-3">
             <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">
-              Taslaklar {drafts && drafts.length > 0 && (
+              {t.content.drafts} {drafts && drafts.length > 0 && (
                 <span className="normal-case text-primary ml-1 font-mono">{drafts.length}</span>
               )}
             </h2>
@@ -143,10 +144,8 @@ export default async function ContentPage({ params }: Props) {
             {(!drafts || drafts.length === 0) && (
               <div className="rounded-2xl border border-dashed border-white/12 p-12 text-center">
                 <p className="text-3xl mb-3">✨</p>
-                <p className="text-sm font-medium text-foreground">Henüz taslak yok</p>
-                <p className="text-xs text-muted-foreground mt-1">
-                  Sol panelden bir gün seç ve &quot;İçerik Üret&quot;e bas.
-                </p>
+                <p className="text-sm font-medium text-foreground">{t.content.noDrafts}</p>
+                <p className="text-xs text-muted-foreground mt-1">{t.content.noDraftsHint}</p>
               </div>
             )}
 
@@ -157,14 +156,13 @@ export default async function ContentPage({ params }: Props) {
                 hashtags: string[] | null; image_url: string | null
                 image_prompt: string | null; status: string
               }) => {
-                const meta = STATUS_CONFIG[draft.status] ?? STATUS_CONFIG.pending
-                const d    = new Date(draft.special_day_date + 'T00:00:00')
+                const cls = STATUS_CLS[draft.status] ?? STATUS_CLS.pending
+                const lbl = t.status[draft.status as keyof typeof t.status] ?? t.status.pending
+                const d   = new Date(draft.special_day_date + 'T00:00:00')
                 return (
                   <FadeUpItem key={draft.id}>
                     <div className="rounded-2xl border border-white/8 bg-card overflow-hidden hover:border-white/14 transition-colors">
-                      {/* Mobil: üst görsel + alt içerik / Desktop: yan yana */}
                       <div className="flex flex-col sm:flex-row">
-                        {/* Görsel */}
                         {draft.image_url ? (
                           // eslint-disable-next-line @next/next/no-img-element
                           <img
@@ -179,7 +177,6 @@ export default async function ContentPage({ params }: Props) {
                           </div>
                         )}
 
-                        {/* Content */}
                         <div className="flex-1 min-w-0 p-4">
                           <div className="flex items-start justify-between gap-2 mb-2">
                             <p className="text-[11px] text-muted-foreground font-mono">
@@ -187,8 +184,8 @@ export default async function ContentPage({ params }: Props) {
                               {' · '}
                               {draft.special_day_label_tr}
                             </p>
-                            <span className={`text-[10px] px-2 py-0.5 rounded-lg border font-medium shrink-0 ${meta.cls}`}>
-                              {meta.label}
+                            <span className={`text-[10px] px-2 py-0.5 rounded-lg border font-medium shrink-0 ${cls}`}>
+                              {lbl}
                             </span>
                           </div>
 

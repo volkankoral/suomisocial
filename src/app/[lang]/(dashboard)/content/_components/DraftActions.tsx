@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { useT } from '@/lib/useT'
 
 interface Props {
   draftId: string
@@ -9,10 +10,12 @@ interface Props {
 }
 
 export function DraftActions({ draftId, currentStatus }: Props) {
-  const [loading, setLoading]     = useState(false)
+  const [loading, setLoading]       = useState(false)
   const [publishing, setPublishing] = useState(false)
-  const [pubError, setPubError]   = useState<string | null>(null)
+  const [pubError, setPubError]     = useState<string | null>(null)
   const router = useRouter()
+  const t      = useT()
+  const c      = t.content
 
   async function updateStatus(status: string) {
     setLoading(true)
@@ -100,7 +103,7 @@ export function DraftActions({ draftId, currentStatus }: Props) {
   }
 
   async function deleteDraft() {
-    if (!confirm('Bu taslağı silmek istediğine emin misin?')) return
+    if (!confirm(c.deleteConfirm)) return
     setLoading(true)
     await fetch(`/api/drafts/${draftId}`, { method: 'DELETE' })
     setLoading(false)
@@ -113,68 +116,47 @@ export function DraftActions({ draftId, currentStatus }: Props) {
     <div className="space-y-2 w-full">
       <div className="flex items-center gap-2 flex-wrap">
         {currentStatus !== 'approved' && currentStatus !== 'posted' && (
-          <button
-            onClick={() => updateStatus('approved')}
-            disabled={loading}
-            className={`${btnBase} bg-green-600 text-white hover:bg-green-700`}
-          >
-            ✓ Onayla
+          <button onClick={() => updateStatus('approved')} disabled={loading}
+            className={`${btnBase} bg-green-600 text-white hover:bg-green-700`}>
+            {t.common.approve}
           </button>
         )}
 
         {currentStatus === 'approved' && (
           <>
-            <button
-              onClick={publishToBoth}
-              disabled={publishing}
-              className={`${btnBase} bg-gradient-to-r from-pink-600 to-blue-600 text-white hover:opacity-90 flex items-center gap-1.5`}
-            >
-              {publishing ? '⏳ Paylaşılıyor…' : '📲 IG + FB'}
+            <button onClick={publishToBoth} disabled={publishing}
+              className={`${btnBase} bg-gradient-to-r from-pink-600 to-blue-600 text-white hover:opacity-90 flex items-center gap-1.5`}>
+              {publishing ? c.publishing : c.publishBoth}
             </button>
-            <button
-              onClick={publishToInstagram}
-              disabled={publishing}
-              className={`${btnBase} bg-pink-600/20 text-pink-300 border border-pink-500/30 hover:bg-pink-600/30`}
-            >
-              📷 IG
+            <button onClick={publishToInstagram} disabled={publishing}
+              className={`${btnBase} bg-pink-600/20 text-pink-300 border border-pink-500/30 hover:bg-pink-600/30`}>
+              {c.publishIg}
             </button>
-            <button
-              onClick={publishToFacebook}
-              disabled={publishing}
-              className={`${btnBase} bg-blue-600/20 text-blue-300 border border-blue-500/30 hover:bg-blue-600/30`}
-            >
-              🔵 FB
+            <button onClick={publishToFacebook} disabled={publishing}
+              className={`${btnBase} bg-blue-600/20 text-blue-300 border border-blue-500/30 hover:bg-blue-600/30`}>
+              {c.publishFb}
             </button>
-            <button
-              onClick={publishToTikTok}
-              disabled={publishing}
-              className={`${btnBase} bg-purple-600/20 text-purple-300 border border-purple-500/30 hover:bg-purple-600/30`}
-            >
-              🎵 TT
+            <button onClick={publishToTikTok} disabled={publishing}
+              className={`${btnBase} bg-purple-600/20 text-purple-300 border border-purple-500/30 hover:bg-purple-600/30`}>
+              {c.publishTt}
             </button>
-            <button
-              onClick={() => updateStatus('pending')}
-              disabled={loading}
-              className={`${btnBase} border border-white/12 text-muted-foreground hover:text-foreground`}
-            >
-              ↩ Beklet
+            <button onClick={() => updateStatus('pending')} disabled={loading}
+              className={`${btnBase} border border-white/12 text-muted-foreground hover:text-foreground`}>
+              {c.hold}
             </button>
           </>
         )}
 
         {currentStatus === 'posted' && (
           <span className={`${btnBase} bg-blue-500/15 text-blue-400 border border-blue-500/20`}>
-            ✓ Paylaşıldı
+            {t.status.posted}
           </span>
         )}
 
         {currentStatus !== 'rejected' && currentStatus !== 'posted' && (
-          <button
-            onClick={() => updateStatus('rejected')}
-            disabled={loading}
-            className={`${btnBase} bg-red-900/30 text-red-300 hover:opacity-80`}
-          >
-            ✕ Reddet
+          <button onClick={() => updateStatus('rejected')} disabled={loading}
+            className={`${btnBase} bg-red-900/30 text-red-300 hover:opacity-80`}>
+            {t.common.reject}
           </button>
         )}
 

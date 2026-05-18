@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
+import { useT } from '@/lib/useT'
 
 interface Props {
   draft: {
@@ -21,6 +22,7 @@ export function PreviewModal({ draft, brandName = 'yourbrand', igUsername, logoU
   const initials  = brandName.slice(0, 2).toUpperCase()
   const [open, setOpen] = useState(false)
   const [tab, setTab]   = useState<'instagram' | 'facebook'>('instagram')
+  const t = useT()
 
   return (
     <>
@@ -28,7 +30,7 @@ export function PreviewModal({ draft, brandName = 'yourbrand', igUsername, logoU
         onClick={() => setOpen(true)}
         className="text-xs px-3 py-1.5 rounded-lg border border-white/12 text-muted-foreground hover:text-foreground hover:border-white/25 transition-colors"
       >
-        👁 Önizle
+        {t.common.preview}
       </button>
 
       <AnimatePresence>
@@ -50,17 +52,17 @@ export function PreviewModal({ draft, brandName = 'yourbrand', igUsername, logoU
             >
               {/* Tab bar */}
               <div className="flex border-b border-white/8">
-                {(['instagram', 'facebook'] as const).map((t) => (
+                {(['instagram', 'facebook'] as const).map((platform) => (
                   <button
-                    key={t}
-                    onClick={() => setTab(t)}
+                    key={platform}
+                    onClick={() => setTab(platform)}
                     className={`flex-1 py-3 text-xs font-medium transition-colors capitalize ${
-                      tab === t
+                      tab === platform
                         ? 'text-foreground border-b-2 border-primary'
                         : 'text-muted-foreground hover:text-foreground'
                     }`}
                   >
-                    {t === 'instagram' ? '📸 Instagram' : '🔵 Facebook'}
+                    {platform === 'instagram' ? t.preview.instagram : t.preview.facebook}
                   </button>
                 ))}
                 <button
@@ -84,7 +86,7 @@ export function PreviewModal({ draft, brandName = 'yourbrand', igUsername, logoU
                     </div>
                     <div>
                       <p className="text-xs font-semibold leading-none">{displayIg}</p>
-                      <p className="text-[10px] text-gray-500 mt-0.5">Helsinki, Finland</p>
+                      <p className="text-[10px] text-gray-500 mt-0.5">{t.preview.location}</p>
                     </div>
                     <span className="ml-auto text-gray-400 text-lg">···</span>
                   </div>
@@ -144,7 +146,7 @@ export function PreviewModal({ draft, brandName = 'yourbrand', igUsername, logoU
                     </div>
                     <div>
                       <p className="text-xs font-semibold leading-none">{brandName}</p>
-                      <p className="text-[10px] text-gray-500 mt-0.5">Şimdi · 🌐</p>
+                      <p className="text-[10px] text-gray-500 mt-0.5">{t.preview.now}</p>
                     </div>
                     <span className="ml-auto text-gray-400 text-lg">···</span>
                   </div>
@@ -179,11 +181,11 @@ export function PreviewModal({ draft, brandName = 'yourbrand', igUsername, logoU
 
                   {/* Reactions */}
                   <div className="flex gap-1 px-3 py-2 border-t border-gray-100 text-xs text-gray-500">
-                    <span>👍 Beğen</span>
+                    <span>{t.preview.like}</span>
                     <span className="mx-2">·</span>
-                    <span>💬 Yorum</span>
+                    <span>{t.preview.comment}</span>
                     <span className="mx-2">·</span>
-                    <span>↗️ Paylaş</span>
+                    <span>{t.preview.share}</span>
                   </div>
                 </div>
               )}
