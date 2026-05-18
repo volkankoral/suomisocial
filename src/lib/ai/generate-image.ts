@@ -121,20 +121,33 @@ async function pollReplicate(predictionId: string, token: string): Promise<strin
   throw new Error('FLUX zaman aşımı (30sn)')
 }
 
+// Pollinations negative prompt — video game / CGI görünümünü engeller
+const NEGATIVE_PROMPT = [
+  'cartoon', 'anime', 'illustration', 'drawing', 'sketch',
+  'video game', 'CGI', '3D render', 'plastic', 'toy',
+  'distorted face', 'deformed', 'blurry', 'low quality',
+  'watermark', 'text overlay', 'logo',
+].join(', ')
+
 /**
  * Pollinations.ai — ücretsiz, hemen URL döner (URL'nin kendisi görsel)
  */
 function buildPollinationsUrl(prompt: string, aspect: ImageAspect, seed?: number): string {
   const { w, h } = ASPECT_DIMS[aspect]
+
+  // Prompt'a kalite artırıcı kelimeler ekle
+  const enhancedPrompt = `${prompt}, photorealistic, 8K, professional photography, natural lighting, sharp focus, cinematic`
+
   const params = new URLSearchParams({
-    width:   String(w),
-    height:  String(h),
-    model:   'flux-realism',
-    nologo:  'true',
-    enhance: 'true',
+    width:    String(w),
+    height:   String(h),
+    model:    'flux-realism',
+    nologo:   'true',
+    enhance:  'true',
+    negative: NEGATIVE_PROMPT,
     ...(seed !== undefined ? { seed: String(seed) } : {}),
   })
-  return `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}?${params.toString()}`
+  return `https://image.pollinations.ai/prompt/${encodeURIComponent(enhancedPrompt)}?${params.toString()}`
 }
 
 // === Geriye dönük uyumluluk (eski kodun bozulmaması için) ===

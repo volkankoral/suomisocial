@@ -54,7 +54,7 @@ Rules:
 - caption_fi: Write in NATURAL FINNISH. 120-200 characters. Warm, local, casual tone. Use 1-3 emojis. NEVER use stiff translated phrases.
 - caption_tr: Turkish translation for the business owner (so they can verify meaning).
 - hashtags: 5-8 hashtags WITHOUT # symbol. Mix Finnish tags (#suomi, #helsinki, etc.) + business-specific tags relevant to the actual business type.
-- image_prompt: Detailed ENGLISH description (60-100 words). MUST be PHOTOREALISTIC. Style must match the business type (e.g. tech/SaaS → modern office/laptop/app UI, restaurant → food photography, retail → product/store). NO text overlays, NO cartoons, NO illustrations. Specify lighting, composition, mood.
+- image_prompt: Detailed ENGLISH description (60-100 words). MUST be PHOTOREALISTIC like a professional stock photo or editorial photograph. Style must match the business type (e.g. tech/SaaS → modern workspace/device screens/abstract tech, restaurant → food close-ups/table settings, retail → product/lifestyle). If people are included, describe them only by body language/hands/silhouette — avoid close-up faces to prevent AI distortion. NO text overlays, NO cartoons, NO illustrations, NO video-game aesthetics. Specify lighting (e.g. "soft natural window light"), composition, mood.
 `
 
 function buildBrandBlock(brand: BrandContext): string {
