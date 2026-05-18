@@ -30,6 +30,8 @@ export function NavBar({ links, email, lang }: Props) {
   const t        = useT()
   const [menuOpen, setMenuOpen]   = useState(false)
   const [langOpen, setLangOpen]   = useState(false)
+  const [userOpen, setUserOpen]   = useState(false)
+  const [loggingOut, setLoggingOut] = useState(false)
 
   const isActive = (href: string) =>
     pathname === href || pathname.startsWith(href + '/')
@@ -41,6 +43,17 @@ export function NavBar({ links, email, lang }: Props) {
     router.push(segments.join('/'))
     setLangOpen(false)
     setMenuOpen(false)
+  }
+
+  async function logout() {
+    setLoggingOut(true)
+    try {
+      await fetch('/api/auth/logout', { method: 'POST' })
+      router.push(`/${lang}/login`)
+      router.refresh()
+    } catch {
+      setLoggingOut(false)
+    }
   }
 
   const currentLang = LANG_OPTIONS.find(l => l.code === lang) ?? LANG_OPTIONS[0]
@@ -146,14 +159,44 @@ export function NavBar({ links, email, lang }: Props) {
             </AnimatePresence>
           </div>
 
-          {/* User badge */}
-          <div className="hidden sm:flex shrink-0 items-center gap-2 px-3 py-1.5 rounded-lg border border-white/8 bg-white/4">
-            <div className="w-5 h-5 rounded-full bg-gradient-to-br from-orange-500 to-pink-600 flex items-center justify-center text-[9px] font-bold text-white shrink-0">
-              {email.charAt(0).toUpperCase()}
-            </div>
-            <span className="text-xs text-muted-foreground font-mono hidden md:block max-w-[120px] truncate">
-              {email}
-            </span>
+          {/* User badge + dropdown */}
+          <div className="hidden sm:block relative">
+            <button
+              onClick={() => { setUserOpen(!userOpen); setLangOpen(false) }}
+              className="flex shrink-0 items-center gap-2 px-3 py-1.5 rounded-lg border border-white/8 bg-white/4 hover:border-white/20 transition-colors"
+            >
+              <div className="w-5 h-5 rounded-full bg-gradient-to-br from-orange-500 to-pink-600 flex items-center justify-center text-[9px] font-bold text-white shrink-0">
+                {email.charAt(0).toUpperCase()}
+              </div>
+              <span className="text-xs text-muted-foreground font-mono hidden md:block max-w-[120px] truncate">
+                {email}
+              </span>
+              <span className="text-[10px] text-muted-foreground/60">▾</span>
+            </button>
+
+            <AnimatePresence>
+              {userOpen && (
+                <motion.div
+                  initial={{ opacity: 0, y: -6, scale: 0.96 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: -6, scale: 0.96 }}
+                  transition={{ duration: 0.14 }}
+                  className="absolute right-0 top-full mt-1 w-52 rounded-xl border border-white/12 bg-zinc-900 shadow-2xl overflow-hidden z-50"
+                >
+                  <div className="px-4 py-2.5 border-b border-white/8">
+                    <p className="text-xs text-muted-foreground truncate">{email}</p>
+                  </div>
+                  <button
+                    onClick={logout}
+                    disabled={loggingOut}
+                    className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-red-300 hover:bg-red-500/10 transition-colors disabled:opacity-50"
+                  >
+                    <span>🚪</span>
+                    <span>{loggingOut ? '…' : t.auth.logout}</span>
+                  </button>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
 
           {/* Hamburger */}
@@ -170,9 +213,9 @@ export function NavBar({ links, email, lang }: Props) {
         </div>
       </header>
 
-      {/* Click-away for lang dropdown */}
-      {langOpen && (
-        <div className="fixed inset-0 z-40" onClick={() => setLangOpen(false)} />
+      {/* Click-away for dropdowns */}
+      {(langOpen || userOpen) && (
+        <div className="fixed inset-0 z-40" onClick={() => { setLangOpen(false); setUserOpen(false) }} />
       )}
 
       {/* Mobile full menu */}
@@ -235,6 +278,18 @@ export function NavBar({ links, email, lang }: Props) {
                 )
               })}
             </nav>
+
+            {/* Logout */}
+            <div className="border-t border-white/8 p-3">
+              <button
+                onClick={logout}
+                disabled={loggingOut}
+                className="w-full flex items-center gap-4 px-4 py-3.5 rounded-xl text-base font-medium text-red-300 hover:bg-red-500/10 transition-colors disabled:opacity-50"
+              >
+                <span className="text-2xl w-8 text-center">🚪</span>
+                <span>{loggingOut ? '…' : t.auth.logout}</span>
+              </button>
+            </div>
           </motion.div>
         )}
       </AnimatePresence>

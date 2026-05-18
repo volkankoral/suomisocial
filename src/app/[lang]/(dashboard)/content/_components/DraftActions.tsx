@@ -7,9 +7,10 @@ import { useT } from '@/lib/useT'
 interface Props {
   draftId: string
   currentStatus: string
+  archived?: boolean
 }
 
-export function DraftActions({ draftId, currentStatus }: Props) {
+export function DraftActions({ draftId, currentStatus, archived = false }: Props) {
   const [loading, setLoading]       = useState(false)
   const [publishing, setPublishing] = useState(false)
   const [pubError, setPubError]     = useState<string | null>(null)
@@ -110,7 +111,38 @@ export function DraftActions({ draftId, currentStatus }: Props) {
     router.refresh()
   }
 
+  async function toggleArchive() {
+    setLoading(true)
+    await fetch(`/api/drafts/${draftId}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ archived: !archived }),
+    })
+    setLoading(false)
+    router.refresh()
+  }
+
   const btnBase = 'text-xs px-3 py-2 sm:py-1.5 rounded-lg font-medium transition-colors disabled:opacity-40 active:scale-95'
+
+  // Arşivdeki taslaklar — sadece geri al + sil
+  if (archived) {
+    return (
+      <div className="flex items-center gap-2 flex-wrap w-full">
+        <button onClick={toggleArchive} disabled={loading}
+          className={`${btnBase} bg-amber-600/20 text-amber-300 border border-amber-500/30 hover:bg-amber-600/30`}>
+          {c.unarchiveBtn}
+        </button>
+        <button
+          onClick={deleteDraft}
+          disabled={loading}
+          className="text-xs px-2 py-2 sm:py-1.5 text-zinc-400 hover:text-red-500 transition-colors disabled:opacity-40 active:scale-95"
+          title={t.common.delete}
+        >
+          🗑
+        </button>
+      </div>
+    )
+  }
 
   return (
     <div className="space-y-2 w-full">
@@ -160,12 +192,17 @@ export function DraftActions({ draftId, currentStatus }: Props) {
           </button>
         )}
 
+        <button onClick={toggleArchive} disabled={loading}
+          className={`${btnBase} border border-white/12 text-muted-foreground hover:text-foreground`}>
+          {c.archiveBtn}
+        </button>
+
         {currentStatus !== 'posted' && (
           <button
             onClick={deleteDraft}
             disabled={loading}
             className="text-xs px-2 py-2 sm:py-1.5 text-zinc-400 hover:text-red-500 transition-colors disabled:opacity-40 active:scale-95"
-            title="Sil"
+            title={t.common.delete}
           >
             🗑
           </button>
