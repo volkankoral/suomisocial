@@ -80,7 +80,7 @@ export default async function ContentPage({ params }: Props) {
         </Animate>
       )}
 
-      <div className="grid gap-8 lg:grid-cols-[300px_1fr]">
+      <div className="grid gap-6 lg:gap-8 lg:grid-cols-[300px_1fr]">
 
         {/* Sol: Yaklaşan günler */}
         <Animate delay={0.1}>
@@ -162,18 +162,19 @@ export default async function ContentPage({ params }: Props) {
                 return (
                   <FadeUpItem key={draft.id}>
                     <div className="rounded-2xl border border-white/8 bg-card overflow-hidden hover:border-white/14 transition-colors">
-                      <div className="flex gap-0">
+                      {/* Mobil: üst görsel + alt içerik / Desktop: yan yana */}
+                      <div className="flex flex-col sm:flex-row">
                         {/* Görsel */}
                         {draft.image_url ? (
                           // eslint-disable-next-line @next/next/no-img-element
                           <img
                             src={draft.image_url}
                             alt={draft.special_day_label_tr}
-                            className="w-28 h-28 object-cover shrink-0"
+                            className="w-full sm:w-32 sm:h-32 h-48 object-cover shrink-0"
                             loading="lazy"
                           />
                         ) : (
-                          <div className="w-28 h-28 bg-white/4 shrink-0 flex items-center justify-center text-2xl border-r border-white/8">
+                          <div className="w-full sm:w-32 sm:h-32 h-32 bg-white/4 shrink-0 flex items-center justify-center text-3xl border-b sm:border-b-0 sm:border-r border-white/8">
                             🖼
                           </div>
                         )}

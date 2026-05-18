@@ -42,7 +42,7 @@ export default async function DashboardLayout({ children, params }: Props) {
   return (
     <div className="min-h-screen flex flex-col bg-background">
       <NavBar links={navLinks} email={user.email ?? ''} />
-      <main className="flex-1 mx-auto w-full max-w-7xl px-5 py-8">
+      <main className="flex-1 mx-auto w-full max-w-7xl px-4 sm:px-5 py-5 sm:py-8">
         {children}
       </main>
     </div>

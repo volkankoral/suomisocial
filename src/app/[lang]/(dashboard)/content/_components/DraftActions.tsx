@@ -107,14 +107,16 @@ export function DraftActions({ draftId, currentStatus }: Props) {
     router.refresh()
   }
 
+  const btnBase = 'text-xs px-3 py-2 sm:py-1.5 rounded-lg font-medium transition-colors disabled:opacity-40 active:scale-95'
+
   return (
-    <div className="space-y-1.5">
+    <div className="space-y-2 w-full">
       <div className="flex items-center gap-2 flex-wrap">
         {currentStatus !== 'approved' && currentStatus !== 'posted' && (
           <button
             onClick={() => updateStatus('approved')}
             disabled={loading}
-            className="text-xs px-3 py-1.5 rounded-lg bg-green-600 text-white font-medium hover:bg-green-700 transition-colors disabled:opacity-40"
+            className={`${btnBase} bg-green-600 text-white hover:bg-green-700`}
           >
             ✓ Onayla
           </button>
@@ -125,35 +127,35 @@ export function DraftActions({ draftId, currentStatus }: Props) {
             <button
               onClick={publishToBoth}
               disabled={publishing}
-              className="text-xs px-3 py-1.5 rounded-lg bg-gradient-to-r from-pink-600 to-blue-600 text-white font-medium hover:opacity-90 transition-opacity disabled:opacity-40 flex items-center gap-1.5"
+              className={`${btnBase} bg-gradient-to-r from-pink-600 to-blue-600 text-white hover:opacity-90 flex items-center gap-1.5`}
             >
-              {publishing ? '⏳ Paylaşılıyor…' : '📲 IG + FB Paylaş'}
+              {publishing ? '⏳ Paylaşılıyor…' : '📲 IG + FB'}
             </button>
             <button
               onClick={publishToInstagram}
               disabled={publishing}
-              className="text-xs px-3 py-1.5 rounded-lg bg-pink-600 text-white font-medium hover:bg-pink-700 transition-colors disabled:opacity-40"
+              className={`${btnBase} bg-pink-600/20 text-pink-300 border border-pink-500/30 hover:bg-pink-600/30`}
             >
-              {publishing ? '⏳' : '📷 IG'}
+              📷 IG
             </button>
             <button
               onClick={publishToFacebook}
               disabled={publishing}
-              className="text-xs px-3 py-1.5 rounded-lg bg-blue-600 text-white font-medium hover:bg-blue-700 transition-colors disabled:opacity-40"
+              className={`${btnBase} bg-blue-600/20 text-blue-300 border border-blue-500/30 hover:bg-blue-600/30`}
             >
-              {publishing ? '⏳' : '🔵 FB'}
+              🔵 FB
             </button>
             <button
               onClick={publishToTikTok}
               disabled={publishing}
-              className="text-xs px-3 py-1.5 rounded-lg bg-purple-600 text-white font-medium hover:bg-purple-700 transition-colors disabled:opacity-40"
+              className={`${btnBase} bg-purple-600/20 text-purple-300 border border-purple-500/30 hover:bg-purple-600/30`}
             >
-              {publishing ? '⏳' : '🎵 TT'}
+              🎵 TT
             </button>
             <button
               onClick={() => updateStatus('pending')}
               disabled={loading}
-              className="text-xs px-3 py-1.5 rounded-lg border border-white/12 text-muted-foreground hover:text-foreground transition-colors disabled:opacity-40"
+              className={`${btnBase} border border-white/12 text-muted-foreground hover:text-foreground`}
             >
               ↩ Beklet
             </button>
@@ -161,7 +163,7 @@ export function DraftActions({ draftId, currentStatus }: Props) {
         )}
 
         {currentStatus === 'posted' && (
-          <span className="text-xs px-3 py-1.5 rounded-lg bg-blue-500/15 text-blue-400 border border-blue-500/20 font-medium">
+          <span className={`${btnBase} bg-blue-500/15 text-blue-400 border border-blue-500/20`}>
             ✓ Paylaşıldı
           </span>
         )}
@@ -170,7 +172,7 @@ export function DraftActions({ draftId, currentStatus }: Props) {
           <button
             onClick={() => updateStatus('rejected')}
             disabled={loading}
-            className="text-xs px-3 py-1.5 rounded-lg bg-red-900/30 text-red-300 font-medium hover:opacity-80 disabled:opacity-40"
+            className={`${btnBase} bg-red-900/30 text-red-300 hover:opacity-80`}
           >
             ✕ Reddet
           </button>
@@ -180,7 +182,7 @@ export function DraftActions({ draftId, currentStatus }: Props) {
           <button
             onClick={deleteDraft}
             disabled={loading}
-            className="text-xs px-2 py-1.5 text-zinc-400 hover:text-red-500 transition-colors disabled:opacity-40"
+            className="text-xs px-2 py-2 sm:py-1.5 text-zinc-400 hover:text-red-500 transition-colors disabled:opacity-40 active:scale-95"
             title="Sil"
           >
             🗑
@@ -189,7 +191,7 @@ export function DraftActions({ draftId, currentStatus }: Props) {
       </div>
 
       {pubError && (
-        <p className="text-xs text-red-400">{pubError}</p>
+        <p className="text-xs text-red-400 leading-snug">{pubError}</p>
       )}
     </div>
   )
