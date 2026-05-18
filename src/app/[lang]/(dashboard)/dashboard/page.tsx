@@ -1,8 +1,10 @@
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { createServiceClient } from '@/lib/supabase/service'
-import { getUserOrgId } from '@/lib/supabase/get-org'
-import { upcomingSpecialDays, nextFriday } from '@/lib/fi-special-days'
+import { getUserOrgId, getUserOrgCountry } from '@/lib/supabase/get-org'
+import { nextFriday } from '@/lib/fi-special-days'
+import { getUpcoming } from '@/lib/special-days'
+import { getRegionForCountry } from '@/lib/regions'
 
 export default async function DashboardPage({ params }: { params: Promise<{ lang: string }> }) {
   const { lang } = await params
@@ -42,8 +44,10 @@ export default async function DashboardPage({ params }: { params: Promise<{ lang
     : { count: 0 }
   const monthlyPosted = (postsRes as { count: number | null }).count ?? 0
 
-  // Yaklaşan özel günler (önümüzdeki 30 gün)
-  const upcoming = upcomingSpecialDays(30).slice(0, 3)
+  // Yaklaşan özel günler (önümüzdeki 30 gün) — bölgeye göre
+  const countryCode = await getUserOrgCountry()
+  const region      = getRegionForCountry(countryCode)
+  const upcoming    = getUpcoming(region, 30).slice(0, 3)
 
   // Bu hafta sonu için Cuma postu var mı?
   const friday = nextFriday()

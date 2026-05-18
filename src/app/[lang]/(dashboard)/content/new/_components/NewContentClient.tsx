@@ -54,7 +54,7 @@ export function NewContentClient({
 
   const [category, setCategory] = useState<Category>(initialCategory)
   const [specialDayId, setSpecialDayId] = useState(initialSpecialDayId ?? upcomingDays[0]?.id ?? '')
-  const [routineId, setRoutineId] = useState(initialRoutineId ?? 'hyvaa-viikonloppua')
+  const [routineId, setRoutineId] = useState(initialRoutineId ?? routines[0]?.id ?? '')
   const [campaignBrief, setCampaignBrief] = useState('')
   const [platforms, setPlatforms] = useState<string[]>(['instagram', 'facebook'])
   const [aspect, setAspect] = useState<'square' | 'portrait' | 'story'>('square')

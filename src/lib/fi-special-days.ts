@@ -235,16 +235,26 @@ export const FI_WEEKLY_ROUTINES: RoutinePost[] = [
 ]
 
 /**
- * Verilen yıl için tüm özel günleri gerçek tarihlerine çözümle (Date objesi)
+ * Verilen yıl için tüm özel günleri gerçek tarihlerine çözümle (Date objesi).
+ * `days` parametresi ile başka bölgenin (örn. Türkiye) günleri de çözümlenebilir.
  */
-export function resolveSpecialDays(year: number): Array<SpecialDay & { resolvedDate: Date }> {
-  return FI_SPECIAL_DAYS.map(day => ({
+export function resolveSpecialDays(
+  year: number,
+  days: SpecialDay[] = FI_SPECIAL_DAYS,
+): Array<SpecialDay & { resolvedDate: Date }> {
+  return days.map(day => ({
     ...day,
     resolvedDate: resolveDate(day.date, year),
   }))
 }
 
-function resolveDate(expr: string, year: number): Date {
+export function resolveDate(expr: string, year: number): Date {
+  // Tam ISO tarih YYYY-MM-DD (örn. dini bayramlar — yıla bağlı sabit)
+  if (/^\d{4}-\d{2}-\d{2}$/.test(expr)) {
+    const [y, m, d] = expr.split('-').map(Number)
+    return new Date(Date.UTC(y, m - 1, d))
+  }
+
   // Sabit MM-DD
   if (/^\d{2}-\d{2}$/.test(expr)) {
     const [m, d] = expr.split('-').map(Number)
@@ -262,6 +272,13 @@ function resolveDate(expr: string, year: number): Date {
   if (expr === 'mothers') return nthWeekdayOfMonth(year, 4, 0, 2) // 0=Pazar
   // Kasım'ın 2. Pazarı
   if (expr === 'fathers') return nthWeekdayOfMonth(year, 10, 0, 2)
+
+  // Genel: nth:AY(1-12):HAFTAGÜNÜ(0-6):N → o ayın N. haftagünü
+  const nthMatch = expr.match(/^nth:(\d+):(\d+):(\d+)$/)
+  if (nthMatch) {
+    const mo = Number(nthMatch[1]), wd = Number(nthMatch[2]), n = Number(nthMatch[3])
+    return nthWeekdayOfMonth(year, mo - 1, wd, n)
+  }
 
   // Juhannus: 20-26 Haziran arasındaki Cumartesi
   if (expr === 'midsummer') {
@@ -303,16 +320,25 @@ function nthWeekdayOfMonth(year: number, month: number, weekday: number, n: numb
 /**
  * Önümüzdeki N gün için yaklaşan özel günleri döner
  */
-export function upcomingSpecialDays(daysAhead = 30, fromDate = new Date()): Array<SpecialDay & { resolvedDate: Date; daysUntil: number }> {
+export function upcomingSpecialDays(
+  daysAhead = 30,
+  fromDate = new Date(),
+  days: SpecialDay[] = FI_SPECIAL_DAYS,
+): Array<SpecialDay & { resolvedDate: Date; daysUntil: number }> {
   const now = new Date(Date.UTC(fromDate.getUTCFullYear(), fromDate.getUTCMonth(), fromDate.getUTCDate()))
   const limit = new Date(now.getTime() + daysAhead * 86400000)
 
   const result: Array<SpecialDay & { resolvedDate: Date; daysUntil: number }> = []
+  const seen = new Set<string>()
 
   for (const yearOffset of [0, 1]) {
     const year = fromDate.getUTCFullYear() + yearOffset
-    for (const day of FI_SPECIAL_DAYS) {
+    for (const day of days) {
       const resolvedDate = resolveDate(day.date, year)
+      // ISO sabit tarihli günler iki yıl döngüsünde tekrar etmesin
+      const key = day.id + resolvedDate.toISOString().slice(0, 10)
+      if (seen.has(key)) continue
+      seen.add(key)
       if (resolvedDate >= now && resolvedDate <= limit) {
         const daysUntil = Math.round((resolvedDate.getTime() - now.getTime()) / 86400000)
         result.push({ ...day, resolvedDate, daysUntil })

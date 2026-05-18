@@ -41,7 +41,23 @@ export interface GeneratedContent {
   image_prompt: string             // İngilizce — görsel üretici için
 }
 
-const COMMON_RULES = `
+/** İçerik üretim dili — bölgeye göre belirlenir */
+export type ContentLang = 'fi' | 'tr' | 'en' | 'sv'
+
+const LANG_NAME: Record<ContentLang, string> = {
+  fi: 'FINNISH', tr: 'TURKISH', en: 'ENGLISH', sv: 'SWEDISH',
+}
+
+const LANG_TAGS: Record<ContentLang, string> = {
+  fi: '#suomi, #helsinki', tr: '#türkiye, #istanbul', en: '#local', sv: '#sverige',
+}
+
+/** Dile göre ortak JSON kuralları */
+function commonRules(lang: ContentLang): string {
+  const langName = LANG_NAME[lang]
+  // Birincil dil Türkçe değilse referans çeviri Türkçe; Türkçeyse İngilizce
+  const refLang = lang === 'tr' ? 'ENGLISH' : 'TURKISH'
+  return `
 Respond ONLY in JSON (no other text, no markdown fences):
 {
   "caption_fi":   "...",
@@ -51,11 +67,12 @@ Respond ONLY in JSON (no other text, no markdown fences):
 }
 
 Rules:
-- caption_fi: Write in NATURAL FINNISH. 120-200 characters. Warm, local, casual tone. Use 1-3 emojis. NEVER use stiff translated phrases.
-- caption_tr: Turkish translation for the business owner (so they can verify meaning).
-- hashtags: 5-8 hashtags WITHOUT # symbol. Mix Finnish tags (#suomi, #helsinki, etc.) + business-specific tags relevant to the actual business type.
+- caption_fi: Write the MAIN caption in NATURAL ${langName}. 120-200 characters. Warm, local, casual tone. Use 1-3 emojis. NEVER use stiff translated phrases.
+- caption_tr: A short ${refLang} reference translation of the caption so the business owner can verify the meaning.
+- hashtags: 5-8 hashtags WITHOUT # symbol. Mix local ${langName} tags (${LANG_TAGS[lang]}, etc.) + business-specific tags relevant to the actual business type.
 - image_prompt: Detailed ENGLISH description (60-100 words). MUST be PHOTOREALISTIC like a professional stock photo or editorial photograph. Style must match the business type (e.g. tech/SaaS → modern workspace/device screens/abstract tech, restaurant → food close-ups/table settings, retail → product/lifestyle). If people are included, describe them only by body language/hands/silhouette — avoid close-up faces to prevent AI distortion. NO text overlays, NO cartoons, NO illustrations, NO video-game aesthetics. Specify lighting (e.g. "soft natural window light"), composition, mood.
 `
+}
 
 function buildBrandBlock(brand: BrandContext): string {
   const productsStr = Array.isArray(brand.products)
@@ -113,14 +130,16 @@ async function callGroq(systemPrompt: string, userPrompt: string): Promise<Gener
 export async function generateSpecialDayContent(
   brand: BrandContext,
   day: SpecialDayContext,
+  lang: ContentLang = 'fi',
 ): Promise<GeneratedContent> {
-  const systemPrompt = `You write social media posts in FINNISH for a local Finnish business.
+  const langName = LANG_NAME[lang]
+  const systemPrompt = `You write social media posts in ${langName} for a local business.
 
 ${buildBrandBlock(brand)}
 
-Task: Create an Instagram/Facebook post for a FINNISH SPECIAL DAY.
+Task: Create an Instagram/Facebook post for a SPECIAL DAY.
 Connect the special day NATURALLY to the business. Don't be forced.
-${COMMON_RULES}
+${commonRules(lang)}
 
 Visual hint (use in image_prompt if relevant): ${day.visual_hint ?? '(none)'}`
 
@@ -128,7 +147,7 @@ Visual hint (use in image_prompt if relevant): ${day.visual_hint ?? '(none)'}`
 Date: ${day.date}
 Cultural context: ${day.context_fi}
 
-Write a warm, local Finnish post that connects ${day.name_fi} to ${brand.business_name}.`
+Write a warm, local ${langName} post that connects ${day.name_fi} to ${brand.business_name}.`
 
   return callGroq(systemPrompt, userPrompt)
 }
@@ -139,20 +158,22 @@ Write a warm, local Finnish post that connects ${day.name_fi} to ${brand.busines
 export async function generateRoutineContent(
   brand: BrandContext,
   routine: RoutineContext,
+  lang: ContentLang = 'fi',
 ): Promise<GeneratedContent> {
-  const systemPrompt = `You write social media posts in FINNISH for a local Finnish business.
+  const langName = LANG_NAME[lang]
+  const systemPrompt = `You write social media posts in ${langName} for a local business.
 
 ${buildBrandBlock(brand)}
 
 Task: Create a SHORT, CASUAL weekly post — a friendly greeting that fits ${routine.name_fi}.
-${COMMON_RULES}
+${commonRules(lang)}
 
 Visual hint: ${routine.visual_hint ?? '(none)'}`
 
   const userPrompt = `Routine: ${routine.name_fi}
 Context: ${routine.context_fi}
 
-Write a warm Finnish post wishing customers ${routine.name_fi}, gently mentioning ${brand.business_name}.`
+Write a warm ${langName} post wishing customers ${routine.name_fi}, gently mentioning ${brand.business_name}.`
 
   return callGroq(systemPrompt, userPrompt)
 }
@@ -163,14 +184,16 @@ Write a warm Finnish post wishing customers ${routine.name_fi}, gently mentionin
 export async function generateCampaignContent(
   brand: BrandContext,
   campaign: CampaignContext,
+  lang: ContentLang = 'fi',
 ): Promise<GeneratedContent> {
-  const systemPrompt = `You write social media posts in FINNISH for a local Finnish business.
+  const langName = LANG_NAME[lang]
+  const systemPrompt = `You write social media posts in ${langName} for a local business.
 
 ${buildBrandBlock(brand)}
 
-Task: Create a CAMPAIGN/PROMOTION post in Finnish.
+Task: Create a CAMPAIGN/PROMOTION post in ${langName}.
 Be enthusiastic but not pushy. Include a clear call-to-action.
-${COMMON_RULES}`
+${commonRules(lang)}`
 
   const dateInfo = [
     campaign.start_date ? `Starts: ${campaign.start_date}` : '',
@@ -181,7 +204,7 @@ ${COMMON_RULES}`
 "${campaign.brief}"
 ${dateInfo}
 
-Write a Finnish promotional post for ${brand.business_name}.`
+Write a ${langName} promotional post for ${brand.business_name}.`
 
   return callGroq(systemPrompt, userPrompt)
 }

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServiceClient } from '@/lib/supabase/service'
-import { getUserOrgId } from '@/lib/supabase/get-org'
+import { getUserOrgId, getUserOrgCountry } from '@/lib/supabase/get-org'
 import {
   generateSpecialDayContent,
   generateRoutineContent,
@@ -9,7 +9,8 @@ import {
 } from '@/lib/ai/generate-content'
 import { generateImage, type ImageAspect } from '@/lib/ai/generate-image'
 import { addTextOverlay } from '@/lib/ai/add-text-overlay'
-import { FI_SPECIAL_DAYS, FI_WEEKLY_ROUTINES, resolveSpecialDays } from '@/lib/fi-special-days'
+import { findSpecialDay, findRoutine, getResolvedSpecialDays } from '@/lib/special-days'
+import { getRegionForCountry, getContentLang } from '@/lib/regions'
 
 /**
  * Yeni içerik üretim endpoint'i — 3 kategori:
@@ -42,6 +43,11 @@ export async function POST(req: NextRequest) {
   const body = await req.json() as Body
   const aspect = body.aspect ?? 'square'
 
+  // Bölge ve içerik dilini belirle
+  const countryCode = await getUserOrgCountry()
+  const region      = getRegionForCountry(countryCode)
+  const lang        = getContentLang(region)
+
   const supabase = createServiceClient()
 
   // Brand bilgisi al
@@ -66,12 +72,12 @@ export async function POST(req: NextRequest) {
     if (body.category === 'special_day') {
       if (!body.specialDayId) return NextResponse.json({ error: 'specialDayId zorunlu' }, { status: 400 })
 
-      const day = FI_SPECIAL_DAYS.find(d => d.id === body.specialDayId)
+      const day = findSpecialDay(region, body.specialDayId)
       if (!day) return NextResponse.json({ error: 'Özel gün bulunamadı' }, { status: 404 })
 
       // Gerçek tarihi çöz
       const year = new Date().getUTCFullYear()
-      const resolved = resolveSpecialDays(year).find(d => d.id === day.id)!
+      const resolved = getResolvedSpecialDays(region, year).find(d => d.id === day.id)!
       dayDate = resolved.resolvedDate.toISOString().slice(0, 10)
       dayLabel = day.name_fi
       specialDayId = day.id
@@ -81,11 +87,10 @@ export async function POST(req: NextRequest) {
         name_fi: day.name_fi,
         context_fi: day.context_fi,
         visual_hint: day.visual_hint,
-      })
+      }, lang)
     }
     else if (body.category === 'weekly_routine') {
-      const routineId = body.routineId ?? 'hyvaa-viikonloppua'
-      const routine = FI_WEEKLY_ROUTINES.find(r => r.id === routineId)
+      const routine = body.routineId ? findRoutine(region, body.routineId) : undefined
       if (!routine) return NextResponse.json({ error: 'Rutin bulunamadı' }, { status: 404 })
 
       dayDate = (body.scheduledAt ?? new Date().toISOString()).slice(0, 10)
@@ -95,7 +100,7 @@ export async function POST(req: NextRequest) {
         name_fi: routine.name_fi,
         context_fi: routine.context_fi,
         visual_hint: routine.visual_hint,
-      })
+      }, lang)
     }
     else if (body.category === 'campaign') {
       if (!body.brief) return NextResponse.json({ error: 'Kampanya açıklaması zorunlu' }, { status: 400 })
@@ -105,7 +110,7 @@ export async function POST(req: NextRequest) {
 
       generated = await generateCampaignContent(brandCtx, {
         brief: body.brief,
-      })
+      }, lang)
     }
     else {
       return NextResponse.json({ error: 'Geçersiz kategori' }, { status: 400 })

@@ -1,8 +1,9 @@
 import { createServiceClient } from '@/lib/supabase/service'
-import { getUserOrgId } from '@/lib/supabase/get-org'
+import { getUserOrgId, getUserOrgCountry } from '@/lib/supabase/get-org'
 import { redirect } from 'next/navigation'
 import { Suspense } from 'react'
-import { FI_SPECIAL_DAYS, FI_WEEKLY_ROUTINES, upcomingSpecialDays } from '@/lib/fi-special-days'
+import { getSpecialDays, getWeeklyRoutines, getUpcoming } from '@/lib/special-days'
+import { getRegionForCountry } from '@/lib/regions'
 import { NewContentClient } from './_components/NewContentClient'
 
 interface Props {
@@ -29,8 +30,10 @@ export default async function NewContentPage({ params, searchParams }: Props) {
     redirect(`/${lang}/brand?new=1`)
   }
 
-  // Önümüzdeki özel günler (özel gün seçenekleri için)
-  const upcoming = upcomingSpecialDays(90).slice(0, 10)
+  // Bölgeye göre özel günler
+  const countryCode = await getUserOrgCountry()
+  const region      = getRegionForCountry(countryCode)
+  const upcoming    = getUpcoming(region, 90).slice(0, 10)
 
   return (
     <Suspense fallback={<div className="text-muted-foreground text-sm p-8">Yükleniyor…</div>}>
@@ -39,8 +42,8 @@ export default async function NewContentPage({ params, searchParams }: Props) {
         initialCategory={(category as 'weekly_routine' | 'special_day' | 'campaign') ?? 'special_day'}
         initialSpecialDayId={specialDayId}
         initialRoutineId={routineId}
-        specialDays={FI_SPECIAL_DAYS}
-        routines={FI_WEEKLY_ROUTINES}
+        specialDays={getSpecialDays(region)}
+        routines={getWeeklyRoutines(region)}
         upcomingDays={upcoming.map(d => ({
           id: d.id,
           name_fi: d.name_fi,
