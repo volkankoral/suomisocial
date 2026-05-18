@@ -30,6 +30,8 @@ interface Body {
   aspect?: ImageAspect
   platforms?: string[]
   scheduledAt?: string | null
+  userMediaUrl?: string | null
+  userMediaType?: 'image' | 'video' | null
 }
 
 export async function POST(req: NextRequest) {
@@ -108,8 +110,20 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Geçersiz kategori' }, { status: 400 })
     }
 
-    // Görseli üret (Replicate/FLUX varsa, yoksa Pollinations)
-    const image = await generateImage(generated.image_prompt, { aspect })
+    // Görsel: kullanıcı yüklediyse onu kullan, yoksa AI üret
+    let imageUrl: string | null = null
+    let imageProvider: string | null = null
+
+    if (body.userMediaUrl) {
+      // Kullanıcının yüklediği medyayı kullan — AI görsel üretmesin
+      imageUrl = body.userMediaUrl
+      imageProvider = 'user-upload'
+    } else {
+      // AI ile üret (Replicate/FLUX varsa, yoksa Pollinations)
+      const image = await generateImage(generated.image_prompt, { aspect })
+      imageUrl = image.url
+      imageProvider = image.provider
+    }
 
     // Draft kaydet
     const { data: draft, error } = await supabase
@@ -124,8 +138,10 @@ export async function POST(req: NextRequest) {
         caption_fi:                generated.caption_fi,
         caption_tr:                generated.caption_tr,
         hashtags:                  generated.hashtags,
-        image_url:                 image.url,
-        image_prompt:              generated.image_prompt,
+        image_url:                 imageUrl,
+        image_prompt:              body.userMediaUrl ? null : generated.image_prompt,
+        user_media_url:            body.userMediaUrl ?? null,
+        user_media_type:           body.userMediaType ?? null,
         platforms:                 body.platforms ?? ['instagram', 'facebook'],
         campaign_brief:            body.category === 'campaign' ? body.brief : null,
         scheduled_at:              body.scheduledAt ?? null,
@@ -139,7 +155,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({
       ok: true,
       draft,
-      imageProvider: image.provider,
+      imageProvider,
     })
 
   } catch (err) {

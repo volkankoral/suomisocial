@@ -33,9 +33,9 @@ export default async function ContentPage({ params }: Props) {
         .order('special_day_date', { ascending: true })
     : { data: [] }
 
-  // Brand adı ve IG kullanıcı adı (önizleme için)
+  // Brand adı, logo ve IG kullanıcı adı (önizleme için)
   const { data: brand } = orgId
-    ? await supabase.from('brand_settings').select('business_name').eq('organization_id', orgId).maybeSingle()
+    ? await supabase.from('brand_settings').select('business_name, logo_url').eq('organization_id', orgId).maybeSingle()
     : { data: null }
 
   const { data: igAccount } = orgId
@@ -43,6 +43,7 @@ export default async function ContentPage({ params }: Props) {
     : { data: null }
 
   const brandName  = brand?.business_name ?? 'yourbrand'
+  const logoUrl    = brand?.logo_url ?? undefined
   const igUsername = igAccount?.platform_username ?? undefined
 
   const countryCode  = await getUserOrgCountry()
@@ -208,7 +209,7 @@ export default async function ContentPage({ params }: Props) {
 
                           <div className="flex items-center gap-2 flex-wrap">
                             <DraftActions draftId={draft.id} currentStatus={draft.status} />
-                            <PreviewModal draft={draft} brandName={brandName} igUsername={igUsername} />
+                            <PreviewModal draft={draft} brandName={brandName} igUsername={igUsername} logoUrl={logoUrl} />
                           </div>
                         </div>
                       </div>

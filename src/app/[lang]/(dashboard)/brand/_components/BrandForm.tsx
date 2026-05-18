@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 
 interface BrandData {
@@ -11,6 +11,7 @@ interface BrandData {
   primary_color?: string | null
   products?: string[] | null
   languages?: string[] | null
+  logo_url?: string | null
 }
 
 interface CountryOption {
@@ -38,6 +39,11 @@ export function BrandForm({ brand, countryCode, countries }: Props) {
   const [saved, setSaved]   = useState(false)
   const [error, setError]   = useState<string | null>(null)
 
+  const [logoUrl, setLogoUrl]       = useState<string | null>(brand?.logo_url ?? null)
+  const [logoUploading, setLogoUploading] = useState(false)
+  const [logoError, setLogoError]   = useState<string | null>(null)
+  const logoInputRef = useRef<HTMLInputElement>(null)
+
   const [form, setForm] = useState({
     business_name: brand?.business_name ?? '',
     description: brand?.description ?? '',
@@ -46,6 +52,31 @@ export function BrandForm({ brand, countryCode, countries }: Props) {
     products: Array.isArray(brand?.products) ? (brand.products as string[]).join(', ') : '',
     country_code: countryCode,
   })
+
+  async function handleLogoUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    setLogoError(null)
+    setLogoUploading(true)
+    try {
+      const fd = new FormData()
+      fd.append('file', file)
+      fd.append('type', 'brand-logo')
+
+      const res = await fetch('/api/upload', { method: 'POST', body: fd })
+      const json = await res.json()
+      if (!res.ok) {
+        setLogoError(json.error ?? 'Yükleme başarısız')
+      } else {
+        setLogoUrl(json.url)
+      }
+    } catch {
+      setLogoError('Beklenmeyen hata')
+    } finally {
+      setLogoUploading(false)
+    }
+  }
 
   async function handleSave(e: React.FormEvent) {
     e.preventDefault()
@@ -64,6 +95,7 @@ export function BrandForm({ brand, countryCode, countries }: Props) {
           primary_color: form.primary_color,
           products:      form.products.split(',').map((p) => p.trim()).filter(Boolean),
           country_code:  form.country_code,
+          logo_url:      logoUrl,
         }),
       })
       const json = await res.json()
@@ -83,6 +115,60 @@ export function BrandForm({ brand, countryCode, countries }: Props) {
 
   return (
     <form onSubmit={handleSave} className="max-w-xl space-y-6">
+
+      {/* Logo yükleme */}
+      <div>
+        <label className="block text-sm font-medium text-foreground mb-1.5">
+          🖼 Marka Logosu
+          <span className="text-muted-foreground font-normal ml-1">(opsiyonel, max 5 MB)</span>
+        </label>
+        <div className="flex items-center gap-4">
+          {/* Preview alanı */}
+          <div
+            className="w-20 h-20 rounded-xl border border-white/12 bg-white/4 flex items-center justify-center overflow-hidden shrink-0 cursor-pointer hover:border-white/25 transition-colors"
+            onClick={() => logoInputRef.current?.click()}
+          >
+            {logoUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={logoUrl} alt="Logo" className="w-full h-full object-contain p-1" />
+            ) : (
+              <span className="text-2xl opacity-30">🏷</span>
+            )}
+          </div>
+
+          <div className="space-y-2">
+            <button
+              type="button"
+              onClick={() => logoInputRef.current?.click()}
+              disabled={logoUploading}
+              className="text-xs px-3 py-2 rounded-lg border border-white/12 text-muted-foreground hover:text-foreground hover:border-white/25 transition-colors disabled:opacity-40"
+            >
+              {logoUploading ? '⏳ Yükleniyor…' : logoUrl ? '🔄 Logoyu Değiştir' : '📤 Logo Yükle'}
+            </button>
+            {logoUrl && (
+              <button
+                type="button"
+                onClick={() => { setLogoUrl(null); if (logoInputRef.current) logoInputRef.current.value = '' }}
+                className="block text-xs text-red-400/70 hover:text-red-400 transition-colors"
+              >
+                × Logoyu kaldır
+              </button>
+            )}
+            {logoError && (
+              <p className="text-xs text-red-400">❌ {logoError}</p>
+            )}
+            <p className="text-[10px] text-muted-foreground/60">PNG, JPG, SVG, WebP desteklenir</p>
+          </div>
+        </div>
+
+        <input
+          ref={logoInputRef}
+          type="file"
+          accept="image/*"
+          className="hidden"
+          onChange={handleLogoUpload}
+        />
+      </div>
 
       {/* Ülke (Lokasyon) */}
       <div>
@@ -201,7 +287,7 @@ export function BrandForm({ brand, countryCode, countries }: Props) {
       <div className="flex items-center gap-3 pt-2">
         <button
           type="submit"
-          disabled={saving}
+          disabled={saving || logoUploading}
           className="px-5 py-2 rounded-lg bg-gradient-to-r from-orange-500 to-pink-600 text-white text-sm font-medium hover:opacity-90 transition-opacity disabled:opacity-40"
         >
           {saving ? 'Kaydediliyor…' : 'Kaydet'}

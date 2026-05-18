@@ -13,9 +13,10 @@ interface Props {
   }
   brandName?: string
   igUsername?: string
+  logoUrl?: string
 }
 
-export function PreviewModal({ draft, brandName = 'yourbrand', igUsername }: Props) {
+export function PreviewModal({ draft, brandName = 'yourbrand', igUsername, logoUrl }: Props) {
   const displayIg = igUsername ?? brandName.toLowerCase().replace(/\s+/g, '')
   const initials  = brandName.slice(0, 2).toUpperCase()
   const [open, setOpen] = useState(false)
@@ -75,8 +76,11 @@ export function PreviewModal({ draft, brandName = 'yourbrand', igUsername }: Pro
                 <div className="bg-white text-black">
                   {/* Header */}
                   <div className="flex items-center gap-2.5 px-3 py-2.5">
-                    <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-yellow-400 via-pink-500 to-purple-600 flex items-center justify-center text-white text-xs font-bold">
-                      {initials}
+                    <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-yellow-400 via-pink-500 to-purple-600 flex items-center justify-center text-white text-xs font-bold overflow-hidden shrink-0">
+                      {logoUrl ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={logoUrl} alt={brandName} className="w-full h-full object-cover" />
+                      ) : initials}
                     </div>
                     <div>
                       <p className="text-xs font-semibold leading-none">{displayIg}</p>
@@ -132,8 +136,11 @@ export function PreviewModal({ draft, brandName = 'yourbrand', igUsername }: Pro
                 <div className="bg-white text-black">
                   {/* Header */}
                   <div className="flex items-center gap-2.5 px-3 py-2.5">
-                    <div className="w-9 h-9 rounded-full bg-blue-600 flex items-center justify-center text-white text-xs font-bold">
-                      {initials}
+                    <div className="w-9 h-9 rounded-full bg-blue-600 flex items-center justify-center text-white text-xs font-bold overflow-hidden shrink-0">
+                      {logoUrl ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={logoUrl} alt={brandName} className="w-full h-full object-cover" />
+                      ) : initials}
                     </div>
                     <div>
                       <p className="text-xs font-semibold leading-none">{brandName}</p>
