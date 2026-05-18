@@ -53,8 +53,8 @@ Respond ONLY in JSON (no other text, no markdown fences):
 Rules:
 - caption_fi: Write in NATURAL FINNISH. 120-200 characters. Warm, local, casual tone. Use 1-3 emojis. NEVER use stiff translated phrases.
 - caption_tr: Turkish translation for the business owner (so they can verify meaning).
-- hashtags: 5-8 hashtags WITHOUT # symbol. Mix Finnish tags (#suomi, #helsinki, #ravintola, etc.) + business-specific tags.
-- image_prompt: Detailed ENGLISH description (60-100 words). MUST start with "Professional food photography," or "Cozy restaurant photo,". NO text overlays, NO cartoons, NO illustrations. PHOTOREALISTIC ONLY. Specify lighting, composition, mood.
+- hashtags: 5-8 hashtags WITHOUT # symbol. Mix Finnish tags (#suomi, #helsinki, etc.) + business-specific tags relevant to the actual business type.
+- image_prompt: Detailed ENGLISH description (60-100 words). MUST be PHOTOREALISTIC. Style must match the business type (e.g. tech/SaaS → modern office/laptop/app UI, restaurant → food photography, retail → product/store). NO text overlays, NO cartoons, NO illustrations. Specify lighting, composition, mood.
 `
 
 function buildBrandBlock(brand: BrandContext): string {
@@ -64,11 +64,11 @@ function buildBrandBlock(brand: BrandContext): string {
     ? brand.products
     : ''
 
-  return `Business: ${brand.business_name}
-Type: ${brand.business_type ?? 'restaurant'}
+  return `Business name: ${brand.business_name}
+Business type: ${brand.business_type ?? 'local Finnish business'}
 Description: ${brand.description ?? 'A local Finnish business'}
 Tone: ${brand.tone ?? 'warm, friendly, local'}
-Products: ${productsStr || 'general menu'}`
+Products/Services: ${productsStr || 'general offerings'}`
 }
 
 async function callGroq(systemPrompt: string, userPrompt: string): Promise<GeneratedContent> {
