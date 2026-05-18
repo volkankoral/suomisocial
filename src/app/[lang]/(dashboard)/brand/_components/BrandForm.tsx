@@ -12,6 +12,7 @@ interface BrandData {
   products?: string[] | null
   languages?: string[] | null
   logo_url?: string | null
+  overlay_text?: boolean | null
 }
 
 interface CountryOption {
@@ -51,6 +52,7 @@ export function BrandForm({ brand, countryCode, countries }: Props) {
     primary_color: brand?.primary_color ?? '#f97316',
     products: Array.isArray(brand?.products) ? (brand.products as string[]).join(', ') : '',
     country_code: countryCode,
+    overlay_text: brand?.overlay_text !== false, // varsayılan: açık
   })
 
   async function handleLogoUpload(e: React.ChangeEvent<HTMLInputElement>) {
@@ -96,6 +98,7 @@ export function BrandForm({ brand, countryCode, countries }: Props) {
           products:      form.products.split(',').map((p) => p.trim()).filter(Boolean),
           country_code:  form.country_code,
           logo_url:      logoUrl,
+          overlay_text:  form.overlay_text,
         }),
       })
       const json = await res.json()
@@ -281,6 +284,33 @@ export function BrandForm({ brand, countryCode, countries }: Props) {
           />
           <span className="text-sm font-mono text-muted-foreground">{form.primary_color}</span>
         </div>
+      </div>
+
+      {/* Görsele yazı overlay */}
+      <div>
+        <label className="block text-sm font-medium text-foreground mb-1.5">
+          ✏️ Görsel Üzerine Yazı
+        </label>
+        <label className="flex items-center gap-3 cursor-pointer group">
+          <div
+            onClick={() => setForm((f) => ({ ...f, overlay_text: !f.overlay_text }))}
+            className={`relative w-11 h-6 rounded-full transition-colors shrink-0 ${
+              form.overlay_text ? 'bg-orange-500' : 'bg-white/15'
+            }`}
+          >
+            <span className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform ${
+              form.overlay_text ? 'translate-x-5' : 'translate-x-0'
+            }`} />
+          </div>
+          <div>
+            <p className="text-sm text-foreground">
+              {form.overlay_text ? 'Açık — görsel üzerinde yazı var' : 'Kapalı — temiz görsel'}
+            </p>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              Açıksa üretilen görselin altına işletme adı ve özel gün etiketi eklenir
+            </p>
+          </div>
+        </label>
       </div>
 
       {/* Kaydet */}

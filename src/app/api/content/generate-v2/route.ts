@@ -8,6 +8,7 @@ import {
   type BrandContext,
 } from '@/lib/ai/generate-content'
 import { generateImage, type ImageAspect } from '@/lib/ai/generate-image'
+import { addTextOverlay } from '@/lib/ai/add-text-overlay'
 import { FI_SPECIAL_DAYS, FI_WEEKLY_ROUTINES, resolveSpecialDays } from '@/lib/fi-special-days'
 
 /**
@@ -46,7 +47,7 @@ export async function POST(req: NextRequest) {
   // Brand bilgisi al
   const { data: brand } = await supabase
     .from('brand_settings')
-    .select('business_name, description, tone, products')
+    .select('business_name, description, tone, products, overlay_text')
     .eq('organization_id', orgId)
     .maybeSingle()
 
@@ -123,6 +124,24 @@ export async function POST(req: NextRequest) {
       const image = await generateImage(generated.image_prompt, { aspect })
       imageUrl = image.url
       imageProvider = image.provider
+    }
+
+    // Metin overlay — video değilse uygula (brand overlay_text false yapabilir)
+    const overlayEnabled = (brand as { overlay_text?: boolean }).overlay_text !== false
+    const isVideo = body.userMediaType === 'video'
+
+    if (imageUrl && overlayEnabled && !isVideo) {
+      try {
+        imageUrl = await addTextOverlay({
+          orgId,
+          businessName: brand.business_name,
+          label:        dayLabel,
+          imageUrl,
+        })
+      } catch (overlayErr) {
+        // Overlay başarısız olursa orijinal URL ile devam et
+        console.error('Overlay hatası (devam ediliyor):', overlayErr)
+      }
     }
 
     // Draft kaydet
