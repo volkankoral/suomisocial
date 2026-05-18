@@ -35,7 +35,8 @@ const TONE_OPTIONS = [
 export function BrandForm({ brand, countryCode, countries }: Props) {
   const router = useRouter()
   const [saving, setSaving] = useState(false)
-  const [saved, setSaved] = useState(false)
+  const [saved, setSaved]   = useState(false)
+  const [error, setError]   = useState<string | null>(null)
 
   const [form, setForm] = useState({
     business_name: brand?.business_name ?? '',
@@ -50,24 +51,34 @@ export function BrandForm({ brand, countryCode, countries }: Props) {
     e.preventDefault()
     setSaving(true)
     setSaved(false)
+    setError(null)
 
-    await fetch('/api/brand', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        business_name: form.business_name,
-        description:   form.description,
-        tone:          form.tone,
-        primary_color: form.primary_color,
-        products:      form.products.split(',').map((p) => p.trim()).filter(Boolean),
-        country_code:  form.country_code,
-      }),
-    })
-
-    setSaving(false)
-    setSaved(true)
-    router.refresh()
-    setTimeout(() => setSaved(false), 3000)
+    try {
+      const res  = await fetch('/api/brand', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          business_name: form.business_name,
+          description:   form.description,
+          tone:          form.tone,
+          primary_color: form.primary_color,
+          products:      form.products.split(',').map((p) => p.trim()).filter(Boolean),
+          country_code:  form.country_code,
+        }),
+      })
+      const json = await res.json()
+      if (!res.ok) {
+        setError(json.error ?? `Hata (${res.status})`)
+      } else {
+        setSaved(true)
+        router.refresh()
+        setTimeout(() => setSaved(false), 3000)
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Beklenmeyen hata')
+    } finally {
+      setSaving(false)
+    }
   }
 
   return (
@@ -197,6 +208,9 @@ export function BrandForm({ brand, countryCode, countries }: Props) {
         </button>
         {saved && (
           <p className="text-sm text-green-400 font-medium">✓ Kaydedildi</p>
+        )}
+        {error && (
+          <p className="text-sm text-red-400 font-medium">❌ {error}</p>
         )}
       </div>
     </form>
