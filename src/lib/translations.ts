@@ -221,6 +221,16 @@ export const translations = {
       goToContent:      'İçeriklerime Git →',
       starterDone:      'gönderi hazır',
     },
+    roi: {
+      title:           '✨ Occaly Değer Özeti',
+      vsAgency:        'Bir ajansa ödeseydin',
+      hoursSaved:      'saat tasarruf ettin',
+      contentCreated:  'Üretilen İçerik',
+      published:       'Paylaşıldı',
+      totalReach:      'Toplam Erişim',
+      totalEngagement: 'Toplam Etkileşim',
+      empty:           'İçerik üretmeye başla — kazandığın değer burada birikecek.',
+    },
   },
 
   fi: {
@@ -440,6 +450,16 @@ export const translations = {
       goToContent:      'Siirry sisältöihin →',
       starterDone:      'julkaisua valmiina',
     },
+    roi: {
+      title:           '✨ Occaly-arvon yhteenveto',
+      vsAgency:        'Jos olisit maksanut toimistolle',
+      hoursSaved:      'tuntia säästetty',
+      contentCreated:  'Luotu sisältö',
+      published:       'Julkaistu',
+      totalReach:      'Kokonaiskattavuus',
+      totalEngagement: 'Sitoutuminen yhteensä',
+      empty:           'Aloita sisällön luominen — säästösi kertyvät tähän.',
+    },
   },
 
   en: {
@@ -658,6 +678,16 @@ export const translations = {
       back:             'Back',
       goToContent:      'Go to my content →',
       starterDone:      'posts ready',
+    },
+    roi: {
+      title:           '✨ Occaly Value Summary',
+      vsAgency:        'If you had paid an agency',
+      hoursSaved:      'hours saved',
+      contentCreated:  'Content Created',
+      published:       'Published',
+      totalReach:      'Total Reach',
+      totalEngagement: 'Total Engagement',
+      empty:           'Start creating content — your savings will add up here.',
     },
   },
 } as const

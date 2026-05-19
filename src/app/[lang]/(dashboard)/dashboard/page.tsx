@@ -5,6 +5,8 @@ import { getUserOrgId, getUserOrgCountry } from '@/lib/supabase/get-org'
 import { nextFriday } from '@/lib/fi-special-days'
 import { getUpcoming } from '@/lib/special-days'
 import { getRegionForCountry } from '@/lib/regions'
+import { computeRoi } from '@/lib/roi'
+import { RoiPanel } from './_components/RoiPanel'
 
 export default async function DashboardPage({ params }: { params: Promise<{ lang: string }> }) {
   const { lang } = await params
@@ -49,6 +51,28 @@ export default async function DashboardPage({ params }: { params: Promise<{ lang
   const region      = getRegionForCountry(countryCode)
   const upcoming    = getUpcoming(region, 30).slice(0, 3)
 
+  // ROI hesabı — üretilen toplam içerik + paylaşım metrikleri
+  const allDraftsRes = orgId ? await supabase
+    .from('content_drafts')
+    .select('id', { count: 'exact', head: true })
+    .eq('organization_id', orgId)
+    : { count: 0 }
+  const contentCreated = (allDraftsRes as { count: number | null }).count ?? 0
+
+  const postMetricsRes = orgId ? await supabase
+    .from('posts')
+    .select('reach, likes_count, comments_count')
+    .eq('organization_id', orgId)
+    : { data: [] }
+  const postRows = (postMetricsRes.data ?? []) as Array<{ reach: number | null; likes_count: number | null; comments_count: number | null }>
+
+  const roi = computeRoi(region, {
+    contentCreated,
+    published:       postRows.length,
+    totalReach:      postRows.reduce((s, p) => s + (p.reach ?? 0), 0),
+    totalEngagement: postRows.reduce((s, p) => s + (p.likes_count ?? 0) + (p.comments_count ?? 0), 0),
+  })
+
   // Bu hafta sonu için Cuma postu var mı?
   const friday = nextFriday()
   const fridayKey = friday.toISOString().slice(0, 10)
@@ -71,6 +95,9 @@ export default async function DashboardPage({ params }: { params: Promise<{ lang
         <h1 className="text-3xl font-bold tracking-tight gradient-text">Tervetuloa, {user?.email?.split('@')[0]}!</h1>
         <p className="mt-1 text-sm text-muted-foreground">Bu ay <span className="text-foreground font-semibold">{monthlyPosted}</span> paylaşım yaptın</p>
       </div>
+
+      {/* ROI / Değer paneli */}
+      <RoiPanel roi={roi} />
 
       {/* 3 ana kart */}
       <div className="grid gap-4 md:grid-cols-3">
