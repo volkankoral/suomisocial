@@ -61,8 +61,8 @@ export async function GET(req: NextRequest) {
       })
     }
 
-    // Yeni kullanıcı → brand kurulumuna yönlendir
-    return NextResponse.redirect(`${origin}/${lang}/brand?new=1`)
+    // Yeni kullanıcı → onboarding sihirbazına yönlendir
+    return NextResponse.redirect(`${origin}/${lang}/onboarding`)
   }
 
   // Zaten org var → dashboard'a
