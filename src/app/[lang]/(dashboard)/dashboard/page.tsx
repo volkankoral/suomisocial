@@ -3,13 +3,20 @@ import { createClient } from '@/lib/supabase/server'
 import { createServiceClient } from '@/lib/supabase/service'
 import { getUserOrgId, getUserOrgCountry } from '@/lib/supabase/get-org'
 import { nextFriday } from '@/lib/fi-special-days'
-import { getUpcoming } from '@/lib/special-days'
+import { getUpcoming, getWeeklyRoutines } from '@/lib/special-days'
 import { getRegionForCountry } from '@/lib/regions'
 import { computeRoi } from '@/lib/roi'
 import { RoiPanel } from './_components/RoiPanel'
+import { translations, type Lang } from '@/lib/translations'
+
+const DATE_LOCALE: Record<string, string> = { tr: 'tr-TR', fi: 'fi-FI', en: 'en-US' }
 
 export default async function DashboardPage({ params }: { params: Promise<{ lang: string }> }) {
-  const { lang } = await params
+  const { lang: rawLang } = await params
+  const lang   = (rawLang as Lang) in translations ? (rawLang as Lang) : 'tr'
+  const t      = translations[lang]
+  const d      = t.dashboard
+  const locale = DATE_LOCALE[lang] ?? 'tr-TR'
   const authClient = await createClient()
   const { data: { user } } = await authClient.auth.getUser()
 
@@ -73,6 +80,9 @@ export default async function DashboardPage({ params }: { params: Promise<{ lang
     totalEngagement: postRows.reduce((s, p) => s + (p.likes_count ?? 0) + (p.comments_count ?? 0), 0),
   })
 
+  // Bölgenin haftalık rutini
+  const weeklyRoutine = getWeeklyRoutines(region)[0]
+
   // Bu hafta sonu için Cuma postu var mı?
   const friday = nextFriday()
   const fridayKey = friday.toISOString().slice(0, 10)
@@ -92,8 +102,8 @@ export default async function DashboardPage({ params }: { params: Promise<{ lang
 
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-bold tracking-tight gradient-text">Tervetuloa, {user?.email?.split('@')[0]}!</h1>
-        <p className="mt-1 text-sm text-muted-foreground">Bu ay <span className="text-foreground font-semibold">{monthlyPosted}</span> paylaşım yaptın</p>
+        <h1 className="text-3xl font-bold tracking-tight gradient-text">{d.welcome}, {user?.email?.split('@')[0]}!</h1>
+        <p className="mt-1 text-sm text-muted-foreground">{d.postedSummary.replace('{n}', String(monthlyPosted))}</p>
       </div>
 
       {/* ROI / Değer paneli */}
@@ -104,23 +114,23 @@ export default async function DashboardPage({ params }: { params: Promise<{ lang
 
         {/* 1. Hafta sonu rutini */}
         <Link
-          href={`/${lang}/content/new?category=weekly_routine&routineId=hyvaa-viikonloppua`}
+          href={`/${lang}/content/new?category=weekly_routine&routineId=${weeklyRoutine?.id ?? ''}`}
           className="group rounded-2xl border border-white/8 bg-gradient-to-br from-amber-950/30 to-card p-5 hover:border-amber-500/30 transition-all duration-200"
         >
           <div className="flex items-start justify-between mb-3">
             <span className="text-3xl">📅</span>
             <span className="text-[10px] uppercase tracking-wider text-amber-400 font-semibold">
-              Cuma {friday.toLocaleDateString('fi-FI', { day: 'numeric', month: 'short' })}
+              {d.friday} {friday.toLocaleDateString(locale, { day: 'numeric', month: 'short' })}
             </span>
           </div>
-          <h3 className="text-base font-bold text-foreground mb-1">Hyvää viikonloppua</h3>
+          <h3 className="text-base font-bold text-foreground mb-1">{weeklyRoutine?.name_fi ?? ''}</h3>
           {weekendDraft ? (
-            <p className="text-xs text-green-400">✓ Hazırlandı, onayını bekliyor</p>
+            <p className="text-xs text-green-400">{d.weeklyReady}</p>
           ) : (
-            <p className="text-xs text-muted-foreground">Bu hafta sonu için içerik yok</p>
+            <p className="text-xs text-muted-foreground">{d.weeklyNone}</p>
           )}
           <p className="text-xs text-amber-400/80 mt-3 group-hover:text-amber-400 transition-colors font-medium">
-            {weekendDraft ? 'Düzenle →' : 'Hemen Hazırla →'}
+            {weekendDraft ? d.edit : d.prepareNow}
           </p>
         </Link>
 
@@ -133,24 +143,24 @@ export default async function DashboardPage({ params }: { params: Promise<{ lang
             <div className="flex items-start justify-between mb-3">
               <span className="text-3xl">🎉</span>
               <span className="text-[10px] uppercase tracking-wider text-pink-400 font-semibold">
-                {upcoming[0].daysUntil} gün sonra
+                {upcoming[0].daysUntil} {d.inDays}
               </span>
             </div>
             <h3 className="text-base font-bold text-foreground mb-1">{upcoming[0].name_fi}</h3>
             {draftSpecialIds.has(upcoming[0].id) ? (
-              <p className="text-xs text-green-400">✓ İçerik hazırlandı</p>
+              <p className="text-xs text-green-400">{d.specialReady}</p>
             ) : (
               <p className="text-xs text-muted-foreground">{upcoming[0].name_tr}</p>
             )}
             <p className="text-xs text-pink-400/80 mt-3 group-hover:text-pink-400 transition-colors font-medium">
-              {draftSpecialIds.has(upcoming[0].id) ? 'Görüntüle →' : 'İçerik Hazırla →'}
+              {draftSpecialIds.has(upcoming[0].id) ? d.view : d.prepareContent}
             </p>
           </Link>
         ) : (
           <div className="rounded-2xl border border-white/8 bg-card p-5 opacity-60">
             <span className="text-3xl block mb-3">🎉</span>
-            <h3 className="text-base font-bold text-foreground mb-1">Özel gün yok</h3>
-            <p className="text-xs text-muted-foreground">Önümüzdeki 30 gün içinde yaklaşan özel gün bulunmadı</p>
+            <h3 className="text-base font-bold text-foreground mb-1">{d.noSpecialDay}</h3>
+            <p className="text-xs text-muted-foreground">{d.noSpecialDayDesc}</p>
           </div>
         )}
 
@@ -162,13 +172,13 @@ export default async function DashboardPage({ params }: { params: Promise<{ lang
           <div className="flex items-start justify-between mb-3">
             <span className="text-3xl">🎨</span>
             <span className="text-[10px] uppercase tracking-wider text-purple-400 font-semibold">
-              Sen başlat
+              {d.youStart}
             </span>
           </div>
-          <h3 className="text-base font-bold text-foreground mb-1">Yeni Kampanya</h3>
-          <p className="text-xs text-muted-foreground">Promosyon, indirim, yeni menü</p>
+          <h3 className="text-base font-bold text-foreground mb-1">{d.newCampaign}</h3>
+          <p className="text-xs text-muted-foreground">{d.campaignDesc}</p>
           <p className="text-xs text-purple-400/80 mt-3 group-hover:text-purple-400 transition-colors font-medium">
-            Hemen Oluştur →
+            {d.createNow}
           </p>
         </Link>
 
@@ -179,38 +189,38 @@ export default async function DashboardPage({ params }: { params: Promise<{ lang
         <section className="space-y-3">
           <div className="flex items-center justify-between">
             <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">
-              Bekleyen Onaylar
+              {d.pendingApprovals}
             </h2>
             <Link href={`/${lang}/content`} className="text-xs text-primary hover:text-primary/80 font-medium">
-              Hepsini Gör →
+              {d.seeAll}
             </Link>
           </div>
 
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {drafts.slice(0, 6).map((d: { id: string; status: string; special_day_label: string; special_day_date: string; image_url: string | null; category: string }) => (
+            {drafts.slice(0, 6).map((draft: { id: string; status: string; special_day_label: string; special_day_date: string; image_url: string | null; category: string }) => (
               <Link
-                key={d.id}
+                key={draft.id}
                 href={`/${lang}/content`}
                 className="rounded-xl border border-white/8 bg-card overflow-hidden hover:border-white/20 transition-all"
               >
-                {d.image_url && (
+                {draft.image_url && (
                   <div className="aspect-square bg-zinc-900 overflow-hidden">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={d.image_url} alt="" className="w-full h-full object-cover" />
+                    <img src={draft.image_url} alt="" className="w-full h-full object-cover" />
                   </div>
                 )}
                 <div className="p-3">
-                  <p className="text-sm font-medium text-foreground truncate">{d.special_day_label}</p>
+                  <p className="text-sm font-medium text-foreground truncate">{draft.special_day_label}</p>
                   <div className="flex items-center justify-between mt-1">
                     <p className="text-[10px] text-muted-foreground">
-                      {new Date(d.special_day_date).toLocaleDateString('tr-TR')}
+                      {new Date(draft.special_day_date).toLocaleDateString(locale)}
                     </p>
                     <span className={`text-[9px] px-1.5 py-0.5 rounded-full font-medium ${
-                      d.status === 'approved'
+                      draft.status === 'approved'
                         ? 'bg-green-500/15 text-green-400'
                         : 'bg-amber-500/15 text-amber-400'
                     }`}>
-                      {d.status === 'approved' ? '✓ Onaylı' : 'Bekliyor'}
+                      {draft.status === 'approved' ? d.approvedShort : d.pendingShort}
                     </span>
                   </div>
                 </div>
@@ -225,18 +235,18 @@ export default async function DashboardPage({ params }: { params: Promise<{ lang
         <section className="rounded-xl border border-amber-500/20 bg-amber-950/15 p-4">
           <div className="flex items-start justify-between gap-4">
             <div>
-              <p className="text-sm font-semibold text-amber-400 mb-1">⚠️ Eksik hesap bağlantısı</p>
+              <p className="text-sm font-semibold text-amber-400 mb-1">{d.missingAccounts}</p>
               <p className="text-xs text-muted-foreground">
                 {connectedPlatforms.length === 0
-                  ? 'Henüz sosyal medya hesabı bağlamadın. Paylaşım yapabilmek için en az birini bağla.'
-                  : `Bağlı: ${connectedPlatforms.join(', ')}. Diğer platformları da bağlayarak tüm hesaplara aynı anda paylaşım yap.`}
+                  ? d.noAccounts
+                  : `${d.connected}: ${connectedPlatforms.join(', ')}. ${d.someAccounts}`}
               </p>
             </div>
             <Link
               href={`/${lang}/social`}
               className="shrink-0 text-xs px-3 py-1.5 rounded-lg bg-amber-500/20 text-amber-300 hover:bg-amber-500/30 transition-colors font-medium"
             >
-              Hesap Bağla →
+              {d.connectAccount}
             </Link>
           </div>
         </section>
@@ -246,7 +256,7 @@ export default async function DashboardPage({ params }: { params: Promise<{ lang
       {upcoming.length > 1 && (
         <section className="space-y-3">
           <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">
-            Yaklaşan Diğer Günler
+            {d.otherUpcoming}
           </h2>
           <div className="grid gap-2.5 sm:grid-cols-2 lg:grid-cols-4">
             {upcoming.slice(1).map((day) => (
@@ -256,10 +266,10 @@ export default async function DashboardPage({ params }: { params: Promise<{ lang
                 className="rounded-xl border border-white/8 bg-card px-4 py-3 hover:border-white/15 transition-all"
               >
                 <p className="text-[10px] font-mono text-muted-foreground mb-1">
-                  {day.resolvedDate.toLocaleDateString('fi-FI', { day: 'numeric', month: 'short' })}
+                  {day.resolvedDate.toLocaleDateString(locale, { day: 'numeric', month: 'short' })}
                 </p>
                 <p className="text-sm font-medium text-foreground">{day.name_fi}</p>
-                <p className="text-[10px] text-muted-foreground mt-0.5">{day.daysUntil} gün</p>
+                <p className="text-[10px] text-muted-foreground mt-0.5">{day.daysUntil} {d.days}</p>
               </Link>
             ))}
           </div>
