@@ -5,32 +5,52 @@ import { useRouter, useParams } from 'next/navigation'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
 import { createClient } from '@/lib/supabase/client'
+import { useT } from '@/lib/useT'
+
+function mapAuthError(msg: string, a: ReturnType<typeof useT>['auth']): string {
+  const m = msg.toLowerCase()
+  if (m.includes('invalid login') || m.includes('invalid credentials') || m.includes('wrong password') || m.includes('email not found'))
+    return a.errInvalidCredentials
+  if (m.includes('email not confirmed') || m.includes('confirm your email'))
+    return a.errEmailNotConfirmed
+  if (m.includes('too many') || m.includes('rate limit') || m.includes('429'))
+    return a.errTooManyRequests
+  if (m.includes('network') || m.includes('fetch') || m.includes('failed to fetch'))
+    return a.errNetwork
+  return msg  // fallback: Supabase'in döndürdüğü mesajı göster
+}
 
 export default function LoginPage() {
   const [email, setEmail]       = useState('')
   const [password, setPassword] = useState('')
   const [error, setError]       = useState<string | null>(null)
   const [loading, setLoading]   = useState(false)
+
   const router = useRouter()
   const params = useParams()
   const lang   = (params?.lang as string) ?? 'tr'
+  const t      = useT()
+  const a      = t.auth
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setLoading(true)
     setError(null)
 
-    const supabase = createClient()
-    const { error } = await supabase.auth.signInWithPassword({ email, password })
-
-    if (error) {
-      setError(error.message)
+    try {
+      const supabase = createClient()
+      const { error } = await supabase.auth.signInWithPassword({ email, password })
+      if (error) {
+        setError(mapAuthError(error.message, a))
+        setLoading(false)
+        return
+      }
+      router.refresh()
+      router.push('../dashboard')
+    } catch {
+      setError(a.errNetwork)
       setLoading(false)
-      return
     }
-
-    router.refresh()
-    router.push('../dashboard')
   }
 
   return (
@@ -50,7 +70,7 @@ export default function LoginPage() {
         {/* Logo */}
         <div className="flex flex-col items-center mb-8">
           <img src="/logo.svg" alt="Occaly" className="h-10 w-auto mb-3" />
-          <p className="text-sm text-muted-foreground">Yönetim paneline giriş yap</p>
+          <p className="text-sm text-muted-foreground">{a.loginSubtitle}</p>
         </div>
 
         {/* Card */}
@@ -59,7 +79,7 @@ export default function LoginPage() {
 
             <div className="space-y-1.5">
               <label htmlFor="email" className="text-sm font-medium text-foreground">
-                E-posta
+                {a.email}
               </label>
               <input
                 id="email"
@@ -75,7 +95,7 @@ export default function LoginPage() {
 
             <div className="space-y-1.5">
               <label htmlFor="password" className="text-sm font-medium text-foreground">
-                Şifre
+                {a.password}
               </label>
               <input
                 id="password"
@@ -106,17 +126,17 @@ export default function LoginPage() {
               {loading ? (
                 <span className="flex items-center justify-center gap-2">
                   <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                  Giriş yapılıyor…
+                  {a.loggingIn}
                 </span>
               ) : (
-                'Giriş Yap →'
+                a.loginBtn
               )}
             </button>
 
             <p className="text-center text-xs text-muted-foreground pt-1">
-              Hesabın yok mu?{' '}
+              {a.noAccount}{' '}
               <Link href={`/${lang}/signup`} className="text-primary hover:text-primary/80 font-medium transition-colors">
-                Ücretsiz kayıt ol
+                {a.signupFree}
               </Link>
             </p>
 
@@ -124,7 +144,7 @@ export default function LoginPage() {
         </div>
 
         <p className="text-center text-xs text-muted-foreground/50 mt-6">
-          Occaly · AI sosyal medya & reklam otomasyonu
+          Occaly · {a.tagline}
         </p>
       </motion.div>
     </main>
