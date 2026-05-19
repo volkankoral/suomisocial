@@ -10,7 +10,7 @@ import {
 import { generateImage, type ImageAspect } from '@/lib/ai/generate-image'
 import { addTextOverlay } from '@/lib/ai/add-text-overlay'
 import { findSpecialDay, findRoutine, getResolvedSpecialDays } from '@/lib/special-days'
-import { getRegionForCountry, getContentLang } from '@/lib/regions'
+import { getRegionForCountry, getContentLang, type ContentLang } from '@/lib/regions'
 
 /**
  * Yeni içerik üretim endpoint'i — 3 kategori:
@@ -43,17 +43,16 @@ export async function POST(req: NextRequest) {
   const body = await req.json() as Body
   const aspect = body.aspect ?? 'square'
 
-  // Bölge ve içerik dilini belirle
+  // Bölge (lang'i brand'den sonra hesaplayacağız)
   const countryCode = await getUserOrgCountry()
   const region      = getRegionForCountry(countryCode)
-  const lang        = getContentLang(region)
 
   const supabase = createServiceClient()
 
   // Brand bilgisi al
   const { data: brand } = await supabase
     .from('brand_settings')
-    .select('business_name, description, tone, products, overlay_text')
+    .select('business_name, description, tone, products, overlay_text, content_language')
     .eq('organization_id', orgId)
     .maybeSingle()
 
@@ -62,6 +61,11 @@ export async function POST(req: NextRequest) {
   }
 
   const brandCtx: BrandContext = brand
+
+  // İçerik dilini belirle: brand'deki override > bölge varsayılanı
+  const regionDefault = getContentLang(region)
+  const brandLang     = (brand as { content_language?: string | null }).content_language
+  const lang: ContentLang = (['fi', 'tr', 'en'].includes(brandLang ?? '') ? brandLang : regionDefault) as ContentLang
 
   try {
     let generated

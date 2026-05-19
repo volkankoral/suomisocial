@@ -5,7 +5,7 @@ import { generateSpecialDayContent, type BrandContext } from '@/lib/ai/generate-
 import { generateImage } from '@/lib/ai/generate-image'
 import { addTextOverlay } from '@/lib/ai/add-text-overlay'
 import { getUpcoming } from '@/lib/special-days'
-import { getRegionForCountry, getContentLang } from '@/lib/regions'
+import { getRegionForCountry, getContentLang, type ContentLang } from '@/lib/regions'
 
 export const maxDuration = 60
 
@@ -34,7 +34,7 @@ export async function POST() {
   // Marka bilgisi
   const { data: brand } = await supabase
     .from('brand_settings')
-    .select('business_name, description, tone, products, overlay_text')
+    .select('business_name, description, tone, products, overlay_text, content_language')
     .eq('organization_id', orgId)
     .maybeSingle()
 
@@ -45,9 +45,12 @@ export async function POST() {
   const brandCtx: BrandContext = brand
   const overlayEnabled = (brand as { overlay_text?: boolean }).overlay_text !== false
 
-  const countryCode = await getUserOrgCountry()
-  const region      = getRegionForCountry(countryCode)
-  const lang        = getContentLang(region)
+  const countryCode   = await getUserOrgCountry()
+  const region        = getRegionForCountry(countryCode)
+  const regionDefault = getContentLang(region)
+  const lang = (['fi', 'tr', 'en'].includes((brand as { content_language?: string })?.content_language ?? '')
+    ? (brand as { content_language: string }).content_language
+    : regionDefault) as ContentLang
 
   const upcoming = getUpcoming(region, 75).slice(0, STARTER_COUNT)
   if (upcoming.length === 0) {

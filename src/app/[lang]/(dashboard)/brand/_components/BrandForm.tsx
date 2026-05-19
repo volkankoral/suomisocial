@@ -14,6 +14,7 @@ interface BrandData {
   languages?: string[] | null
   logo_url?: string | null
   overlay_text?: boolean | null
+  content_language?: string | null
 }
 
 interface CountryOption {
@@ -50,13 +51,14 @@ export function BrandForm({ brand, countryCode, countries }: Props) {
   ]
 
   const [form, setForm] = useState({
-    business_name: brand?.business_name ?? '',
-    description:   brand?.description ?? '',
-    tone:          brand?.tone ?? 'samimi ve sıcak',
-    primary_color: brand?.primary_color ?? '#f97316',
-    products:      Array.isArray(brand?.products) ? (brand.products as string[]).join(', ') : '',
-    country_code:  countryCode,
-    overlay_text:  brand?.overlay_text !== false,
+    business_name:    brand?.business_name ?? '',
+    description:      brand?.description ?? '',
+    tone:             brand?.tone ?? 'samimi ve sıcak',
+    primary_color:    brand?.primary_color ?? '#f97316',
+    products:         Array.isArray(brand?.products) ? (brand.products as string[]).join(', ') : '',
+    country_code:     countryCode,
+    overlay_text:     brand?.overlay_text !== false,
+    content_language: brand?.content_language ?? '',   // '' = auto/null
   })
 
   async function handleLogoUpload(e: React.ChangeEvent<HTMLInputElement>) {
@@ -86,14 +88,15 @@ export function BrandForm({ brand, countryCode, countries }: Props) {
         method:  'POST',
         headers: { 'Content-Type': 'application/json' },
         body:    JSON.stringify({
-          business_name: form.business_name,
-          description:   form.description,
-          tone:          form.tone,
-          primary_color: form.primary_color,
-          products:      form.products.split(',').map(p => p.trim()).filter(Boolean),
-          country_code:  form.country_code,
-          logo_url:      logoUrl,
-          overlay_text:  form.overlay_text,
+          business_name:    form.business_name,
+          description:      form.description,
+          tone:             form.tone,
+          primary_color:    form.primary_color,
+          products:         form.products.split(',').map(p => p.trim()).filter(Boolean),
+          country_code:     form.country_code,
+          logo_url:         logoUrl,
+          overlay_text:     form.overlay_text,
+          content_language: form.content_language || null,  // '' → null (auto)
         }),
       })
       const json = await res.json()
@@ -249,6 +252,39 @@ export function BrandForm({ brand, countryCode, countries }: Props) {
             <p className="text-xs text-muted-foreground mt-0.5">{b.overlayDesc}</p>
           </div>
         </label>
+      </div>
+
+      {/* İçerik Dili */}
+      <div>
+        <label className="block text-sm font-medium text-foreground mb-1.5">{b.contentLang}</label>
+        <div className="grid grid-cols-2 gap-2">
+          {[
+            { value: '',   label: b.contentLangAuto },
+            { value: 'fi', label: b.contentLangFi },
+            { value: 'tr', label: b.contentLangTr },
+            { value: 'en', label: b.contentLangEn },
+          ].map(opt => (
+            <label
+              key={opt.value}
+              className={`flex items-center gap-2 rounded-lg border px-3 py-2 cursor-pointer text-sm transition-colors ${
+                form.content_language === opt.value
+                  ? 'border-orange-500/50 bg-orange-500/10 text-foreground'
+                  : 'border-white/10 bg-card text-muted-foreground hover:border-white/20 hover:text-foreground'
+              }`}
+            >
+              <input
+                type="radio"
+                name="content_language"
+                value={opt.value}
+                checked={form.content_language === opt.value}
+                onChange={e => setForm(f => ({ ...f, content_language: e.target.value }))}
+                className="sr-only"
+              />
+              {opt.label}
+            </label>
+          ))}
+        </div>
+        <p className="text-xs text-muted-foreground mt-1.5">{b.contentLangHint}</p>
       </div>
 
       {/* Kaydet */}
