@@ -2,22 +2,26 @@ import { createServiceClient } from '@/lib/supabase/service'
 import { getUserOrgId } from '@/lib/supabase/get-org'
 import { SyncButton } from './_components/SyncButton'
 import { TikTokButton } from './_components/TikTokButton'
+import { translations, type Lang } from '@/lib/translations'
 
 interface Props { params: Promise<{ lang: string }> }
 
-function fmt(n: number | null | undefined, prefix = '') {
+function fmt(n: number | null | undefined) {
   if (!n) return '—'
-  return prefix + n.toLocaleString('tr-TR')
+  return n.toLocaleString()
 }
 
 function fmtCtr(ctr: number | null | undefined) {
   if (!ctr) return '—'
-  // Meta API returns CTR as a decimal like 0.025 → %2.50
-  return `%${(ctr * 100).toFixed(2)}`
+  return `${(ctr * 100).toFixed(2)}%`
 }
 
 export default async function AdsPage({ params }: Props) {
-  await params
+  const { lang: rawLang } = await params
+  const lang = (rawLang as Lang) in translations ? (rawLang as Lang) : 'tr'
+  const t    = translations[lang]
+  const a    = t.ads
+
   const supabase = createServiceClient()
   const orgId    = await getUserOrgId()
 
@@ -38,7 +42,6 @@ export default async function AdsPage({ params }: Props) {
         .limit(50)
     : { data: [] }
 
-  // Get TikTok account
   const { data: tiktokAccount } = orgId
     ? await supabase
         .from('social_accounts')
@@ -48,13 +51,12 @@ export default async function AdsPage({ params }: Props) {
         .single()
     : { data: null }
 
-  const activeAccounts     = (adAccounts ?? []).filter((a: { is_active: boolean }) => a.is_active)
-  const connectedPlatforms = new Set(activeAccounts.map((a: { platform: string }) => a.platform))
+  const activeAccounts     = (adAccounts ?? []).filter((x: { is_active: boolean }) => x.is_active)
+  const connectedPlatforms = new Set(activeAccounts.map((x: { platform: string }) => x.platform))
   const metaConnected      = connectedPlatforms.has('meta')
   const googleConnected    = connectedPlatforms.has('google')
   const tiktokConnected    = !!tiktokAccount?.is_connected
 
-  // Toplam metrikler
   const totalSpend  = (campaigns ?? []).reduce((s: number, c: { spend: number | null }) => s + (c.spend ?? 0), 0)
   const totalImpr   = (campaigns ?? []).reduce((s: number, c: { impressions: number | null }) => s + (c.impressions ?? 0), 0)
   const totalClicks = (campaigns ?? []).reduce((s: number, c: { clicks: number | null }) => s + (c.clicks ?? 0), 0)
@@ -66,23 +68,21 @@ export default async function AdsPage({ params }: Props) {
       {/* Header */}
       <div className="flex items-start justify-between gap-4 flex-wrap">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight gradient-text">Reklam İzleme</h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Meta reklam kampanyaları — harcama, gösterim ve tıklama verileri
-          </p>
+          <h1 className="text-3xl font-bold tracking-tight gradient-text">{a.title}</h1>
+          <p className="mt-1 text-sm text-muted-foreground">{a.subtitle}</p>
         </div>
         {(metaConnected || googleConnected) && (
           <SyncButton hasGoogle={googleConnected} hasMeta={metaConnected} />
         )}
       </div>
 
-      {/* KPI kartları */}
+      {/* KPI cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         {[
-          { icon: '💶', label: 'Toplam Harcama', value: totalSpend ? `€${totalSpend.toFixed(2)}` : '—' },
-          { icon: '👁',  label: 'Gösterim',       value: fmt(totalImpr) },
-          { icon: '🖱',  label: 'Tıklama',        value: fmt(totalClicks) },
-          { icon: '📈', label: 'Ort. CTR',        value: avgCTR ? `%${(avgCTR * 100).toFixed(2)}` : '—' },
+          { icon: '💶', label: a.totalSpend,  value: totalSpend ? `€${totalSpend.toFixed(2)}` : '—' },
+          { icon: '👁',  label: a.impressions, value: fmt(totalImpr) },
+          { icon: '🖱',  label: a.clicks,      value: fmt(totalClicks) },
+          { icon: '📈', label: a.avgCtr,       value: avgCTR ? `${(avgCTR * 100).toFixed(2)}%` : '—' },
         ].map((m) => (
           <div key={m.label} className="rounded-xl border border-white/8 bg-card px-4 py-3 flex items-center gap-3">
             <span className="text-2xl">{m.icon}</span>
@@ -94,10 +94,10 @@ export default async function AdsPage({ params }: Props) {
         ))}
       </div>
 
-      {/* Platform bağlantıları */}
+      {/* Ad accounts */}
       <section className="space-y-3">
         <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">
-          Reklam Hesapları
+          {a.adAccounts}
         </h2>
         <div className="grid gap-4 sm:grid-cols-3">
 
@@ -109,7 +109,7 @@ export default async function AdsPage({ params }: Props) {
                 <span className="text-2xl">📘</span>
                 {metaConnected && (
                   <span className="text-[10px] bg-green-500/15 text-green-400 border border-green-500/20 px-2 py-0.5 rounded-lg font-medium">
-                    Bağlı
+                    {a.connected}
                   </span>
                 )}
               </div>
@@ -117,17 +117,17 @@ export default async function AdsPage({ params }: Props) {
               {metaConnected ? (
                 <div className="mt-2 space-y-1">
                   {activeAccounts
-                    .filter((a: { platform: string }) => a.platform === 'meta')
-                    .map((a: { id: string; account_name: string | null; account_id: string }) => (
-                      <p key={a.id} className="text-xs text-muted-foreground truncate">
-                        {a.account_name ?? a.account_id}
+                    .filter((x: { platform: string }) => x.platform === 'meta')
+                    .map((x: { id: string; account_name: string | null; account_id: string }) => (
+                      <p key={x.id} className="text-xs text-muted-foreground truncate">
+                        {x.account_name ?? x.account_id}
                       </p>
                     ))}
                   <a
                     href="/api/oauth/meta-ads"
                     className="inline-block mt-2 text-xs text-blue-400 hover:text-blue-300 underline-offset-2 hover:underline"
                   >
-                    Yeniden bağla
+                    {a.reconnect}
                   </a>
                 </div>
               ) : (
@@ -136,7 +136,7 @@ export default async function AdsPage({ params }: Props) {
                     href="/api/oauth/meta-ads"
                     className="block w-full text-center text-xs px-3 py-1.5 rounded-lg bg-blue-600 text-white font-medium hover:bg-blue-700 transition-colors"
                   >
-                    + Meta Ads Bağla
+                    {a.connectMeta}
                   </a>
                 </div>
               )}
@@ -151,7 +151,7 @@ export default async function AdsPage({ params }: Props) {
                 <span className="text-2xl">🔍</span>
                 {googleConnected && (
                   <span className="text-[10px] bg-green-500/15 text-green-400 border border-green-500/20 px-2 py-0.5 rounded-lg font-medium">
-                    Bağlı
+                    {a.connected}
                   </span>
                 )}
               </div>
@@ -159,17 +159,17 @@ export default async function AdsPage({ params }: Props) {
               {googleConnected ? (
                 <div className="mt-2 space-y-1">
                   {activeAccounts
-                    .filter((a: { platform: string }) => a.platform === 'google')
-                    .map((a: { id: string; account_name: string | null; account_id: string }) => (
-                      <p key={a.id} className="text-xs text-muted-foreground truncate">
-                        {a.account_name ?? a.account_id}
+                    .filter((x: { platform: string }) => x.platform === 'google')
+                    .map((x: { id: string; account_name: string | null; account_id: string }) => (
+                      <p key={x.id} className="text-xs text-muted-foreground truncate">
+                        {x.account_name ?? x.account_id}
                       </p>
                     ))}
                   <a
                     href="/api/oauth/google-ads"
                     className="inline-block mt-2 text-xs text-blue-400 hover:text-blue-300 underline-offset-2 hover:underline"
                   >
-                    Yeniden bağla
+                    {a.reconnect}
                   </a>
                 </div>
               ) : (
@@ -178,7 +178,7 @@ export default async function AdsPage({ params }: Props) {
                     href="/api/oauth/google-ads"
                     className="block w-full text-center text-xs px-3 py-1.5 rounded-lg bg-gradient-to-r from-blue-600 to-green-600 text-white font-medium hover:opacity-90 transition-opacity"
                   >
-                    + Google Ads Bağla
+                    {a.connectGoogle}
                   </a>
                 </div>
               )}
@@ -193,7 +193,7 @@ export default async function AdsPage({ params }: Props) {
                 <span className="text-2xl">🎵</span>
                 {tiktokConnected && (
                   <span className="text-[10px] bg-green-500/15 text-green-400 border border-green-500/20 px-2 py-0.5 rounded-lg font-medium">
-                    Bağlı
+                    {a.connected}
                   </span>
                 )}
               </div>
@@ -207,7 +207,7 @@ export default async function AdsPage({ params }: Props) {
                     href="/api/oauth/tiktok"
                     className="inline-block mt-2 text-xs text-purple-400 hover:text-purple-300 underline-offset-2 hover:underline"
                   >
-                    Yeniden bağla
+                    {a.reconnect}
                   </a>
                 </div>
               ) : (
@@ -221,27 +221,25 @@ export default async function AdsPage({ params }: Props) {
         </div>
       </section>
 
-      {/* Kampanya tablosu */}
+      {/* Campaign table */}
       <section className="space-y-3">
         <div className="flex items-center justify-between">
           <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">
-            Kampanyalar {campaigns && campaigns.length > 0 && (
+            {a.campaigns} {campaigns && campaigns.length > 0 && (
               <span className="normal-case text-primary ml-1 font-mono">{campaigns.length}</span>
             )}
           </h2>
           {!metaConnected && (
-            <p className="text-xs text-muted-foreground">Meta Ads bağlandıktan sonra veriler görünecek</p>
+            <p className="text-xs text-muted-foreground">{a.noDataHint}</p>
           )}
         </div>
 
         {(!campaigns || campaigns.length === 0) ? (
           <div className="rounded-xl border border-dashed border-white/12 p-12 text-center">
             <p className="text-3xl mb-2">📡</p>
-            <p className="text-sm font-medium text-foreground">Henüz kampanya verisi yok</p>
+            <p className="text-sm font-medium text-foreground">{a.emptyCampaignsTitle}</p>
             <p className="text-xs text-muted-foreground mt-1">
-              {metaConnected
-                ? 'Yukarıdaki "Senkronize Et" butonuna bas.'
-                : 'Meta Ads hesabını bağla ve senkronize et.'}
+              {metaConnected ? a.emptyCampaignsMeta : a.emptyCampaignsNoMeta}
             </p>
           </div>
         ) : (
@@ -249,7 +247,7 @@ export default async function AdsPage({ params }: Props) {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-white/8 bg-white/2">
-                  {['Platform', 'Kampanya', 'Durum', 'Harcama', 'Gösterim', 'Tıklama', 'CTR', 'CPC'].map((h) => (
+                  {[a.colPlatform, a.colCampaign, a.colStatus, a.colSpend, a.colImpressions, a.colClicks, a.colCtr, a.colCpc].map((h) => (
                     <th key={h} className="text-left text-[10px] font-semibold text-muted-foreground uppercase px-4 py-2.5 tracking-wider whitespace-nowrap">
                       {h}
                     </th>
@@ -286,10 +284,10 @@ export default async function AdsPage({ params }: Props) {
                       {c.spend ? `€${c.spend.toFixed(2)}` : '—'}
                     </td>
                     <td className="px-4 py-3 text-foreground tabular-nums">
-                      {c.impressions ? c.impressions.toLocaleString('tr-TR') : '—'}
+                      {c.impressions ? c.impressions.toLocaleString() : '—'}
                     </td>
                     <td className="px-4 py-3 text-foreground tabular-nums">
-                      {c.clicks ? c.clicks.toLocaleString('tr-TR') : '—'}
+                      {c.clicks ? c.clicks.toLocaleString() : '—'}
                     </td>
                     <td className="px-4 py-3 text-foreground tabular-nums">
                       {fmtCtr(c.ctr)}

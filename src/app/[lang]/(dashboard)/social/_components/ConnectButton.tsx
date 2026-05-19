@@ -1,14 +1,15 @@
 'use client'
 
-import { useRouter } from 'next/navigation'
+import { useT } from '@/lib/useT'
 
 interface Props {
   platform: 'instagram' | 'facebook' | 'tiktok'
   lang: string
 }
 
-export function ConnectButton({ platform, lang }: Props) {
-  const router = useRouter()
+export function ConnectButton({ platform }: Props) {
+  const t = useT()
+  const s = t.social
 
   const handleConnect = () => {
     if (platform === 'instagram' || platform === 'facebook') {
@@ -23,7 +24,7 @@ export function ConnectButton({ platform, lang }: Props) {
       onClick={handleConnect}
       className="w-full text-sm px-4 py-2.5 rounded-xl bg-primary text-primary-foreground font-semibold hover:opacity-90 transition-opacity shadow-lg shadow-blue-900/20"
     >
-      + Bağla
+      {s.connectBtn}
     </button>
   )
 }

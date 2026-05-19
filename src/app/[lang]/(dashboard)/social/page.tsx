@@ -3,6 +3,7 @@ import { getUserOrgId } from '@/lib/supabase/get-org'
 import { ConnectButton } from './_components/ConnectButton'
 import { DisconnectButton } from './_components/DisconnectButton'
 import { Animate, Stagger, FadeUpItem } from '@/components/ui/animate'
+import { translations, type Lang } from '@/lib/translations'
 
 interface Props {
   params: Promise<{ lang: string }>
@@ -16,7 +17,7 @@ type SocialAccount = {
   created_at: string
 }
 
-const PLATFORMS = [
+const PLATFORM_BASE = [
   {
     id: 'instagram' as const,
     name: 'Instagram',
@@ -24,9 +25,8 @@ const PLATFORMS = [
     gradient: 'from-purple-600/20 via-pink-600/15 to-orange-600/10',
     border: 'border-purple-500/25 hover:border-purple-500/45',
     glow: 'shadow-purple-900/20',
-    desc: 'Feed, Stories ve Reels paylaşımı',
-    phase: 'Faz 3',
     active: true,
+    phaseNum: 3,
   },
   {
     id: 'facebook' as const,
@@ -35,9 +35,8 @@ const PLATFORMS = [
     gradient: 'from-blue-600/20 to-blue-800/10',
     border: 'border-blue-500/25 hover:border-blue-500/45',
     glow: 'shadow-blue-900/20',
-    desc: 'Sayfa post ve hikaye paylaşımı',
-    phase: 'Faz 3',
     active: true,
+    phaseNum: 3,
   },
   {
     id: 'tiktok' as const,
@@ -46,24 +45,33 @@ const PLATFORMS = [
     gradient: 'from-purple-600/20 to-pink-600/10',
     border: 'border-purple-500/25 hover:border-purple-500/45',
     glow: 'shadow-purple-900/20',
-    desc: 'Kısa video paylaşımı (9:16)',
-    phase: 'Faz 4',
     active: true,
+    phaseNum: 4,
   },
 ]
 
-const ERROR_MESSAGES: Record<string, string> = {
-  meta_not_configured: 'META_APP_ID henüz ayarlanmamış. .env.local dosyasını kontrol et.',
-  state_mismatch:      'Güvenlik doğrulaması başarısız. Tekrar dene.',
-  oauth_failed:        'Meta bağlantısı başarısız. Uygulama ayarlarını kontrol et.',
-  no_code:             'Yetkilendirme iptal edildi.',
-  access_denied:       'Meta erişimi reddedildi.',
-  no_pages_found:      'Hesabına bağlı Facebook Sayfası bulunamadı. Önce bir Facebook Sayfası oluştur, sonra tekrar dene.',
-}
-
 export default async function SocialPage({ params, searchParams }: Props) {
-  const { lang }                    = await params
+  const { lang: rawLang }           = await params
   const { connected, error, info }  = await searchParams
+
+  const lang = (rawLang as Lang) in translations ? (rawLang as Lang) : 'tr'
+  const t    = translations[lang]
+  const s    = t.social
+
+  const ERROR_MESSAGES: Record<string, string> = {
+    meta_not_configured: s.errMetaNotConfigured,
+    state_mismatch:      s.errStateMismatch,
+    oauth_failed:        s.errOauthFailed,
+    no_code:             s.errNoCode,
+    access_denied:       s.errAccessDenied,
+    no_pages_found:      s.errNoPages,
+  }
+
+  const PLATFORMS = PLATFORM_BASE.map((p) => ({
+    ...p,
+    desc:  p.id === 'instagram' ? s.descInstagram : p.id === 'facebook' ? s.descFacebook : s.descTiktok,
+    phase: `${s.phaseLabel} ${p.phaseNum}`,
+  }))
 
   const supabase = createServiceClient()
   const orgId    = await getUserOrgId()
@@ -84,10 +92,8 @@ export default async function SocialPage({ params, searchParams }: Props) {
       {/* Header */}
       <Animate>
         <div>
-          <h1 className="text-3xl font-bold tracking-tight gradient-text">Sosyal Medya Hesapları</h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Instagram, Facebook ve TikTok hesaplarını bağla
-          </p>
+          <h1 className="text-3xl font-bold tracking-tight gradient-text">{s.title}</h1>
+          <p className="mt-1 text-sm text-muted-foreground">{s.subtitle}</p>
         </div>
       </Animate>
 
@@ -97,9 +103,9 @@ export default async function SocialPage({ params, searchParams }: Props) {
           <div className="rounded-xl border border-emerald-500/25 bg-emerald-950/15 px-4 py-3 flex items-center gap-3">
             <span className="w-5 h-5 rounded-full bg-emerald-500/20 flex items-center justify-center text-emerald-400 text-xs">✓</span>
             <p className="text-sm text-emerald-300 font-medium">
-              {connected === 'instagram' && 'Instagram hesabı başarıyla bağlandı!'}
-              {connected === 'facebook'  && 'Facebook sayfası başarıyla bağlandı!'}
-              {connected === 'tiktok'    && 'TikTok hesabı başarıyla bağlandı!'}
+              {connected === 'instagram' && s.connectedInstagram}
+              {connected === 'facebook'  && s.connectedFacebook}
+              {connected === 'tiktok'    && s.connectedTiktok}
             </p>
           </div>
         </Animate>
@@ -109,7 +115,7 @@ export default async function SocialPage({ params, searchParams }: Props) {
           <div className="rounded-xl border border-red-500/25 bg-red-950/15 px-4 py-3 flex items-center gap-3">
             <span className="text-red-400 text-sm">❌</span>
             <p className="text-sm text-red-300 font-medium">
-              {ERROR_MESSAGES[error] ?? `Hata: ${error}`}
+              {ERROR_MESSAGES[error] ?? `${s.errFallback}${error}`}
             </p>
           </div>
         </Animate>
@@ -117,9 +123,7 @@ export default async function SocialPage({ params, searchParams }: Props) {
       {info === 'tiktok_coming_soon' && (
         <Animate delay={0.05}>
           <div className="rounded-xl border border-amber-500/25 bg-amber-950/15 px-4 py-3">
-            <p className="text-sm text-amber-300 font-medium">
-              🎵 TikTok entegrasyonu Faz 4&apos;te eklenecek.
-            </p>
+            <p className="text-sm text-amber-300 font-medium">{s.tiktokSoon}</p>
           </div>
         </Animate>
       )}
@@ -156,23 +160,23 @@ export default async function SocialPage({ params, searchParams }: Props) {
                         <div className="flex items-center gap-2">
                           <span className="w-2 h-2 rounded-full bg-emerald-500 shadow-sm shadow-emerald-500/50" />
                           <span className="text-xs text-emerald-400 font-medium">
-                            Bağlı{account?.platform_username ? ` — @${account.platform_username}` : ''}
+                            {s.connectedStatus}{account?.platform_username ? ` — @${account.platform_username}` : ''}
                           </span>
                         </div>
                         <DisconnectButton accountId={account!.id} />
                       </div>
                     ) : p.active ? (
-                      <ConnectButton platform={p.id} lang={lang} />
+                      <ConnectButton platform={p.id} lang={rawLang} />
                     ) : (
                       <div>
                         <button
                           disabled
                           className="w-full text-sm px-4 py-2.5 rounded-xl border-2 border-dashed border-white/10 text-muted-foreground/50 cursor-not-allowed"
                         >
-                          + Bağla
+                          {s.connectBtn}
                         </button>
                         <p className="text-[10px] text-muted-foreground/50 text-center mt-2">
-                          {p.phase}&apos;de aktif olacak
+                          {p.phase} {s.comingSoonNote}
                         </p>
                       </div>
                     )}
@@ -192,20 +196,14 @@ export default async function SocialPage({ params, searchParams }: Props) {
               🔐
             </div>
             <div className="flex-1">
-              <h3 className="font-semibold text-emerald-300 mb-1 text-sm">
-                Sıfır-Bilgi Token Şifrelemesi
-              </h3>
-              <p className="text-xs text-emerald-400/70 leading-relaxed mb-3">
-                Bağladığınız hesapların access token&apos;ları <strong className="text-emerald-300">asla</strong> plaintext olarak
-                veritabanında saklanmaz. Supabase Vault (pgsodium) ile şifrelenir; şifre çözme anahtarı
-                Supabase altyapısında tutulur. Biz dahil hiç kimse token&apos;larınızı okuyamaz.
-              </p>
+              <h3 className="font-semibold text-emerald-300 mb-1 text-sm">{s.securityTitle}</h3>
+              <p className="text-xs text-emerald-400/70 leading-relaxed mb-3">{s.securityDesc}</p>
               <div className="flex flex-wrap gap-3 text-[11px]">
                 {[
-                  { icon: '🏛️', text: 'AES-256-GCM şifreleme' },
-                  { icon: '🔑', text: 'Master key bizde yok' },
-                  { icon: '🛡️', text: 'RLS ile organizasyon izolasyonu' },
-                  { icon: '🗑️', text: 'Bağlantı kesilince vault\'tan da siliniyor' },
+                  { icon: '🏛️', text: s.secTag1 },
+                  { icon: '🔑', text: s.secTag2 },
+                  { icon: '🛡️', text: s.secTag3 },
+                  { icon: '🗑️', text: s.secTag4 },
                 ].map((item) => (
                   <span
                     key={item.text}
@@ -226,7 +224,7 @@ export default async function SocialPage({ params, searchParams }: Props) {
         <Animate delay={0.15}>
           <div className="rounded-xl border border-amber-500/20 bg-amber-950/10 p-6">
             <h3 className="font-semibold text-amber-300 mb-3 flex items-center gap-2">
-              <span>⚙️</span> Meta Uygulama Kurulumu Gerekli
+              <span>⚙️</span> {s.setupTitle}
             </h3>
             <ol className="text-sm text-amber-400/80 space-y-2 list-decimal list-inside">
               <li>developers.facebook.com → Uygulamam → Ayarlar → Temel</li>
@@ -252,10 +250,8 @@ export default async function SocialPage({ params, searchParams }: Props) {
         <Animate delay={0.18}>
           <div className="rounded-2xl border border-dashed border-white/10 p-12 text-center">
             <p className="text-4xl mb-4">🔗</p>
-            <p className="text-sm font-medium text-foreground">Henüz hesap bağlanmadı</p>
-            <p className="text-xs text-muted-foreground mt-1.5">
-              Yukarıdan Instagram veya Facebook&apos;a &quot;+ Bağla&quot; butonuyla bağlan.
-            </p>
+            <p className="text-sm font-medium text-foreground">{s.noAccountsTitle}</p>
+            <p className="text-xs text-muted-foreground mt-1.5">{s.noAccountsHint}</p>
           </div>
         </Animate>
       )}
@@ -265,7 +261,7 @@ export default async function SocialPage({ params, searchParams }: Props) {
         <Animate delay={0.2}>
           <section className="space-y-3">
             <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">
-              Bağlı Hesaplar
+              {s.connectedAccounts}
             </h2>
             <div className="space-y-2">
               {(accounts ?? []).map((acc: SocialAccount) => {
@@ -284,7 +280,7 @@ export default async function SocialPage({ params, searchParams }: Props) {
                     </div>
                     <div className="ml-auto flex items-center gap-2">
                       <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                      <span className="text-xs text-emerald-400 font-medium">Aktif</span>
+                      <span className="text-xs text-emerald-400 font-medium">{s.active}</span>
                     </div>
                   </div>
                 )

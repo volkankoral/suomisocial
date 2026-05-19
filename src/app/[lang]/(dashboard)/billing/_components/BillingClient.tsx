@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { useSearchParams } from 'next/navigation'
+import { useT } from '@/lib/useT'
 
 interface Plan {
   id: string
@@ -31,14 +32,6 @@ interface Props {
   hasStripeCustomer: boolean
 }
 
-const STATUS_LABELS: Record<string, { label: string; color: string }> = {
-  active:    { label: 'Aktif',          color: 'bg-green-500/15 text-green-400 border-green-500/20' },
-  trialing:  { label: 'Deneme',         color: 'bg-blue-500/15 text-blue-400 border-blue-500/20' },
-  past_due:  { label: 'Ödeme Gerekli',  color: 'bg-red-500/15 text-red-400 border-red-500/20' },
-  canceled:  { label: 'İptal Edildi',   color: 'bg-white/8 text-muted-foreground border-white/10' },
-  inactive:  { label: 'Pasif',          color: 'bg-white/8 text-muted-foreground border-white/10' },
-}
-
 export function BillingClient({ subscription, plans, hasStripeCustomer }: Props) {
   const searchParams = useSearchParams()
   const success  = searchParams.get('success')
@@ -46,6 +39,17 @@ export function BillingClient({ subscription, plans, hasStripeCustomer }: Props)
 
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'yearly'>('monthly')
   const [loading, setLoading] = useState<string | null>(null)
+
+  const t = useT()
+  const b = t.billing
+
+  const STATUS_LABELS: Record<string, { label: string; color: string }> = {
+    active:   { label: b.statusActive,   color: 'bg-green-500/15 text-green-400 border-green-500/20' },
+    trialing: { label: b.statusTrialing, color: 'bg-blue-500/15 text-blue-400 border-blue-500/20' },
+    past_due: { label: b.statusPastDue,  color: 'bg-red-500/15 text-red-400 border-red-500/20' },
+    canceled: { label: b.statusCanceled, color: 'bg-white/8 text-muted-foreground border-white/10' },
+    inactive: { label: b.statusInactive, color: 'bg-white/8 text-muted-foreground border-white/10' },
+  }
 
   const currentPlanId = subscription?.plans?.id
 
@@ -61,7 +65,7 @@ export function BillingClient({ subscription, plans, hasStripeCustomer }: Props)
       if (data.url) {
         window.location.href = data.url
       } else {
-        alert(data.error ?? 'Bir hata oluştu')
+        alert(data.error ?? b.errorOccurred)
       }
     } finally {
       setLoading(null)
@@ -76,7 +80,7 @@ export function BillingClient({ subscription, plans, hasStripeCustomer }: Props)
       if (data.url) {
         window.location.href = data.url
       } else {
-        alert(data.error ?? 'Portal açılamadı')
+        alert(data.error ?? b.portalError)
       }
     } finally {
       setLoading(null)
@@ -85,33 +89,33 @@ export function BillingClient({ subscription, plans, hasStripeCustomer }: Props)
 
   return (
     <div className="space-y-8">
-      {/* Başlık */}
+      {/* Header */}
       <div>
-        <h1 className="text-3xl font-bold tracking-tight gradient-text">Abonelik & Faturalama</h1>
-        <p className="mt-1 text-sm text-muted-foreground">Planını yönet, fatura geçmişini gör</p>
+        <h1 className="text-3xl font-bold tracking-tight gradient-text">{b.pageTitle}</h1>
+        <p className="mt-1 text-sm text-muted-foreground">{b.pageSubtitle}</p>
       </div>
 
-      {/* Başarı / İptal mesajları */}
+      {/* Success / Cancel messages */}
       {success && (
         <div className="rounded-xl border border-green-500/30 bg-green-500/10 px-5 py-4 text-green-300 text-sm">
-          ✅ Aboneliğin başarıyla başlatıldı! Planın birkaç dakika içinde aktifleşecek.
+          {b.successMsg}
         </div>
       )}
       {canceled && (
         <div className="rounded-xl border border-white/12 bg-white/4 px-5 py-4 text-muted-foreground text-sm">
-          ℹ️ Ödeme iptal edildi. İstediğin zaman tekrar deneyebilirsin.
+          {b.canceledMsg}
         </div>
       )}
 
-      {/* Mevcut Abonelik */}
+      {/* Current subscription */}
       <section className="rounded-xl border border-white/8 bg-card p-5 space-y-4">
-        <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-widest">Mevcut Plan</h2>
+        <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-widest">{b.currentPlan}</h2>
 
         {subscription ? (
           <div className="flex items-center justify-between flex-wrap gap-4">
             <div className="space-y-1">
               <div className="flex items-center gap-3">
-                <p className="text-xl font-bold text-foreground">{subscription.plans?.name ?? 'Bilinmeyen Plan'}</p>
+                <p className="text-xl font-bold text-foreground">{subscription.plans?.name ?? b.unknownPlan}</p>
                 <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium border ${
                   STATUS_LABELS[subscription.status]?.color ?? STATUS_LABELS.inactive.color
                 }`}>
@@ -119,17 +123,17 @@ export function BillingClient({ subscription, plans, hasStripeCustomer }: Props)
                 </span>
                 {subscription.is_manual && (
                   <span className="text-[10px] px-2 py-0.5 rounded-full bg-purple-500/15 text-purple-400 border border-purple-500/20 font-medium">
-                    Manuel
+                    {b.manual}
                   </span>
                 )}
               </div>
               <p className="text-sm text-muted-foreground">
-                {subscription.billing_cycle === 'monthly' ? 'Aylık' : 'Yıllık'} ·{' '}
-                €{subscription.plans?.price_monthly?.toFixed(2)}/ay
+                {subscription.billing_cycle === 'monthly' ? b.billingMonthly : b.billingYearly} ·{' '}
+                €{subscription.plans?.price_monthly?.toFixed(2)}{b.perMonth}
               </p>
               {subscription.current_period_end && (
                 <p className="text-xs text-muted-foreground">
-                  Sonraki yenileme: {new Date(subscription.current_period_end).toLocaleDateString('tr-TR')}
+                  {b.nextRenewal} {new Date(subscription.current_period_end).toLocaleDateString()}
                 </p>
               )}
             </div>
@@ -140,25 +144,25 @@ export function BillingClient({ subscription, plans, hasStripeCustomer }: Props)
                 disabled={loading === 'portal'}
                 className="text-sm px-4 py-2 rounded-xl border border-white/12 text-muted-foreground hover:text-foreground hover:border-white/25 transition-all disabled:opacity-40"
               >
-                {loading === 'portal' ? 'Açılıyor…' : '🔧 Faturalama Yönetimi'}
+                {loading === 'portal' ? b.openingPortal : b.managePortal}
               </button>
             )}
           </div>
         ) : (
           <div className="text-center py-6">
             <p className="text-3xl mb-2">📦</p>
-            <p className="text-muted-foreground text-sm">Aktif aboneliğin yok</p>
-            <p className="text-xs text-muted-foreground mt-1">Aşağıdan bir plan seçerek başla</p>
+            <p className="text-muted-foreground text-sm">{b.noSubscription}</p>
+            <p className="text-xs text-muted-foreground mt-1">{b.noSubscriptionHint}</p>
           </div>
         )}
       </section>
 
-      {/* Plan Seçimi */}
+      {/* Plan selection */}
       <section className="space-y-4">
         <div className="flex items-center justify-between flex-wrap gap-3">
-          <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-widest">Planlar</h2>
+          <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-widest">{b.plans}</h2>
 
-          {/* Aylık / Yıllık toggle */}
+          {/* Monthly / Yearly toggle */}
           <div className="flex items-center gap-1 rounded-xl bg-white/5 p-1 border border-white/8">
             <button
               onClick={() => setBillingCycle('monthly')}
@@ -168,7 +172,7 @@ export function BillingClient({ subscription, plans, hasStripeCustomer }: Props)
                   : 'text-muted-foreground hover:text-foreground'
               }`}
             >
-              Aylık
+              {b.billingMonthly}
             </button>
             <button
               onClick={() => setBillingCycle('yearly')}
@@ -178,7 +182,7 @@ export function BillingClient({ subscription, plans, hasStripeCustomer }: Props)
                   : 'text-muted-foreground hover:text-foreground'
               }`}
             >
-              Yıllık
+              {b.billingYearly}
               <span className="ml-1.5 text-[9px] bg-green-500/20 text-green-400 px-1.5 py-0.5 rounded-full">
                 -20%
               </span>
@@ -221,7 +225,7 @@ export function BillingClient({ subscription, plans, hasStripeCustomer }: Props)
                     </div>
                     {plan.is_featured && (
                       <span className="text-[9px] bg-orange-500/15 text-orange-400 border border-orange-500/20 px-2 py-0.5 rounded-full font-medium whitespace-nowrap">
-                        ⭐ Popüler
+                        {b.popular}
                       </span>
                     )}
                   </div>
@@ -230,10 +234,10 @@ export function BillingClient({ subscription, plans, hasStripeCustomer }: Props)
                     <span className="text-3xl font-bold text-foreground">
                       €{price.toFixed(0)}
                     </span>
-                    <span className="text-xs text-muted-foreground">/ay</span>
+                    <span className="text-xs text-muted-foreground">{b.perMonth}</span>
                     {billingCycle === 'yearly' && plan.price_yearly && (
                       <p className="text-xs text-green-400 mt-0.5">
-                        €{plan.price_yearly.toFixed(0)}/yıl olarak faturalanır
+                        €{plan.price_yearly.toFixed(0)}{b.billedYearlyFmt}
                       </p>
                     )}
                   </div>
@@ -261,14 +265,14 @@ export function BillingClient({ subscription, plans, hasStripeCustomer }: Props)
                     }`}
                   >
                     {isLoading
-                      ? 'Yönlendiriliyor…'
+                      ? b.btnLoading
                       : isCurrent
-                      ? '✓ Mevcut Plan'
+                      ? b.btnCurrent
                       : !hasStripePrice
-                      ? 'Yakında'
+                      ? b.btnComingSoon
                       : plan.is_featured
-                      ? 'Başla →'
-                      : 'Seç →'}
+                      ? b.btnStart
+                      : b.btnSelect}
                   </button>
                 </div>
               </div>
@@ -277,13 +281,13 @@ export function BillingClient({ subscription, plans, hasStripeCustomer }: Props)
         </div>
       </section>
 
-      {/* Sorular */}
+      {/* FAQ */}
       <section className="rounded-xl border border-white/8 bg-card/50 p-5">
-        <h2 className="text-sm font-semibold mb-3 text-foreground">Sıkça Sorulan Sorular</h2>
+        <h2 className="text-sm font-semibold mb-3 text-foreground">{b.faqTitle}</h2>
         <div className="space-y-3 text-sm text-muted-foreground">
-          <p><span className="text-foreground font-medium">Plan değiştirebilir miyim?</span> — Evet, istediğin zaman plan değiştirebilirsin. Fark hesaplanarak uygulanır.</p>
-          <p><span className="text-foreground font-medium">İptal nasıl yapılır?</span> — &quot;Faturalama Yönetimi&quot; butonu üzerinden Stripe portalına girerek aboneliğini iptal edebilirsin.</p>
-          <p><span className="text-foreground font-medium">İndirim kuponu var mı?</span> — Ödeme sayfasında kupon kodu girebilirsin.</p>
+          <p><span className="text-foreground font-medium">{b.faq1q}</span> — {b.faq1a}</p>
+          <p><span className="text-foreground font-medium">{b.faq2q}</span> — {b.faq2a}</p>
+          <p><span className="text-foreground font-medium">{b.faq3q}</span> — {b.faq3a}</p>
         </div>
       </section>
     </div>

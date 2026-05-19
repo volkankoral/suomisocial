@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { useT } from '@/lib/useT'
 
 interface Props {
   hasGoogle: boolean
@@ -12,6 +13,9 @@ export function SyncButton({ hasGoogle, hasMeta }: Props) {
   const [loading, setLoading] = useState(false)
   const [result, setResult]   = useState<string | null>(null)
   const router = useRouter()
+  const t = useT()
+  const a = t.ads
+  // t.common used as fallback for generic error
 
   async function sync() {
     setLoading(true)
@@ -34,10 +38,10 @@ export function SyncButton({ hasGoogle, hasMeta }: Props) {
       }
 
       if (errors.length) setResult(`✕ ${errors.join(' | ')}`)
-      else setResult(`✓ ${totalSynced} kampanya senkronize edildi`)
+      else setResult(a.synced.replace('{n}', String(totalSynced)))
       router.refresh()
     } catch (err) {
-      setResult(`✕ ${err instanceof Error ? err.message : 'Hata'}`)
+      setResult(`✕ ${err instanceof Error ? err.message : t.common.error}`)
     } finally {
       setLoading(false)
     }
@@ -53,10 +57,10 @@ export function SyncButton({ hasGoogle, hasMeta }: Props) {
         {loading ? (
           <>
             <span className="inline-block w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-            Senkronize ediliyor…
+            {a.syncing}
           </>
         ) : (
-          <>🔄 Senkronize Et</>
+          <>{a.syncBtn}</>
         )}
       </button>
       {result && (

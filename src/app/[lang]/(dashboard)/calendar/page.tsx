@@ -1,17 +1,21 @@
 import { getUpcomingSpecialDays, getSpecialDays, getSupportedCountries } from '@/lib/calendar'
 import { getUserOrgCountry } from '@/lib/supabase/get-org'
 import { Animate, Stagger, FadeUpItem } from '@/components/ui/animate'
+import { translations, type Lang } from '@/lib/translations'
 
 interface Props {
   params: Promise<{ lang: string }>
 }
 
 export default async function CalendarPage({ params }: Props) {
-  await params
+  const { lang: rawLang } = await params
+  const lang = (rawLang as Lang) in translations ? (rawLang as Lang) : 'tr'
+  const t    = translations[lang]
+  const c    = t.calendar
 
   const countryCode = await getUserOrgCountry()
   const countries   = getSupportedCountries()
-  const countryName = countries.find((c) => c.code === countryCode)?.name ?? countryCode
+  const countryName = countries.find((x) => x.code === countryCode)?.name ?? countryCode
 
   const today        = new Date()
   const year         = today.getFullYear()
@@ -29,16 +33,16 @@ export default async function CalendarPage({ params }: Props) {
       <Animate>
         <div className="flex items-start justify-between gap-4 flex-wrap">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight gradient-text">Takvim</h1>
+            <h1 className="text-3xl font-bold tracking-tight gradient-text">{c.title}</h1>
             <p className="mt-1 text-sm text-muted-foreground">
-              {countryName} ({countryCode}) — resmi tatiller &amp; özel günler · {year}
+              {countryName} ({countryCode}) — {c.subtitle} · {year}
             </p>
           </div>
           <a
             href="brand"
             className="text-xs px-3 py-1.5 rounded-lg border border-white/10 text-muted-foreground hover:text-foreground hover:border-white/20 transition-colors"
           >
-            Ülke değiştir →
+            {c.changeCountry}
           </a>
         </div>
       </Animate>
@@ -48,12 +52,12 @@ export default async function CalendarPage({ params }: Props) {
         <Animate delay={0.05}>
           <div className="rounded-2xl border border-orange-500/25 bg-orange-950/20 p-5 relative overflow-hidden">
             <div className="absolute inset-0 bg-gradient-to-r from-orange-600/10 to-transparent pointer-events-none" />
-            <p className="text-[10px] font-mono text-orange-400 mb-1.5 uppercase tracking-widest">Bugün</p>
+            <p className="text-[10px] font-mono text-orange-400 mb-1.5 uppercase tracking-widest">{c.todayLabel}</p>
             <p className="text-xl font-bold text-foreground mb-1">{todaySpecial.name}</p>
             <div className="flex gap-2 mt-3 flex-wrap">
               {todaySpecial.isBankHoliday && (
                 <span className="text-xs bg-amber-500/20 text-amber-300 border border-amber-500/25 px-2.5 py-1 rounded-lg font-medium">
-                  Resmi Tatil
+                  {c.publicHoliday}
                 </span>
               )}
               <span className="text-xs bg-white/5 text-muted-foreground border border-white/10 px-2.5 py-1 rounded-lg font-mono">
@@ -70,11 +74,11 @@ export default async function CalendarPage({ params }: Props) {
         <Animate delay={0.1}>
           <section className="space-y-3">
             <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">
-              Önümüzdeki 30 Gün
+              {c.upcoming30}
             </h2>
             <Stagger className="space-y-2">
               {upcoming.length === 0 && (
-                <p className="text-sm text-muted-foreground">Yaklaşan özel gün yok.</p>
+                <p className="text-sm text-muted-foreground">{c.noUpcoming}</p>
               )}
               {upcoming.map((day) => {
                 const d       = new Date(day.date + 'T00:00:00')
@@ -105,22 +109,22 @@ export default async function CalendarPage({ params }: Props) {
                         <div className="flex gap-1.5 mt-2 flex-wrap">
                           {day.isBankHoliday && (
                             <span className="text-[9px] bg-amber-500/15 text-amber-400 border border-amber-500/20 px-1.5 py-0.5 rounded-md font-medium">
-                              Resmi Tatil
+                              {c.publicHoliday}
                             </span>
                           )}
                           {day.type === 'observance' && (
                             <span className="text-[9px] bg-zinc-500/15 text-zinc-400 border border-zinc-500/20 px-1.5 py-0.5 rounded-md font-medium">
-                              Anma
+                              {c.observance}
                             </span>
                           )}
                           {day.type === 'optional' && (
                             <span className="text-[9px] bg-blue-500/15 text-blue-400 border border-blue-500/20 px-1.5 py-0.5 rounded-md font-medium">
-                              Opsiyonel
+                              {c.optional}
                             </span>
                           )}
                           {day.type === 'school' && (
                             <span className="text-[9px] bg-purple-500/15 text-purple-400 border border-purple-500/20 px-1.5 py-0.5 rounded-md font-medium">
-                              Okul
+                              {c.school}
                             </span>
                           )}
                         </div>
@@ -140,16 +144,16 @@ export default async function CalendarPage({ params }: Props) {
             {/* Stats */}
             <section className="space-y-3">
               <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">
-                {year} Özeti
+                {c.yearSummary.replace('{year}', String(year))}
               </h2>
               <div className="space-y-2">
-                <StatRow icon="🏛️" label="Resmi tatil"      value={bankHolidays.length} sub="İşyerleri kapalı" color="text-amber-400" />
-                <StatRow icon="📅" label="Diğer özel gün" value={otherDays.length}    sub="Anma / kültürel"   color="text-blue-400" />
-                <StatRow icon="🎉" label="Toplam"         value={allThisYear.length}  sub="İçerik üretilecek" color="text-emerald-400" />
+                <StatRow icon="🏛️" label={c.bankHolidays} value={bankHolidays.length} sub={c.bankHolidaysSub} color="text-amber-400" />
+                <StatRow icon="📅" label={c.otherDays}    value={otherDays.length}    sub={c.otherDaysSub}    color="text-blue-400" />
+                <StatRow icon="🎉" label={c.total}        value={allThisYear.length}  sub={c.totalSub}        color="text-emerald-400" />
               </div>
             </section>
 
-            {/* Sonraki resmi tatil */}
+            {/* Next public holiday */}
             {(() => {
               const next = upcoming.find((d) => d.isBankHoliday)
               if (!next) return null
@@ -160,7 +164,7 @@ export default async function CalendarPage({ params }: Props) {
               return (
                 <section className="space-y-2">
                   <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">
-                    Sonraki Resmi Tatil
+                    {c.nextHoliday}
                   </h3>
                   <div className="rounded-xl border border-amber-500/25 bg-amber-950/15 p-4">
                     <p className="font-semibold text-foreground">{next.name}</p>
@@ -169,7 +173,7 @@ export default async function CalendarPage({ params }: Props) {
                         weekday: 'long', day: 'numeric', month: 'long',
                       })}
                       {' · '}
-                      {daysUntil === 0 ? 'Bugün!' : `${daysUntil} gün sonra`}
+                      {daysUntil === 0 ? c.todayBang : `${daysUntil} ${c.daysLater}`}
                     </p>
                   </div>
                 </section>

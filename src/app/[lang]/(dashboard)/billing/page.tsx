@@ -3,11 +3,13 @@ import { getUserOrgId } from '@/lib/supabase/get-org'
 import { redirect } from 'next/navigation'
 import { Suspense } from 'react'
 import { BillingClient } from './_components/BillingClient'
+import { translations, type Lang } from '@/lib/translations'
 
 interface Props { params: Promise<{ lang: string }> }
 
 export default async function BillingPage({ params }: Props) {
-  const { lang } = await params
+  const { lang: rawLang } = await params
+  const lang = (rawLang as Lang) in translations ? (rawLang as Lang) : 'tr'
   const supabase  = createServiceClient()
   const orgId     = await getUserOrgId()
   if (!orgId) redirect(`/${lang}/login`)
@@ -36,8 +38,10 @@ export default async function BillingPage({ params }: Props) {
     .eq('id', orgId)
     .single()
 
+  const loadingText = translations[lang].billing.loading
+
   return (
-    <Suspense fallback={<div className="text-muted-foreground text-sm p-8">Yükleniyor…</div>}>
+    <Suspense fallback={<div className="text-muted-foreground text-sm p-8">{loadingText}</div>}>
       <BillingClient
         subscription={subscription}
         plans={plans ?? []}

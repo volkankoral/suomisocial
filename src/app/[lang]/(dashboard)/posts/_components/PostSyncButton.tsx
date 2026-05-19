@@ -2,11 +2,14 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { useT } from '@/lib/useT'
 
 export function PostSyncButton() {
   const [loading, setLoading] = useState(false)
   const [result, setResult]   = useState<string | null>(null)
   const router = useRouter()
+  const t = useT()
+  const p = t.posts
 
   async function sync() {
     setLoading(true)
@@ -14,11 +17,11 @@ export function PostSyncButton() {
     try {
       const res  = await fetch('/api/posts/sync', { method: 'POST' })
       const json = await res.json()
-      if (!res.ok) throw new Error(json.error ?? 'Senkronizasyon hatası')
-      setResult(`✓ ${json.synced} post güncellendi`)
+      if (!res.ok) throw new Error(json.error ?? p.syncErr)
+      setResult(p.synced.replace('{n}', String(json.synced)))
       router.refresh()
     } catch (err) {
-      setResult(`✕ ${err instanceof Error ? err.message : 'Hata'}`)
+      setResult(`✕ ${err instanceof Error ? err.message : p.syncErr}`)
     } finally {
       setLoading(false)
     }
@@ -34,10 +37,10 @@ export function PostSyncButton() {
         {loading ? (
           <>
             <span className="inline-block w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-            Güncelleniyor…
+            {p.syncing}
           </>
         ) : (
-          <>📊 Metrikleri Güncelle</>
+          <>{p.syncBtn}</>
         )}
       </button>
       {result && (
