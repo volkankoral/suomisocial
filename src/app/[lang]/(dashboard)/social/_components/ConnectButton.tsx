@@ -3,7 +3,7 @@
 import { useT } from '@/lib/useT'
 
 interface Props {
-  platform: 'instagram' | 'facebook' | 'tiktok'
+  platform: 'instagram' | 'facebook' | 'tiktok' | 'google_business'
   lang: string
 }
 
@@ -16,6 +16,8 @@ export function ConnectButton({ platform }: Props) {
       window.location.href = `/api/oauth/meta?platform=${platform}`
     } else if (platform === 'tiktok') {
       window.location.href = '/api/oauth/tiktok'
+    } else if (platform === 'google_business') {
+      window.location.href = '/api/oauth/google-business'
     }
   }
 

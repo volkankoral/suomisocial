@@ -247,6 +247,10 @@ export const translations = {
       secTag3:                'RLS ile organizasyon izolasyonu',
       secTag4:                'Bağlantı kesilince vault\'tan da siliniyor',
       setupTitle:             'Meta Uygulama Kurulumu Gerekli',
+      descGoogleBusiness:             'Google Haritalar & Arama gönderileri',
+      connectedGoogleBusiness:        'Google Business profili başarıyla bağlandı!',
+      errGoogleBusinessNotConfigured: 'Google Business yapılandırması eksik. .env.local dosyasını kontrol et.',
+      errNoLocations:                 'Google Business hesabında işletme konumu bulunamadı.',
     },
     ads: {
       title:                  'Reklam İzleme',
@@ -671,6 +675,10 @@ export const translations = {
       secTag3:                'RLS-organisaatioeristys',
       secTag4:                'Poistetaan vaultista yhteyden katkaisun yhteydessä',
       setupTitle:             'Meta-sovelluksen asetukset vaaditaan',
+      descGoogleBusiness:             'Google Maps & Haku -julkaisut',
+      connectedGoogleBusiness:        'Google Business -profiili yhdistetty onnistuneesti!',
+      errGoogleBusinessNotConfigured: 'Google Business -määritys puuttuu. Tarkista .env.local-tiedosto.',
+      errNoLocations:                 'Google Business -tililtä ei löytynyt toimipisteitä.',
     },
     ads: {
       title:                  'Mainosseuranta',
@@ -1095,6 +1103,10 @@ export const translations = {
       secTag3:                'RLS organization isolation',
       secTag4:                'Deleted from vault on disconnect',
       setupTitle:             'Meta App Setup Required',
+      descGoogleBusiness:             'Google Maps & Search posts',
+      connectedGoogleBusiness:        'Google Business profile connected successfully!',
+      errGoogleBusinessNotConfigured: 'Google Business configuration missing. Check your .env.local file.',
+      errNoLocations:                 'No business locations found in your Google Business account.',
     },
     ads: {
       title:                  'Ad Tracking',

@@ -48,6 +48,16 @@ const PLATFORM_BASE = [
     active: true,
     phaseNum: 4,
   },
+  {
+    id: 'google_business' as const,
+    name: 'Google Business',
+    icon: '📍',
+    gradient: 'from-blue-600/20 via-emerald-600/15 to-amber-600/10',
+    border: 'border-emerald-500/25 hover:border-emerald-500/45',
+    glow: 'shadow-emerald-900/20',
+    active: true,
+    phaseNum: 5,
+  },
 ]
 
 export default async function SocialPage({ params, searchParams }: Props) {
@@ -59,17 +69,26 @@ export default async function SocialPage({ params, searchParams }: Props) {
   const s    = t.social
 
   const ERROR_MESSAGES: Record<string, string> = {
-    meta_not_configured: s.errMetaNotConfigured,
-    state_mismatch:      s.errStateMismatch,
-    oauth_failed:        s.errOauthFailed,
-    no_code:             s.errNoCode,
-    access_denied:       s.errAccessDenied,
-    no_pages_found:      s.errNoPages,
+    meta_not_configured:             s.errMetaNotConfigured,
+    state_mismatch:                  s.errStateMismatch,
+    oauth_failed:                    s.errOauthFailed,
+    no_code:                         s.errNoCode,
+    access_denied:                   s.errAccessDenied,
+    no_pages_found:                  s.errNoPages,
+    google_business_not_configured:  s.errGoogleBusinessNotConfigured,
+    no_locations_found:              s.errNoLocations,
+  }
+
+  const PLATFORM_DESC: Record<string, string> = {
+    instagram:       s.descInstagram,
+    facebook:        s.descFacebook,
+    tiktok:          s.descTiktok,
+    google_business: s.descGoogleBusiness,
   }
 
   const PLATFORMS = PLATFORM_BASE.map((p) => ({
     ...p,
-    desc:  p.id === 'instagram' ? s.descInstagram : p.id === 'facebook' ? s.descFacebook : s.descTiktok,
+    desc:  PLATFORM_DESC[p.id],
     phase: `${s.phaseLabel} ${p.phaseNum}`,
   }))
 
@@ -103,9 +122,10 @@ export default async function SocialPage({ params, searchParams }: Props) {
           <div className="rounded-xl border border-emerald-500/25 bg-emerald-950/15 px-4 py-3 flex items-center gap-3">
             <span className="w-5 h-5 rounded-full bg-emerald-500/20 flex items-center justify-center text-emerald-400 text-xs">✓</span>
             <p className="text-sm text-emerald-300 font-medium">
-              {connected === 'instagram' && s.connectedInstagram}
-              {connected === 'facebook'  && s.connectedFacebook}
-              {connected === 'tiktok'    && s.connectedTiktok}
+              {connected === 'instagram'       && s.connectedInstagram}
+              {connected === 'facebook'        && s.connectedFacebook}
+              {connected === 'tiktok'          && s.connectedTiktok}
+              {connected === 'google_business' && s.connectedGoogleBusiness}
             </p>
           </div>
         </Animate>
@@ -130,7 +150,7 @@ export default async function SocialPage({ params, searchParams }: Props) {
 
       {/* Platform cards */}
       <Animate delay={0.08}>
-        <Stagger className="grid gap-4 sm:grid-cols-3">
+        <Stagger className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {PLATFORMS.map((p) => {
             const isConnected = connectedPlatforms.has(p.id)
             const account = (accounts ?? []).find((a: SocialAccount) => a.platform === p.id)
