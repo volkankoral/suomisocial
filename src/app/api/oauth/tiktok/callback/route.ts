@@ -89,10 +89,10 @@ export async function GET(request: NextRequest) {
 
     const admin = createServiceClient()
 
-    // Varolan vault ID'lerini al (upsert için)
+    // Varolan vault ID'sini al (upsert için)
     const { data: existing } = await admin
       .from('social_accounts')
-      .select('access_token_vault_id, refresh_token_vault_id')
+      .select('access_token_vault_id')
       .eq('organization_id', orgId)
       .eq('platform', 'tiktok')
       .eq('platform_account_id', open_id)
@@ -104,33 +104,20 @@ export async function GET(request: NextRequest) {
       `tiktok_access_${orgId}_${open_id}`,
     )
 
-    let refreshVaultId: string | null = null
-    if (refresh_token) {
-      refreshVaultId = await upsertToken(
-        refresh_token,
-        existing?.refresh_token_vault_id,
-        `tiktok_refresh_${orgId}_${open_id}`,
-      )
-    }
-
-    // 4. DB'ye kaydet
-    const expiresAt = new Date(Date.now() + expires_in * 1000).toISOString()
-    const refreshExpiresAt = refresh_expires_in
-      ? new Date(Date.now() + refresh_expires_in * 1000).toISOString()
-      : null
+    // 4. DB'ye kaydet (Meta callback ile aynı kolonlar — güvenli)
+    const expiresAt = new Date(Date.now() + (expires_in ?? 86400) * 1000).toISOString()
 
     const { error: dbErr } = await admin.from('social_accounts').upsert(
       {
-        organization_id:        orgId,
-        platform:               'tiktok',
-        platform_account_id:    open_id,
-        platform_username:      displayName,
-        access_token:           null,
-        access_token_vault_id:  accessVaultId,
-        refresh_token_vault_id: refreshVaultId,
-        token_expires_at:       expiresAt,
-        is_active:              true,
-        metadata:               { open_id, refresh_expires_in },
+        organization_id:       orgId,
+        platform:              'tiktok',
+        platform_account_id:   open_id,
+        platform_username:     displayName,
+        access_token:          null,
+        access_token_vault_id: accessVaultId,
+        token_expires_at:      expiresAt,
+        is_active:             true,
+        metadata:              { open_id, has_refresh: !!refresh_token },
       },
       { onConflict: 'organization_id,platform,platform_account_id' },
     )
