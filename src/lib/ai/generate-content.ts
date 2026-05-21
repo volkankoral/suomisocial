@@ -69,8 +69,15 @@ Respond ONLY in JSON (no other text, no markdown fences):
 Rules:
 - caption_fi: Write the MAIN caption in NATURAL ${langName}. 120-200 characters. Warm, local, casual tone. Use 1-3 emojis. NEVER use stiff translated phrases.
 - caption_tr: A short ${refLang} reference translation of the caption so the business owner can verify the meaning.
-- hashtags: 5-8 hashtags WITHOUT # symbol. Mix local ${langName} tags (${LANG_TAGS[lang]}, etc.) + business-specific tags relevant to the actual business type.
+- hashtags: 5-8 hashtags WITHOUT # symbol. Mix local ${langName} tags (${LANG_TAGS[lang]}, etc.) + business-specific tags relevant to the actual business type. Hashtags must be real, correctly spelled ${langName} words — no typos, no garbled text.
 - image_prompt: Detailed ENGLISH description (60-100 words). MUST be PHOTOREALISTIC like a professional stock photo or editorial photograph. Style must match the business type (e.g. tech/SaaS → modern workspace/device screens/abstract tech, restaurant → food close-ups/table settings, retail → product/lifestyle). If people are included, describe them only by body language/hands/silhouette — avoid close-up faces to prevent AI distortion. NO text overlays, NO cartoons, NO illustrations, NO video-game aesthetics. Specify lighting (e.g. "soft natural window light"), composition, mood.
+${lang === 'fi' ? `
+FINNISH LANGUAGE RULES (mandatory — errors will be rejected):
+1. Vowel harmony (vokaalisointu): words with back vowels (a, o, u) take suffixes with a/o/u; words with front vowels (ä, ö, y) take suffixes with ä/ö/y. Mixed loanwords ending in front vowel (e.g. "Occaly" ends in y → front harmony → "Occalyllä" not "Occalylla").
+2. Inflection (taivutus): use correct case suffixes. Illative plural of "asia" = "asioihin" (NOT "asiin"). Genitive plural of "rakas" = "rakkaiden" (NOT "rakkaitten" in modern text).
+3. Company/brand names: apply Finnish vowel harmony based on the last vowel of the brand name.
+4. Spell all hashtags as complete, correct Finnish words. No abbreviations, no garbled text (e.g. "#isänpäivä" NOT "#isnpiv").
+5. Avoid overly formal or archaic forms. Write as a native Finnish speaker would on social media.` : ''}
 `
 }
 
