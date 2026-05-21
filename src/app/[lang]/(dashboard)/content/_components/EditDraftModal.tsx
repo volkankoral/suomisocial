@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useT } from '@/lib/useT'
@@ -10,25 +10,65 @@ interface Props {
   captionFi: string
   captionTr: string
   hashtags: string[]
+  imageUrl?: string | null
 }
 
-export function EditDraftModal({ draftId, captionFi, captionTr, hashtags }: Props) {
+export function EditDraftModal({ draftId, captionFi, captionTr, hashtags, imageUrl }: Props) {
   const router = useRouter()
   const t = useT()
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
-  const [open, setOpen]           = useState(false)
-  const [fi, setFi]               = useState(captionFi)
-  const [tr, setTr]               = useState(captionTr)
-  const [tags, setTags]           = useState(hashtags.join(', '))
-  const [saving, setSaving]       = useState(false)
-  const [error, setError]         = useState<string | null>(null)
+  const [open, setOpen]               = useState(false)
+  const [fi, setFi]                   = useState(captionFi)
+  const [tr, setTr]                   = useState(captionTr)
+  const [tags, setTags]               = useState(hashtags.join(', '))
+  const [currentImageUrl, setCurrentImageUrl] = useState(imageUrl ?? null)
+  const [previewUrl, setPreviewUrl]   = useState<string | null>(null)
+  const [uploading, setUploading]     = useState(false)
+  const [saving, setSaving]           = useState(false)
+  const [error, setError]             = useState<string | null>(null)
 
   function openModal() {
     setFi(captionFi)
     setTr(captionTr)
     setTags(hashtags.join(', '))
+    setCurrentImageUrl(imageUrl ?? null)
+    setPreviewUrl(null)
     setError(null)
     setOpen(true)
+  }
+
+  async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    // Local preview
+    const localUrl = URL.createObjectURL(file)
+    setPreviewUrl(localUrl)
+    setError(null)
+    setUploading(true)
+
+    try {
+      const form = new FormData()
+      form.append('file', file)
+      form.append('type', 'post-media')
+
+      const res = await fetch('/api/upload', { method: 'POST', body: form })
+      if (!res.ok) {
+        const json = await res.json().catch(() => ({}))
+        throw new Error(json.error ?? 'Yükleme hatası')
+      }
+      const { url } = await res.json()
+      setCurrentImageUrl(url)
+      setPreviewUrl(null)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Görsel yüklenemedi')
+      setPreviewUrl(null)
+    } finally {
+      setUploading(false)
+      // reset input so same file can be re-selected
+      if (fileInputRef.current) fileInputRef.current.value = ''
+    }
   }
 
   async function save() {
@@ -40,14 +80,19 @@ export function EditDraftModal({ draftId, captionFi, captionTr, hashtags }: Prop
         .map(h => h.trim().replace(/^#/, ''))
         .filter(Boolean)
 
+      const body: Record<string, unknown> = {
+        caption_fi: fi.trim(),
+        caption_tr: tr.trim(),
+        hashtags:   parsedTags,
+      }
+      if (currentImageUrl !== imageUrl) {
+        body.image_url = currentImageUrl
+      }
+
       const res = await fetch(`/api/drafts/${draftId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          caption_fi: fi.trim(),
-          caption_tr: tr.trim(),
-          hashtags:   parsedTags,
-        }),
+        body: JSON.stringify(body),
       })
 
       if (!res.ok) {
@@ -63,6 +108,8 @@ export function EditDraftModal({ draftId, captionFi, captionTr, hashtags }: Prop
       setSaving(false)
     }
   }
+
+  const displayImage = previewUrl ?? currentImageUrl
 
   return (
     <>
@@ -85,7 +132,7 @@ export function EditDraftModal({ draftId, captionFi, captionTr, hashtags }: Prop
               exit={{ opacity: 0 }}
               transition={{ duration: 0.18 }}
               className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm"
-              onClick={() => !saving && setOpen(false)}
+              onClick={() => !saving && !uploading && setOpen(false)}
             />
 
             {/* Modal */}
@@ -104,7 +151,7 @@ export function EditDraftModal({ draftId, captionFi, captionTr, hashtags }: Prop
                   <h2 className="font-semibold text-foreground text-sm">✏️ Taslağı Düzenle</h2>
                   <button
                     onClick={() => setOpen(false)}
-                    disabled={saving}
+                    disabled={saving || uploading}
                     className="w-7 h-7 rounded-lg flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-white/8 transition-colors text-lg leading-none"
                   >
                     ×
@@ -113,6 +160,64 @@ export function EditDraftModal({ draftId, captionFi, captionTr, hashtags }: Prop
 
                 {/* İçerik */}
                 <div className="flex-1 overflow-y-auto px-5 py-4 space-y-4">
+
+                  {/* Görsel */}
+                  <div>
+                    <label className="block text-xs font-medium text-muted-foreground mb-1.5">
+                      🖼 Görsel
+                    </label>
+                    <div className="relative rounded-xl overflow-hidden border border-white/10 bg-white/4">
+                      {displayImage ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          src={displayImage}
+                          alt="Taslak görseli"
+                          className={`w-full h-48 object-cover transition-opacity ${uploading ? 'opacity-50' : 'opacity-100'}`}
+                        />
+                      ) : (
+                        <div className="w-full h-32 flex flex-col items-center justify-center gap-2 text-muted-foreground/50">
+                          <span className="text-3xl">🖼</span>
+                          <span className="text-xs">Görsel yok</span>
+                        </div>
+                      )}
+
+                      {/* Upload overlay */}
+                      {uploading && (
+                        <div className="absolute inset-0 flex items-center justify-center bg-black/40">
+                          <div className="flex flex-col items-center gap-2">
+                            <span className="w-6 h-6 rounded-full border-2 border-white/30 border-t-white animate-spin" />
+                            <span className="text-xs text-white/70">Yükleniyor…</span>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Değiştir butonu */}
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept="image/jpeg,image/png,image/webp"
+                      className="hidden"
+                      onChange={handleFileChange}
+                      disabled={uploading || saving}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => fileInputRef.current?.click()}
+                      disabled={uploading || saving}
+                      className="mt-2 w-full text-xs py-2 rounded-lg border border-white/10 bg-white/4 text-muted-foreground hover:text-foreground hover:border-white/20 transition-colors disabled:opacity-40 flex items-center justify-center gap-1.5"
+                    >
+                      {uploading ? (
+                        <>
+                          <span className="w-3 h-3 rounded-full border-2 border-white/30 border-t-white animate-spin" />
+                          Yükleniyor…
+                        </>
+                      ) : (
+                        <>📁 Görseli Değiştir</>
+                      )}
+                    </button>
+                    <p className="text-[10px] text-muted-foreground/40 mt-1 text-center">JPG, PNG veya WebP · Maks 50 MB</p>
+                  </div>
 
                   {/* Fince Caption */}
                   <div>
@@ -148,7 +253,7 @@ export function EditDraftModal({ draftId, captionFi, captionTr, hashtags }: Prop
                   {/* Hashtag'ler */}
                   <div>
                     <label className="block text-xs font-medium text-muted-foreground mb-1.5">
-                      # Hashtag'ler
+                      # Hashtag&apos;ler
                       <span className="text-[10px] text-muted-foreground/40 ml-1">(virgül veya boşlukla ayır)</span>
                     </label>
                     <input
@@ -176,14 +281,14 @@ export function EditDraftModal({ draftId, captionFi, captionTr, hashtags }: Prop
                 <div className="px-5 pb-5 pt-3 flex gap-2.5 shrink-0 border-t border-white/8">
                   <button
                     onClick={() => setOpen(false)}
-                    disabled={saving}
+                    disabled={saving || uploading}
                     className="flex-1 px-4 py-2.5 rounded-xl text-sm font-medium border border-white/10 bg-white/4 text-muted-foreground hover:text-foreground hover:border-white/20 transition-colors disabled:opacity-40"
                   >
                     İptal
                   </button>
                   <button
                     onClick={save}
-                    disabled={saving || !fi.trim()}
+                    disabled={saving || uploading || !fi.trim()}
                     className="flex-1 px-4 py-2.5 rounded-xl text-sm font-semibold bg-primary text-primary-foreground hover:opacity-90 transition-opacity disabled:opacity-40 flex items-center justify-center gap-2"
                   >
                     {saving ? (

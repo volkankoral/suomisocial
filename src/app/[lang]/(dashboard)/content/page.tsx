@@ -124,6 +124,7 @@ export default async function ContentPage({ params, searchParams }: Props) {
                   captionFi={draft.caption_fi ?? ''}
                   captionTr={draft.caption_tr ?? ''}
                   hashtags={draft.hashtags ?? []}
+                  imageUrl={draft.image_url}
                 />
                 <PreviewModal draft={draft} brandName={brandName} igUsername={igUsername} logoUrl={logoUrl} />
               </div>

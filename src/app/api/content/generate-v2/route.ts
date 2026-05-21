@@ -40,6 +40,15 @@ export async function POST(req: NextRequest) {
   const orgId = await getUserOrgId()
   if (!orgId) return NextResponse.json({ error: 'Yetkisiz' }, { status: 401 })
 
+  // Admin kontrolü — admin orglar FLUX Pro kullanır
+  const supabaseAdmin = createServiceClient()
+  const { data: orgRow } = await supabaseAdmin
+    .from('organizations')
+    .select('is_admin')
+    .eq('id', orgId)
+    .single()
+  const isAdmin = orgRow?.is_admin === true
+
   const body = await req.json() as Body
   const aspect = body.aspect ?? 'square'
 
@@ -47,7 +56,7 @@ export async function POST(req: NextRequest) {
   const countryCode = await getUserOrgCountry()
   const region      = getRegionForCountry(countryCode)
 
-  const supabase = createServiceClient()
+  const supabase = supabaseAdmin
 
   // Brand bilgisi al
   const { data: brand } = await supabase
@@ -129,8 +138,9 @@ export async function POST(req: NextRequest) {
       imageUrl = body.userMediaUrl
       imageProvider = 'user-upload'
     } else {
-      // AI ile üret (Replicate/FLUX varsa, yoksa Pollinations)
-      const image = await generateImage(generated.image_prompt, { aspect })
+      // Admin → FLUX 1.1 Pro (Replicate), diğerleri → Pollinations (ücretsiz)
+      const provider = isAdmin && process.env.REPLICATE_API_TOKEN ? 'flux' : 'pollinations'
+      const image = await generateImage(generated.image_prompt, { aspect, provider })
       imageUrl = image.url
       imageProvider = image.provider
     }

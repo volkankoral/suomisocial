@@ -30,6 +30,14 @@ export default async function NewContentPage({ params, searchParams }: Props) {
     redirect(`/${lang}/brand?new=1`)
   }
 
+  // Admin kontrolü
+  const { data: orgRow } = await supabase
+    .from('organizations')
+    .select('is_admin')
+    .eq('id', orgId)
+    .maybeSingle()
+  const isAdmin = orgRow?.is_admin === true
+
   // Bölgeye göre özel günler
   const countryCode = await getUserOrgCountry()
   const region      = getRegionForCountry(countryCode)
@@ -51,6 +59,7 @@ export default async function NewContentPage({ params, searchParams }: Props) {
           daysUntil: d.daysUntil,
           date: d.resolvedDate.toISOString().slice(0, 10),
         }))}
+        isAdmin={isAdmin}
       />
     </Suspense>
   )

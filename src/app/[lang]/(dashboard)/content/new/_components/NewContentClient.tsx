@@ -37,6 +37,7 @@ interface Props {
   specialDays: SpecialDayItem[]
   routines: RoutineItem[]
   upcomingDays: UpcomingDay[]
+  isAdmin?: boolean
 }
 
 export function NewContentClient({
@@ -47,6 +48,7 @@ export function NewContentClient({
   specialDays,
   routines,
   upcomingDays,
+  isAdmin = false,
 }: Props) {
   const router = useRouter()
   const t = useT()
@@ -253,9 +255,18 @@ export function NewContentClient({
                 : 'border-white/8 bg-card text-muted-foreground hover:border-white/20'
             }`}
           >
-            <span className="text-xl block mb-1">🤖</span>
+            <div className="flex items-center gap-2 mb-1">
+              <span className="text-xl">🤖</span>
+              {isAdmin && (
+                <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-md bg-violet-500/20 text-violet-300 border border-violet-500/30 leading-none">
+                  FLUX Pro
+                </span>
+              )}
+            </div>
             <p className="font-medium">{n.aiGenerate}</p>
-            <p className="text-[10px] opacity-70 mt-0.5">{n.aiGenerateDesc}</p>
+            <p className="text-[10px] opacity-70 mt-0.5">
+              {isAdmin ? 'FLUX 1.1 Pro — yüksek kalite görsel' : n.aiGenerateDesc}
+            </p>
           </button>
           <button
             type="button"
