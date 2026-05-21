@@ -4,6 +4,7 @@ import { getUpcomingSpecialDays } from '@/lib/calendar'
 import { GenerateButton } from './_components/GenerateButton'
 import { DraftActions } from './_components/DraftActions'
 import { PreviewModal } from './_components/PreviewModal'
+import { EditDraftModal } from './_components/EditDraftModal'
 import { BulkDeleteButton } from './_components/BulkDeleteButton'
 import { Animate, Stagger, FadeUpItem } from '@/components/ui/animate'
 import { translations, type Lang } from '@/lib/translations'
@@ -118,6 +119,12 @@ export default async function ContentPage({ params, searchParams }: Props) {
 
               <div className="flex items-center gap-2 flex-wrap">
                 <DraftActions draftId={draft.id} currentStatus={draft.status} archived={!!draft.archived} />
+                <EditDraftModal
+                  draftId={draft.id}
+                  captionFi={draft.caption_fi ?? ''}
+                  captionTr={draft.caption_tr ?? ''}
+                  hashtags={draft.hashtags ?? []}
+                />
                 <PreviewModal draft={draft} brandName={brandName} igUsername={igUsername} logoUrl={logoUrl} />
               </div>
             </div>
