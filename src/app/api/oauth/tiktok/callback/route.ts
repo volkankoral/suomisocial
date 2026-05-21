@@ -42,7 +42,12 @@ export async function GET(request: NextRequest) {
 
     const tokenRes = await fetch('https://open.tiktokapi.com/v2/oauth/token/', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      headers: {
+        'Content-Type':  'application/x-www-form-urlencoded',
+        'Cache-Control': 'no-cache',
+      },
+      // Next.js fetch cache'ini devre dışı bırak
+      cache: 'no-store',
       body: new URLSearchParams({
         client_key:    process.env.TIKTOK_CLIENT_KEY!,
         client_secret: process.env.TIKTOK_CLIENT_SECRET!,
