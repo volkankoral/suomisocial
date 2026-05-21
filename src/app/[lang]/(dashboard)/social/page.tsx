@@ -183,7 +183,7 @@ export default async function SocialPage({ params, searchParams }: Props) {
                             {s.connectedStatus}{account?.platform_username ? ` — @${account.platform_username}` : ''}
                           </span>
                         </div>
-                        <DisconnectButton accountId={account!.id} />
+                        <DisconnectButton accountId={account!.id} platformName={p.name} />
                       </div>
                     ) : p.active ? (
                       <ConnectButton platform={p.id} lang={rawLang} />

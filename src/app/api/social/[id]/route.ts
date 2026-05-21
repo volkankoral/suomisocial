@@ -38,15 +38,7 @@ export async function DELETE(
     return NextResponse.json({ error: 'Hesap bulunamadı' }, { status: 404 })
   }
 
-  // Vault'taki şifreli token'ları temizle
-  if (account?.access_token_vault_id) {
-    await deleteToken(account.access_token_vault_id)
-  }
-  if (account?.refresh_token_vault_id) {
-    await deleteToken(account.refresh_token_vault_id)
-  }
-
-  // DB kaydını sil (service client ile)
+  // DB kaydını önce sil (hızlı yol — kullanıcıyı bekletme)
   const { error } = await admin
     .from('social_accounts')
     .delete()
@@ -57,6 +49,18 @@ export async function DELETE(
     console.error('[disconnect] delete error:', error)
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
+
+  // Vault token'larını arka planda temizle (non-blocking — kullanıcıyı yavaşlatmasın)
+  const vaultCleanup = async () => {
+    if (account?.access_token_vault_id) {
+      await deleteToken(account.access_token_vault_id).catch(() => {})
+    }
+    if (account?.refresh_token_vault_id) {
+      await deleteToken(account.refresh_token_vault_id).catch(() => {})
+    }
+  }
+  // Fire-and-forget
+  vaultCleanup()
 
   return NextResponse.json({ ok: true })
 }
