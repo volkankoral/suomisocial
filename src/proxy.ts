@@ -2,12 +2,42 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { defaultLocale, locales } from '@/dictionaries'
 
+// Ülke kodu → dil eşlemesi (ISO 3166-1 alpha-2)
+const COUNTRY_TO_LOCALE: Record<string, string> = {
+  // Türkçe
+  TR: 'tr',
+  // Suomi (Finnish)
+  FI: 'fi',
+  // Geri kalan herkes için İngilizce uygulanır (aşağıda fallback)
+}
+
 function pickLocale(request: NextRequest): string {
+  // 1. Kullanıcı açık tercih yapmışsa cookie'den al
+  const cookieLocale = request.cookies.get('NEXT_LOCALE')?.value
+  if (cookieLocale && (locales as readonly string[]).includes(cookieLocale)) {
+    return cookieLocale
+  }
+
+  // 2. Vercel IP geolocation header'ı (production'da otomatik gelir)
+  const country =
+    request.headers.get('x-vercel-ip-country') ??
+    request.headers.get('cf-ipcountry') ??
+    ''
+  if (country && COUNTRY_TO_LOCALE[country.toUpperCase()]) {
+    return COUNTRY_TO_LOCALE[country.toUpperCase()]
+  }
+  // FI/TR dışındaki tüm ülkeler için English (Vercel header geldiyse ama eşleşmediyse)
+  if (country) {
+    return 'en'
+  }
+
+  // 3. Browser Accept-Language fallback (local development veya header yoksa)
   const accept = request.headers.get('accept-language') ?? ''
   const preferred = accept
     .split(',')
     .map((part) => part.trim().split(';')[0].split('-')[0])
     .find((code) => (locales as readonly string[]).includes(code))
+
   return preferred ?? defaultLocale
 }
 

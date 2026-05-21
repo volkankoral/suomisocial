@@ -37,6 +37,9 @@ export function NavBar({ links, email, lang }: Props) {
     pathname === href || pathname.startsWith(href + '/')
 
   function switchLang(newLang: string) {
+    // Tercih cookie'sini 1 yıllığına yaz — bir sonraki ziyarette IP otomatik dilini geçersiz kılar
+    document.cookie = `NEXT_LOCALE=${newLang}; path=/; max-age=${60 * 60 * 24 * 365}; SameSite=Lax`
+
     // /tr/content → /fi/content
     const segments = pathname.split('/')
     segments[1] = newLang
