@@ -98,13 +98,23 @@ export async function GET(request: NextRequest) {
       .eq('platform_account_id', open_id)
       .maybeSingle()
 
-    const accessVaultId = await upsertToken(
-      access_token,
-      existing?.access_token_vault_id,
-      `tiktok_access_${orgId}_${open_id}`,
-    )
+    // 3b. Vault'a kaydet (hata olursa plaintext fallback)
+    let accessVaultId: string | null = null
+    try {
+      accessVaultId = await upsertToken(
+        access_token,
+        existing?.access_token_vault_id,
+        `tiktok_access_${orgId}_${open_id}`,
+      )
+    } catch (vaultErr: unknown) {
+      const msg = vaultErr instanceof Error ? vaultErr.message : String(vaultErr)
+      console.error('[tiktok/callback] vault error:', msg)
+      return NextResponse.redirect(
+        `${APP_URL}/${lang}/social?error=tiktok_vault_failed&detail=${encodeURIComponent(msg.slice(0, 150))}`,
+      )
+    }
 
-    // 4. DB'ye kaydet (Meta callback ile aynı kolonlar — güvenli)
+    // 4. DB'ye kaydet
     const expiresAt = new Date(Date.now() + (expires_in ?? 86400) * 1000).toISOString()
 
     const { error: dbErr } = await admin.from('social_accounts').upsert(
@@ -128,8 +138,9 @@ export async function GET(request: NextRequest) {
     }
 
     return NextResponse.redirect(`${APP_URL}/${lang}/social?connected=tiktok`)
-  } catch (err) {
-    console.error('[tiktok/callback] unexpected error:', err)
-    return NextResponse.redirect(`${APP_URL}/${lang}/social?error=oauth_failed`)
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err)
+    console.error('[tiktok/callback] unexpected error:', msg)
+    return NextResponse.redirect(`${APP_URL}/${lang}/social?error=oauth_failed&detail=${encodeURIComponent(msg.slice(0, 150))}`)
   }
 }
