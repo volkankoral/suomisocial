@@ -17,7 +17,10 @@ export async function GET(request: NextRequest) {
   // TikTok v2 auth URL (Login Kit)
   const authUrl = new URL('https://www.tiktok.com/v2/auth/authorize/')
   authUrl.searchParams.set('client_key', clientKey!)
-  authUrl.searchParams.set('scope', 'user.info.basic,video.upload,video.publish')
+  // Sandbox'ta sadece Login Kit scope'ları çalışır.
+  // video.upload + video.publish için Content Posting API ürününü eklemek gerekir.
+  // Şimdilik bağlantı testini user.info.basic ile yapalım.
+  authUrl.searchParams.set('scope', 'user.info.basic,user.info.profile')
   authUrl.searchParams.set('response_type', 'code')
   authUrl.searchParams.set('redirect_uri', redirectUri)
   authUrl.searchParams.set('state', state)
