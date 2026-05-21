@@ -55,15 +55,16 @@ export async function GET(request: NextRequest) {
     if (!tokenRes.ok) {
       const err = await tokenRes.text()
       console.error('[tiktok/callback] token error:', err)
-      return NextResponse.redirect(`${APP_URL}/${lang}/social?error=oauth_failed`)
+      return NextResponse.redirect(`${APP_URL}/${lang}/social?error=tiktok_token_failed&detail=${encodeURIComponent(err.slice(0, 120))}`)
     }
 
     const tokenData = await tokenRes.json()
+    console.log('[tiktok/callback] tokenData keys:', Object.keys(tokenData))
     const { access_token, open_id, expires_in, refresh_token, refresh_expires_in } = tokenData
 
     if (!access_token || !open_id) {
-      console.error('[tiktok/callback] missing token fields:', tokenData)
-      return NextResponse.redirect(`${APP_URL}/${lang}/social?error=oauth_failed`)
+      console.error('[tiktok/callback] missing token fields:', JSON.stringify(tokenData))
+      return NextResponse.redirect(`${APP_URL}/${lang}/social?error=tiktok_no_token&detail=${encodeURIComponent(JSON.stringify(tokenData).slice(0, 120))}`)
     }
 
     // 2. Kullanıcı bilgisi al
@@ -120,25 +121,23 @@ export async function GET(request: NextRequest) {
 
     const { error: dbErr } = await admin.from('social_accounts').upsert(
       {
-        organization_id:         orgId,
-        platform:                'tiktok',
-        platform_account_id:     open_id,
-        platform_username:       displayName,
-        access_token:            null,
-        access_token_vault_id:   accessVaultId,
-        refresh_token:           null,
-        refresh_token_vault_id:  refreshVaultId,
-        token_expires_at:        expiresAt,
-        refresh_token_expires_at: refreshExpiresAt,
-        is_active:               true,
-        metadata:                { open_id },
+        organization_id:        orgId,
+        platform:               'tiktok',
+        platform_account_id:    open_id,
+        platform_username:      displayName,
+        access_token:           null,
+        access_token_vault_id:  accessVaultId,
+        refresh_token_vault_id: refreshVaultId,
+        token_expires_at:       expiresAt,
+        is_active:              true,
+        metadata:               { open_id, refresh_expires_in },
       },
       { onConflict: 'organization_id,platform,platform_account_id' },
     )
 
     if (dbErr) {
       console.error('[tiktok/callback] db error:', dbErr)
-      return NextResponse.redirect(`${APP_URL}/${lang}/social?error=oauth_failed`)
+      return NextResponse.redirect(`${APP_URL}/${lang}/social?error=tiktok_db_failed&detail=${encodeURIComponent(dbErr.message.slice(0, 120))}`)
     }
 
     return NextResponse.redirect(`${APP_URL}/${lang}/social?connected=tiktok`)
