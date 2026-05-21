@@ -2,92 +2,148 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createServiceClient } from '@/lib/supabase/service'
 import { getUserOrgId } from '@/lib/supabase/get-org'
+import { upsertToken } from '@/lib/vault'
+
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://occaly.com'
 
 export async function GET(request: NextRequest) {
-  const authClient = await createClient()
-  const { data: { user } } = await authClient.auth.getUser()
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-
   const { searchParams } = new URL(request.url)
-  const code = searchParams.get('code')
+  const code  = searchParams.get('code')
   const state = searchParams.get('state')
+  const error = searchParams.get('error')
 
-  if (!code || !state) {
-    return NextResponse.json({ error: 'Missing code or state' }, { status: 400 })
+  const lang = request.cookies.get('NEXT_LOCALE')?.value ?? 'tr'
+
+  // Kullanıcı erişimi reddettiyse
+  if (error === 'access_denied') {
+    return NextResponse.redirect(`${APP_URL}/${lang}/social?error=access_denied`)
   }
 
-  // Verify state
+  if (!code || !state) {
+    return NextResponse.redirect(`${APP_URL}/${lang}/social?error=no_code`)
+  }
+
+  // Auth kontrolü
+  const authClient = await createClient()
+  const { data: { user } } = await authClient.auth.getUser()
+  if (!user) {
+    return NextResponse.redirect(`${APP_URL}/${lang}/login`)
+  }
+
+  // CSRF state kontrolü
   const storedState = request.cookies.get('tiktok_oauth_state')?.value
-  if (storedState !== state) {
-    return NextResponse.json({ error: 'Invalid state' }, { status: 400 })
+  if (!storedState || storedState !== state) {
+    return NextResponse.redirect(`${APP_URL}/${lang}/social?error=state_mismatch`)
   }
 
   try {
-    // Exchange code for access token (TikTok v2)
-    const tokenResponse = await fetch('https://open.tiktokapi.com/v2/oauth/token/', {
+    // 1. Code → Access Token değişimi
+    const redirectUri = `${APP_URL}/api/oauth/tiktok/callback`
+
+    const tokenRes = await fetch('https://open.tiktokapi.com/v2/oauth/token/', {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       body: new URLSearchParams({
-        client_key: process.env.TIKTOK_CLIENT_KEY!,
+        client_key:    process.env.TIKTOK_CLIENT_KEY!,
         client_secret: process.env.TIKTOK_CLIENT_SECRET!,
         code,
-        grant_type: 'authorization_code',
-        redirect_uri: `${process.env.NEXT_PUBLIC_APP_URL || 'https://suomisocial-ruby.vercel.app'}/api/oauth/tiktok/callback`,
+        grant_type:    'authorization_code',
+        redirect_uri:  redirectUri,
       }).toString(),
     })
 
-    if (!tokenResponse.ok) {
-      const err = await tokenResponse.text()
-      console.error('TikTok token error:', err)
-      return NextResponse.json({ error: 'Failed to get token' }, { status: 500 })
+    if (!tokenRes.ok) {
+      const err = await tokenRes.text()
+      console.error('[tiktok/callback] token error:', err)
+      return NextResponse.redirect(`${APP_URL}/${lang}/social?error=oauth_failed`)
     }
 
-    const { access_token, open_id, expires_in } = await tokenResponse.json()
+    const tokenData = await tokenRes.json()
+    const { access_token, open_id, expires_in, refresh_token, refresh_expires_in } = tokenData
 
-    // Get user info (TikTok v2)
-    const userResponse = await fetch('https://open.tiktokapi.com/v2/user/info/?fields=display_name,avatar_url', {
-      method: 'GET',
-      headers: {
-        Authorization: `Bearer ${access_token}`,
-      },
-    })
-
-    if (!userResponse.ok) {
-      return NextResponse.json({ error: 'Failed to get user info' }, { status: 500 })
+    if (!access_token || !open_id) {
+      console.error('[tiktok/callback] missing token fields:', tokenData)
+      return NextResponse.redirect(`${APP_URL}/${lang}/social?error=oauth_failed`)
     }
 
-    const userData = await userResponse.json()
-    const displayName = userData.data?.user?.display_name || 'TikTok User'
+    // 2. Kullanıcı bilgisi al
+    const userRes = await fetch(
+      'https://open.tiktokapi.com/v2/user/info/?fields=display_name,avatar_url,username',
+      { headers: { Authorization: `Bearer ${access_token}` } },
+    )
 
-    // Save to database
+    let displayName = 'TikTok User'
+    if (userRes.ok) {
+      const userData = await userRes.json()
+      displayName = userData.data?.user?.display_name
+        ?? userData.data?.user?.username
+        ?? 'TikTok User'
+    }
+
+    // 3. Vault'a şifreli kaydet
     const orgId = await getUserOrgId()
-    const supabase = createServiceClient()
-
-    const { error } = await supabase
-      .from('social_accounts')
-      .upsert(
-        {
-          organization_id: orgId,
-          platform: 'tiktok',
-          platform_user_id: open_id,
-          display_name: displayName,
-          access_token,
-          refresh_token: null, // TikTok doesn't provide refresh token in this flow
-          token_expires_at: new Date(Date.now() + expires_in * 1000).toISOString(),
-          is_connected: true,
-        },
-        { onConflict: 'organization_id,platform' }
-      )
-
-    if (error) {
-      console.error('Database error:', error)
-      return NextResponse.json({ error: error.message }, { status: 500 })
+    if (!orgId) {
+      return NextResponse.redirect(`${APP_URL}/${lang}/social?error=oauth_failed`)
     }
 
-    // Redirect to social accounts page
-    return NextResponse.redirect(`${process.env.NEXT_PUBLIC_APP_URL || 'https://occaly.vercel.app'}/tr/social?connected=tiktok`)
+    const admin = createServiceClient()
+
+    // Varolan vault ID'lerini al (upsert için)
+    const { data: existing } = await admin
+      .from('social_accounts')
+      .select('access_token_vault_id, refresh_token_vault_id')
+      .eq('organization_id', orgId)
+      .eq('platform', 'tiktok')
+      .eq('platform_account_id', open_id)
+      .maybeSingle()
+
+    const accessVaultId = await upsertToken(
+      access_token,
+      existing?.access_token_vault_id,
+      `tiktok_access_${orgId}_${open_id}`,
+    )
+
+    let refreshVaultId: string | null = null
+    if (refresh_token) {
+      refreshVaultId = await upsertToken(
+        refresh_token,
+        existing?.refresh_token_vault_id,
+        `tiktok_refresh_${orgId}_${open_id}`,
+      )
+    }
+
+    // 4. DB'ye kaydet
+    const expiresAt = new Date(Date.now() + expires_in * 1000).toISOString()
+    const refreshExpiresAt = refresh_expires_in
+      ? new Date(Date.now() + refresh_expires_in * 1000).toISOString()
+      : null
+
+    const { error: dbErr } = await admin.from('social_accounts').upsert(
+      {
+        organization_id:         orgId,
+        platform:                'tiktok',
+        platform_account_id:     open_id,
+        platform_username:       displayName,
+        access_token:            null,
+        access_token_vault_id:   accessVaultId,
+        refresh_token:           null,
+        refresh_token_vault_id:  refreshVaultId,
+        token_expires_at:        expiresAt,
+        refresh_token_expires_at: refreshExpiresAt,
+        is_active:               true,
+        metadata:                { open_id },
+      },
+      { onConflict: 'organization_id,platform,platform_account_id' },
+    )
+
+    if (dbErr) {
+      console.error('[tiktok/callback] db error:', dbErr)
+      return NextResponse.redirect(`${APP_URL}/${lang}/social?error=oauth_failed`)
+    }
+
+    return NextResponse.redirect(`${APP_URL}/${lang}/social?connected=tiktok`)
   } catch (err) {
-    console.error('OAuth error:', err)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    console.error('[tiktok/callback] unexpected error:', err)
+    return NextResponse.redirect(`${APP_URL}/${lang}/social?error=oauth_failed`)
   }
 }
