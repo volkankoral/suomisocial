@@ -76,7 +76,7 @@ export function NavBar({ links, email, lang }: Props) {
           </Link>
 
           {/* Desktop nav */}
-          <nav className="hidden lg:flex items-center gap-0.5 flex-1 overflow-x-auto">
+          <nav className="hidden lg:flex items-center gap-0.5 flex-1 overflow-x-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
             {links.map((link) => {
               const active = isActive(link.href)
               return (
