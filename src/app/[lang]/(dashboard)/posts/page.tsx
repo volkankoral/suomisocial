@@ -3,6 +3,8 @@ import { getUserOrgId } from '@/lib/supabase/get-org'
 import { PostSyncButton } from './_components/PostSyncButton'
 import { translations, type Lang } from '@/lib/translations'
 
+export const dynamic = 'force-dynamic'
+
 const DATE_LOCALE: Record<string, string> = { tr: 'tr-TR', fi: 'fi-FI', en: 'en-US' }
 
 interface Props { params: Promise<{ lang: string }> }

@@ -18,7 +18,9 @@ export function PostSyncButton() {
       const res  = await fetch('/api/posts/sync', { method: 'POST' })
       const json = await res.json()
       if (!res.ok) throw new Error(json.error ?? p.syncErr)
-      setResult(p.synced.replace('{n}', String(json.synced)))
+      let msg = `✓ ${p.synced.replace('{n}', String(json.synced))}`
+      if (json.errors?.length) msg += ` — Hata: ${json.errors.join(', ')}`
+      setResult(msg)
       router.refresh()
     } catch (err) {
       setResult(`✕ ${err instanceof Error ? err.message : p.syncErr}`)
