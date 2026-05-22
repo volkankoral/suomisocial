@@ -57,22 +57,24 @@ export async function generateImage(prompt: string, opts: ImageOptions = {}): Pr
  * Yüz bozukluğu, fazla parmak, anormal anatomi, düşük kalite.
  */
 const FLUX_NEGATIVE_PROMPT = [
-  // Yüz & anatomi
+  // Yüz & insan anatomisi — kesinlikle yok
+  'face', 'faces', 'portrait', 'person looking at camera',
+  'child', 'children', 'kid', 'baby', 'toddler',
   'distorted face', 'deformed face', 'disfigured face', 'asymmetric face',
-  'crossed eyes', 'extra eyes', 'bad teeth', 'ugly teeth',
+  'crossed eyes', 'extra eyes', 'bad teeth', 'ugly teeth', 'open mouth',
   'extra fingers', 'missing fingers', 'fused fingers', 'mutated hands',
   'poorly drawn hands', 'extra limbs', 'missing limbs', 'bad anatomy',
   'malformed', 'mutation', 'deformed',
   // Görsel kalite
-  'blurry', 'out of focus', 'low quality', 'low resolution', 'pixelated',
-  'grainy', 'noisy', 'overexposed', 'underexposed', 'bad lighting',
+  'low quality', 'low resolution', 'pixelated', 'grainy', 'noisy',
+  'overexposed', 'underexposed', 'bad lighting', 'washed out',
   // Stil
   'cartoon', 'anime', 'illustration', 'drawing', 'painting', 'sketch',
   'CGI', '3D render', 'plastic', 'video game', 'unrealistic',
   // Gereksiz elementler
   'text', 'watermark', 'logo', 'signature', 'overlay', 'frame', 'border',
   // Yemek spesifik
-  'unappetizing food', 'rotten food', 'burnt food', 'raw dough',
+  'unappetizing food', 'rotten food', 'burnt food', 'raw dough', 'fake food',
 ].join(', ')
 
 /**
