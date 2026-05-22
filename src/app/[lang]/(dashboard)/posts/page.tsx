@@ -104,7 +104,7 @@ export default async function PostsPage({ params }: Props) {
                     />
                   ) : (
                     <div className="w-24 h-24 bg-white/4 shrink-0 flex items-center justify-center text-2xl border-r border-white/8">
-                      🔵
+                      {post.platform === 'instagram' ? '📷' : post.platform === 'facebook' ? '👍' : '🔵'}
                     </div>
                   )}
 
@@ -112,7 +112,7 @@ export default async function PostsPage({ params }: Props) {
                   <div className="flex-1 min-w-0 p-4">
                     <div className="flex items-center gap-2 mb-1.5 flex-wrap">
                       <span className="text-xs font-medium text-foreground capitalize flex items-center gap-1">
-                        🔵 {post.platform}
+                        {post.platform === 'instagram' ? '📷' : post.platform === 'facebook' ? '👍' : post.platform === 'tiktok' ? '🎵' : '🔵'} {post.platform}
                       </span>
                       <span className="text-[10px] px-2 py-0.5 rounded-lg bg-green-500/15 text-green-400 border border-green-500/20 font-medium">
                         {p.live}
