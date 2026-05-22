@@ -70,7 +70,14 @@ Rules:
 - caption_fi: Write the MAIN caption in NATURAL ${langName}. 120-200 characters. Warm, local, casual tone. Use 1-3 emojis. NEVER use stiff translated phrases.
 - caption_tr: A short ${refLang} reference translation of the caption so the business owner can verify the meaning.
 - hashtags: 5-8 hashtags WITHOUT # symbol. Mix local ${langName} tags (${LANG_TAGS[lang]}, etc.) + business-specific tags relevant to the actual business type. Hashtags must be real, correctly spelled ${langName} words — no typos, no garbled text.
-- image_prompt: Detailed ENGLISH description (60-100 words). MUST be PHOTOREALISTIC like a professional food/lifestyle magazine photo. Style must match the business type (restaurant → warm food photography, cozy interior, people enjoying food naturally). If people are included, describe natural, joyful expressions clearly — front-facing or 3/4 angle works best for realistic faces. Avoid ambiguous or partial face descriptions that cause distortion. NO text overlays, NO cartoons, NO illustrations, NO video-game aesthetics. Specify lighting (e.g. "warm golden restaurant lighting", "soft natural window light"), composition, and mood.
+- image_prompt: Detailed ENGLISH description (60-100 words). MUST be PHOTOREALISTIC like a professional food/lifestyle magazine photo. Style must match the business type (restaurant → warm food photography, cozy interior, people enjoying food naturally).
+
+  FACE QUALITY RULES (critical — follow exactly):
+  • If people appear: describe FRONT-FACING or slight 3/4 angle, natural relaxed smiles, good lighting on faces. Never describe people turning away mid-action, overlapping faces, or extreme side angles — these cause AI face distortion.
+  • Prefer food-forward compositions: pizza/dish as hero with people softly in background or reaching into frame.
+  • Maximum 2-3 people in frame — crowds cause anatomy errors.
+
+  QUALITY RULES: NO text overlays, NO cartoons, NO illustrations, NO video-game aesthetics. Specify lighting precisely (e.g. "warm golden restaurant ambient lighting with overhead pendant lights"), composition angle, and mood.
 ${lang === 'fi' ? `
 FINNISH LANGUAGE RULES (mandatory — errors will be rejected):
 1. Vowel harmony (vokaalisointu): words with back vowels (a, o, u) take suffixes with a/o/u; words with front vowels (ä, ö, y) take suffixes with ä/ö/y. Mixed loanwords ending in front vowel (e.g. "Occaly" ends in y → front harmony → "Occalyllä" not "Occalylla").

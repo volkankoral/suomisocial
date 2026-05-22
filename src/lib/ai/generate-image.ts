@@ -53,6 +53,29 @@ export async function generateImage(prompt: string, opts: ImageOptions = {}): Pr
 }
 
 /**
+ * Bilinen AI görsel defoları — FLUX negative prompt olarak kullanılır.
+ * Yüz bozukluğu, fazla parmak, anormal anatomi, düşük kalite.
+ */
+const FLUX_NEGATIVE_PROMPT = [
+  // Yüz & anatomi
+  'distorted face', 'deformed face', 'disfigured face', 'asymmetric face',
+  'crossed eyes', 'extra eyes', 'bad teeth', 'ugly teeth',
+  'extra fingers', 'missing fingers', 'fused fingers', 'mutated hands',
+  'poorly drawn hands', 'extra limbs', 'missing limbs', 'bad anatomy',
+  'malformed', 'mutation', 'deformed',
+  // Görsel kalite
+  'blurry', 'out of focus', 'low quality', 'low resolution', 'pixelated',
+  'grainy', 'noisy', 'overexposed', 'underexposed', 'bad lighting',
+  // Stil
+  'cartoon', 'anime', 'illustration', 'drawing', 'painting', 'sketch',
+  'CGI', '3D render', 'plastic', 'video game', 'unrealistic',
+  // Gereksiz elementler
+  'text', 'watermark', 'logo', 'signature', 'overlay', 'frame', 'border',
+  // Yemek spesifik
+  'unappetizing food', 'rotten food', 'burnt food', 'raw dough',
+].join(', ')
+
+/**
  * Replicate FLUX 1.1 Pro — ~$0.04/görsel, yüksek kalite
  * Synchronous mode (Prefer: wait) kullanıyoruz, polling gerekmez.
  */
@@ -72,10 +95,11 @@ async function generateWithFlux(prompt: string, aspect: ImageAspect, seed?: numb
     body: JSON.stringify({
       input: {
         prompt,
-        aspect_ratio:   ratio,
-        output_format:  'jpg',
-        output_quality: 95,
-        safety_tolerance: 2,
+        negative_prompt:   FLUX_NEGATIVE_PROMPT,
+        aspect_ratio:      ratio,
+        output_format:     'jpg',
+        output_quality:    95,
+        safety_tolerance:  2,
         prompt_upsampling: true,
         ...(seed !== undefined ? { seed } : {}),
       },
