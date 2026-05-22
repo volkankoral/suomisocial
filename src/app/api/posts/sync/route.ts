@@ -34,6 +34,7 @@ export async function POST(req: NextRequest) {
         const pageId   = fbAccount.platform_account_id
         const postsUrl = `${GRAPH}/${pageId}/posts?fields=id,message,full_picture,created_time&limit=25&access_token=${pageToken}`
         const postsData = await fetch(postsUrl).then(r => r.json())
+        if (postsData.error) throw new Error(`FB API: ${postsData.error.message}`)
         const fbPosts: Array<{ id: string; message?: string; full_picture?: string; created_time: string }> = postsData.data ?? []
 
         const insightMetrics = [
@@ -105,6 +106,7 @@ export async function POST(req: NextRequest) {
         const igUserId  = igAccount.platform_account_id
         const mediaUrl  = `${GRAPH}/${igUserId}/media?fields=id,caption,media_url,permalink,timestamp,like_count,comments_count,media_type&limit=25&access_token=${pageToken}`
         const mediaData = await fetch(mediaUrl).then(r => r.json())
+        if (mediaData.error) throw new Error(`IG API: ${mediaData.error.message}`)
         const igPosts: Array<{
           id: string
           caption?: string
