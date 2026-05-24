@@ -4,6 +4,8 @@ import { useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useT } from '@/lib/useT'
+import { TextTemplatePicker } from './TextTemplatePicker'
+import { ImageOverlayPreview } from './ImageOverlayPreview'
 
 interface Props {
   draftId: string
@@ -11,9 +13,18 @@ interface Props {
   captionTr: string
   hashtags: string[]
   imageUrl?: string | null
+  overlayTemplate?: string | null
+  overlayText?: string | null
+  /** Şablon metninde kullanmak için işletme adı */
+  businessName?: string
+  /** Alt metin (özel gün / rutin adı) */
+  specialDayLabel?: string
 }
 
-export function EditDraftModal({ draftId, captionFi, captionTr, hashtags, imageUrl }: Props) {
+export function EditDraftModal({
+  draftId, captionFi, captionTr, hashtags, imageUrl,
+  overlayTemplate, overlayText, businessName = '', specialDayLabel = '',
+}: Props) {
   const router = useRouter()
   const t = useT()
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -28,6 +39,10 @@ export function EditDraftModal({ draftId, captionFi, captionTr, hashtags, imageU
   const [saving, setSaving]           = useState(false)
   const [error, setError]             = useState<string | null>(null)
 
+  // Overlay şablon state'leri
+  const [selectedTemplate, setSelectedTemplate] = useState(overlayTemplate ?? 'none')
+  const [customText, setCustomText]             = useState(overlayText ?? businessName)
+
   function openModal() {
     setFi(captionFi)
     setTr(captionTr)
@@ -35,6 +50,8 @@ export function EditDraftModal({ draftId, captionFi, captionTr, hashtags, imageU
     setCurrentImageUrl(imageUrl ?? null)
     setPreviewUrl(null)
     setError(null)
+    setSelectedTemplate(overlayTemplate ?? 'none')
+    setCustomText(overlayText ?? businessName)
     setOpen(true)
   }
 
@@ -42,7 +59,6 @@ export function EditDraftModal({ draftId, captionFi, captionTr, hashtags, imageU
     const file = e.target.files?.[0]
     if (!file) return
 
-    // Local preview
     const localUrl = URL.createObjectURL(file)
     setPreviewUrl(localUrl)
     setError(null)
@@ -66,7 +82,6 @@ export function EditDraftModal({ draftId, captionFi, captionTr, hashtags, imageU
       setPreviewUrl(null)
     } finally {
       setUploading(false)
-      // reset input so same file can be re-selected
       if (fileInputRef.current) fileInputRef.current.value = ''
     }
   }
@@ -81,9 +96,11 @@ export function EditDraftModal({ draftId, captionFi, captionTr, hashtags, imageU
         .filter(Boolean)
 
       const body: Record<string, unknown> = {
-        caption_fi: fi.trim(),
-        caption_tr: tr.trim(),
-        hashtags:   parsedTags,
+        caption_fi:        fi.trim(),
+        caption_tr:        tr.trim(),
+        hashtags:          parsedTags,
+        overlay_template:  selectedTemplate === 'none' ? null : selectedTemplate,
+        overlay_text:      selectedTemplate === 'none' ? null : (customText.trim() || businessName),
       }
       if (currentImageUrl !== imageUrl) {
         body.image_url = currentImageUrl
@@ -144,7 +161,7 @@ export function EditDraftModal({ draftId, captionFi, captionTr, hashtags, imageU
               transition={{ type: 'spring', stiffness: 400, damping: 32 }}
               className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-3 sm:p-4 pointer-events-none"
             >
-              <div className="w-full max-w-lg bg-zinc-900 border border-white/10 rounded-2xl shadow-2xl overflow-hidden pointer-events-auto max-h-[90vh] flex flex-col">
+              <div className="w-full max-w-lg bg-zinc-900 border border-white/10 rounded-2xl shadow-2xl overflow-hidden pointer-events-auto max-h-[92vh] flex flex-col">
 
                 {/* Başlık */}
                 <div className="flex items-center justify-between px-5 py-4 border-b border-white/8 shrink-0">
@@ -159,29 +176,20 @@ export function EditDraftModal({ draftId, captionFi, captionTr, hashtags, imageU
                 </div>
 
                 {/* İçerik */}
-                <div className="flex-1 overflow-y-auto px-5 py-4 space-y-4">
+                <div className="flex-1 overflow-y-auto px-5 py-4 space-y-5">
 
-                  {/* Görsel */}
+                  {/* Görsel + overlay canlı önizleme */}
                   <div>
-                    <label className="block text-xs font-medium text-muted-foreground mb-1.5">
-                      🖼 Görsel
-                    </label>
+                    <label className="block text-xs font-medium text-muted-foreground mb-1.5">🖼 Görsel</label>
                     <div className="relative rounded-xl overflow-hidden border border-white/10 bg-white/4">
-                      {displayImage ? (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img
-                          src={displayImage}
-                          alt="Taslak görseli"
-                          className={`w-full h-48 object-cover transition-opacity ${uploading ? 'opacity-50' : 'opacity-100'}`}
-                        />
-                      ) : (
-                        <div className="w-full h-32 flex flex-col items-center justify-center gap-2 text-muted-foreground/50">
-                          <span className="text-3xl">🖼</span>
-                          <span className="text-xs">Görsel yok</span>
-                        </div>
-                      )}
+                      <ImageOverlayPreview
+                        imageUrl={displayImage}
+                        templateId={selectedTemplate}
+                        mainText={customText || businessName}
+                        subText={specialDayLabel}
+                        className={`w-full h-52 transition-opacity ${uploading ? 'opacity-50' : 'opacity-100'}`}
+                      />
 
-                      {/* Upload overlay */}
                       {uploading && (
                         <div className="absolute inset-0 flex items-center justify-center bg-black/40">
                           <div className="flex flex-col items-center gap-2">
@@ -192,7 +200,7 @@ export function EditDraftModal({ draftId, captionFi, captionTr, hashtags, imageU
                       )}
                     </div>
 
-                    {/* Değiştir butonu */}
+                    {/* Görsel değiştir */}
                     <input
                       ref={fileInputRef}
                       type="file"
@@ -208,16 +216,41 @@ export function EditDraftModal({ draftId, captionFi, captionTr, hashtags, imageU
                       className="mt-2 w-full text-xs py-2 rounded-lg border border-white/10 bg-white/4 text-muted-foreground hover:text-foreground hover:border-white/20 transition-colors disabled:opacity-40 flex items-center justify-center gap-1.5"
                     >
                       {uploading ? (
-                        <>
-                          <span className="w-3 h-3 rounded-full border-2 border-white/30 border-t-white animate-spin" />
-                          Yükleniyor…
-                        </>
+                        <><span className="w-3 h-3 rounded-full border-2 border-white/30 border-t-white animate-spin" /> Yükleniyor…</>
                       ) : (
                         <>📁 Görseli Değiştir</>
                       )}
                     </button>
                     <p className="text-[10px] text-muted-foreground/40 mt-1 text-center">JPG, PNG veya WebP · Maks 50 MB</p>
                   </div>
+
+                  {/* Metin Şablonu Seçici */}
+                  <TextTemplatePicker
+                    selectedId={selectedTemplate}
+                    onSelect={setSelectedTemplate}
+                    imageUrl={displayImage}
+                    mainText={customText || businessName}
+                    subText={specialDayLabel}
+                  />
+
+                  {/* Şablon metni — seçiliyse göster */}
+                  {selectedTemplate !== 'none' && (
+                    <div>
+                      <label className="block text-xs font-medium text-muted-foreground mb-1.5">
+                        ✍️ Görseldeki Metin
+                      </label>
+                      <input
+                        value={customText}
+                        onChange={e => setCustomText(e.target.value)}
+                        className="w-full bg-white/4 border border-white/10 rounded-xl px-3.5 py-2.5 text-sm text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:border-white/25 transition-colors"
+                        placeholder={businessName || 'Metin...'}
+                        maxLength={60}
+                      />
+                      <p className="text-[10px] text-muted-foreground/40 mt-1">
+                        Varsayılan: işletme adı. Kısa ve net tut (maks. 30 karakter önerilir).
+                      </p>
+                    </div>
+                  )}
 
                   {/* Fince Caption */}
                   <div>
@@ -262,7 +295,6 @@ export function EditDraftModal({ draftId, captionFi, captionTr, hashtags, imageU
                       className="w-full bg-white/4 border border-white/10 rounded-xl px-3.5 py-3 text-sm text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:border-white/25 transition-colors"
                       placeholder="suomi, helsinki, markkinointi..."
                     />
-                    {/* Önizleme */}
                     {tags.trim() && (
                       <p className="text-xs text-primary/70 mt-2 leading-relaxed">
                         {tags.split(/[,\s#]+/).filter(Boolean).map(h => `#${h.replace(/^#/, '')}`).join(' ')}
@@ -296,9 +328,7 @@ export function EditDraftModal({ draftId, captionFi, captionTr, hashtags, imageU
                         <span className="w-3.5 h-3.5 rounded-full border-2 border-white/30 border-t-white animate-spin" />
                         Kaydediliyor…
                       </>
-                    ) : (
-                      '✓ Kaydet'
-                    )}
+                    ) : '✓ Kaydet'}
                   </button>
                 </div>
               </div>

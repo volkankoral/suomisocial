@@ -6,6 +6,7 @@ import { DraftActions } from './_components/DraftActions'
 import { PreviewModal } from './_components/PreviewModal'
 import { EditDraftModal } from './_components/EditDraftModal'
 import { BulkDeleteButton } from './_components/BulkDeleteButton'
+import { ImageOverlayPreview } from './_components/ImageOverlayPreview'
 import { Animate, Stagger, FadeUpItem } from '@/components/ui/animate'
 import { translations, type Lang } from '@/lib/translations'
 import Link from 'next/link'
@@ -29,6 +30,7 @@ interface DraftRow {
   caption_fi: string | null; caption_tr: string | null
   hashtags: string[] | null; image_url: string | null
   image_prompt: string | null; status: string; archived: boolean | null
+  overlay_template: string | null; overlay_text: string | null
 }
 
 export default async function ContentPage({ params, searchParams }: Props) {
@@ -79,19 +81,13 @@ export default async function ContentPage({ params, searchParams }: Props) {
       <FadeUpItem key={draft.id}>
         <div className="rounded-2xl border border-white/8 bg-card overflow-hidden hover:border-white/14 transition-colors">
           <div className="flex flex-col sm:flex-row">
-            {draft.image_url ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={draft.image_url}
-                alt={draft.special_day_label_tr}
-                className="w-full sm:w-32 sm:h-32 h-48 object-cover shrink-0"
-                loading="lazy"
-              />
-            ) : (
-              <div className="w-full sm:w-32 sm:h-32 h-32 bg-white/4 shrink-0 flex items-center justify-center text-3xl border-b sm:border-b-0 sm:border-r border-white/8">
-                🖼
-              </div>
-            )}
+            <ImageOverlayPreview
+              imageUrl={draft.image_url}
+              templateId={draft.overlay_template}
+              mainText={draft.overlay_text ?? brandName}
+              subText={draft.special_day_label_tr}
+              className="w-full sm:w-32 sm:h-32 h-40 shrink-0 border-b sm:border-b-0 sm:border-r border-white/8"
+            />
 
             <div className="flex-1 min-w-0 p-4">
               <div className="flex items-start justify-between gap-2 mb-2">
@@ -125,6 +121,10 @@ export default async function ContentPage({ params, searchParams }: Props) {
                   captionTr={draft.caption_tr ?? ''}
                   hashtags={draft.hashtags ?? []}
                   imageUrl={draft.image_url}
+                  overlayTemplate={draft.overlay_template}
+                  overlayText={draft.overlay_text}
+                  businessName={brandName}
+                  specialDayLabel={draft.special_day_label_tr}
                 />
                 <PreviewModal draft={draft} brandName={brandName} igUsername={igUsername} logoUrl={logoUrl} />
               </div>
@@ -163,6 +163,20 @@ export default async function ContentPage({ params, searchParams }: Props) {
               <p className="text-sm font-medium text-amber-300">{t.content.missingApiKey}</p>
               <p className="text-xs text-amber-400/70 mt-0.5">{t.content.missingApiHint}</p>
             </div>
+          </div>
+        </Animate>
+      )}
+
+      {/* AI görsel uyarısı */}
+      {!isArchive && (
+        <Animate delay={0.06}>
+          <div className="rounded-xl border border-blue-500/20 bg-blue-950/15 p-3.5 flex items-start gap-3">
+            <span className="text-blue-400 text-base shrink-0 mt-0.5">🤖</span>
+            <p className="text-xs text-blue-300/80 leading-relaxed">
+              <span className="font-semibold text-blue-200">Yapay zeka görselleri hakkında:</span>{' '}
+              AI tarafından üretilen görseller bazen bozuk çıkabilir (yüz deformasyonu, fazla parmak vb.).
+              Taslakları paylaşmadan önce mutlaka görselleri kontrol edin.
+            </p>
           </div>
         </Animate>
       )}
