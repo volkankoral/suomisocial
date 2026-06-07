@@ -9,7 +9,7 @@ export async function POST(req: NextRequest) {
   const { data: { user } } = await authClient.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Giriş yapınız' }, { status: 401 })
 
-  const { planId, billingCycle = 'monthly' } = await req.json()
+  const { planId, billingCycle = 'monthly', lang = 'tr' } = await req.json()
   if (!planId) return NextResponse.json({ error: 'planId zorunlu' }, { status: 400 })
 
   const orgId = await getUserOrgId()
@@ -51,8 +51,8 @@ export async function POST(req: NextRequest) {
     mode: 'subscription',
     payment_method_types: ['card'],
     line_items: [{ price: priceId, quantity: 1 }],
-    success_url: `${appUrl}/tr/billing?success=1&session_id={CHECKOUT_SESSION_ID}`,
-    cancel_url:  `${appUrl}/tr/billing?canceled=1`,
+    success_url: `${appUrl}/${lang}/billing?success=1&session_id={CHECKOUT_SESSION_ID}`,
+    cancel_url:  `${appUrl}/${lang}/billing?canceled=1`,
     subscription_data: {
       metadata: { org_id: orgId, plan_id: planId },
     },

@@ -112,7 +112,7 @@ export function OnboardingWizard({ lang, existingBrand, plans, hasSubscription }
       const res  = await fetch('/api/stripe/checkout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ planId, billingCycle: 'monthly' }),
+        body: JSON.stringify({ planId, billingCycle: 'monthly', lang }),
       })
       const data = await res.json()
       if (data.url) {

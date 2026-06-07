@@ -55,11 +55,13 @@ export function BillingClient({ subscription, plans, hasStripeCustomer }: Props)
 
   async function subscribe(planId: string) {
     setLoading(planId)
+    // Mevcut URL'den dili çıkar (örn. /tr/billing → tr)
+    const lang = window.location.pathname.split('/')[1] ?? 'tr'
     try {
       const res = await fetch('/api/stripe/checkout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ planId, billingCycle }),
+        body: JSON.stringify({ planId, billingCycle, lang }),
       })
       const data = await res.json()
       if (data.url) {
