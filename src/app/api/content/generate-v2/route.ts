@@ -40,14 +40,70 @@ export async function POST(req: NextRequest) {
   const orgId = await getUserOrgId()
   if (!orgId) return NextResponse.json({ error: 'Yetkisiz' }, { status: 401 })
 
-  // Admin kontrolü — admin orglar FLUX Pro kullanır
   const supabaseAdmin = createServiceClient()
+
+  // ──────────────────────────────────────────────────────────
+  // KOTA KONTROLÜ — aktif abonelik + aylık limit
+  // ──────────────────────────────────────────────────────────
   const { data: orgRow } = await supabaseAdmin
     .from('organizations')
     .select('is_admin')
     .eq('id', orgId)
     .single()
   const isAdmin = orgRow?.is_admin === true
+
+  // Admin'ler sınırsız
+  if (!isAdmin) {
+    // Aktif abonelik ve plan limitini al
+    const { data: sub } = await supabaseAdmin
+      .from('subscriptions')
+      .select('plan_id, plans(limits)')
+      .eq('organization_id', orgId)
+      .in('status', ['active', 'trialing'])
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle()
+
+    if (!sub) {
+      return NextResponse.json(
+        { error: 'Aktif abonelik bulunamadı. Lütfen bir plan seçin.', code: 'NO_SUBSCRIPTION' },
+        { status: 403 }
+      )
+    }
+
+    // Plan limitini oku (limits.ai_credits — -1 = sınırsız)
+    const planLimits = (sub as { plans?: { limits?: Record<string, number> } }).plans?.limits ?? {}
+    const monthlyLimit: number = planLimits['ai_credits'] ?? 20
+
+    if (monthlyLimit !== -1) {
+      // Bu ayın kullanımını kontrol et
+      const periodStart = new Date()
+      periodStart.setUTCDate(1)
+      periodStart.setUTCHours(0, 0, 0, 0)
+      const periodStartStr = periodStart.toISOString().slice(0, 10)
+
+      const { data: usage } = await supabaseAdmin
+        .from('usage_records')
+        .select('content_generated')
+        .eq('organization_id', orgId)
+        .eq('period_start', periodStartStr)
+        .maybeSingle()
+
+      const used = usage?.content_generated ?? 0
+
+      if (used >= monthlyLimit) {
+        return NextResponse.json(
+          {
+            error: `Aylık ${monthlyLimit} içerik limitine ulaştınız (${used}/${monthlyLimit}). Planınızı yükseltin.`,
+            code: 'QUOTA_EXCEEDED',
+            used,
+            limit: monthlyLimit,
+          },
+          { status: 429 }
+        )
+      }
+    }
+  }
 
   const body = await req.json() as Body
   const aspect = body.aspect ?? 'square'
@@ -189,6 +245,21 @@ export async function POST(req: NextRequest) {
       .single()
 
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+
+    // ──────────────────────────────────────────────────────────
+    // KULLANIM SAYACI — başarılı üretimde artır (admin hariç)
+    // ──────────────────────────────────────────────────────────
+    if (!isAdmin) {
+      const periodStart = new Date()
+      periodStart.setUTCDate(1)
+      periodStart.setUTCHours(0, 0, 0, 0)
+      const periodStartStr = periodStart.toISOString().slice(0, 10)
+
+      await supabaseAdmin.rpc('increment_usage', {
+        p_org_id: orgId,
+        p_period_start: periodStartStr,
+      })
+    }
 
     return NextResponse.json({
       ok: true,

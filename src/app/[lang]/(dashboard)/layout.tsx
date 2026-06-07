@@ -21,10 +21,24 @@ export default async function DashboardLayout({ children, params }: Props) {
 
   const orgId = await getUserOrgId()
   let isAdmin = false
+  let hasActiveSubscription = false
+
   if (orgId) {
     const serviceClient = createServiceClient()
-    const { data: org } = await serviceClient.from('organizations').select('is_admin').eq('id', orgId).single()
+
+    const [{ data: org }, { data: sub }] = await Promise.all([
+      serviceClient.from('organizations').select('is_admin').eq('id', orgId).single(),
+      serviceClient
+        .from('subscriptions')
+        .select('id, status')
+        .eq('organization_id', orgId)
+        .in('status', ['active', 'trialing'])
+        .limit(1)
+        .maybeSingle(),
+    ])
+
     isAdmin = !!org?.is_admin
+    hasActiveSubscription = isAdmin || !!sub
   }
 
   const navLinks = [
@@ -42,6 +56,17 @@ export default async function DashboardLayout({ children, params }: Props) {
   return (
     <div className="min-h-screen flex flex-col bg-background">
       <NavBar links={navLinks} email={user.email ?? ''} lang={lang} />
+      {!hasActiveSubscription && (
+        <div className="bg-amber-500/10 border-b border-amber-500/20 px-4 py-2.5 text-center">
+          <p className="text-xs text-amber-300">
+            ⚠️ Aktif aboneliğiniz yok —{' '}
+            <a href={`/${lang}/billing`} className="underline hover:text-amber-100 font-medium">
+              plan seçin
+            </a>{' '}
+            ve AI içerik üretimine başlayın.
+          </p>
+        </div>
+      )}
       <main className="flex-1 mx-auto w-full max-w-7xl px-4 sm:px-5 py-5 sm:py-8">
         {children}
       </main>

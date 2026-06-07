@@ -71,6 +71,7 @@ export function NewContentClient({
 
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [errorCode, setErrorCode] = useState<string | null>(null)
 
   function togglePlatform(p: string) {
     setPlatforms(prev => prev.includes(p) ? prev.filter(x => x !== p) : [...prev, p])
@@ -104,6 +105,7 @@ export function NewContentClient({
 
   async function generate() {
     setError(null)
+    setErrorCode(null)
 
     if (category === 'campaign' && !campaignBrief.trim()) {
       setError(n.errCampaign)
@@ -140,6 +142,7 @@ export function NewContentClient({
 
       if (!res.ok) {
         setError(data.error ?? 'Üretim başarısız')
+        setErrorCode(data.code ?? null)
         setLoading(false)
         return
       }
@@ -408,8 +411,20 @@ export function NewContentClient({
 
       {/* Hata */}
       {error && (
-        <div className="rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-red-300 text-sm">
-          ❌ {error}
+        <div className={`rounded-xl border px-4 py-3 text-sm ${
+          errorCode === 'QUOTA_EXCEEDED' || errorCode === 'NO_SUBSCRIPTION'
+            ? 'border-amber-500/30 bg-amber-500/10 text-amber-300'
+            : 'border-red-500/30 bg-red-500/10 text-red-300'
+        }`}>
+          {errorCode === 'QUOTA_EXCEEDED' || errorCode === 'NO_SUBSCRIPTION' ? '⚠️' : '❌'} {error}
+          {(errorCode === 'QUOTA_EXCEEDED' || errorCode === 'NO_SUBSCRIPTION') && (
+            <a
+              href={`/${lang}/billing`}
+              className="block mt-2 text-xs underline hover:opacity-80 font-medium"
+            >
+              → Planınızı görüntüleyin veya yükseltin
+            </a>
+          )}
         </div>
       )}
 
