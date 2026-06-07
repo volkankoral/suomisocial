@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { analyzeLimiter } from '@/lib/rate-limit'
 
 export const maxDuration = 30
 
@@ -47,6 +48,16 @@ interface BrandExtract {
 }
 
 export async function POST(req: NextRequest) {
+  // Rate limit
+  const ip = req.headers.get('x-forwarded-for')?.split(',')[0].trim() ?? req.headers.get('x-real-ip') ?? 'unknown'
+  const { ok: rlOk, retryAfter } = analyzeLimiter.check(ip)
+  if (!rlOk) {
+    return NextResponse.json(
+      { error: `Çok fazla istek. ${retryAfter} saniye bekleyin.` },
+      { status: 429, headers: { 'Retry-After': String(retryAfter ?? 60) } }
+    )
+  }
+
   // Auth
   const authClient = await createClient()
   const { data: { user } } = await authClient.auth.getUser()

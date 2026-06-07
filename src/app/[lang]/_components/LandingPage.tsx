@@ -202,10 +202,17 @@ export function LandingPage({ lang, plans = [] }: Props) {
       </motion.section>
 
       {/* Footer */}
-      <footer className="relative z-10 border-t border-white/8 px-6 py-6 text-center">
-        <p className="text-xs text-muted-foreground">
+      <footer className="relative z-10 border-t border-white/8 px-6 py-8 text-center">
+        <p className="text-xs text-muted-foreground mb-3">
           Occaly · AI sosyal medya & reklam otomasyonu
         </p>
+        <div className="flex items-center justify-center gap-4 flex-wrap">
+          <a href={`/${lang}/privacy`} className="text-xs text-muted-foreground hover:text-foreground transition-colors">Privacy Policy</a>
+          <span className="text-white/20 text-xs">·</span>
+          <a href={`/${lang}/terms`} className="text-xs text-muted-foreground hover:text-foreground transition-colors">Terms of Service</a>
+          <span className="text-white/20 text-xs">·</span>
+          <a href={`/${lang}/cookie`} className="text-xs text-muted-foreground hover:text-foreground transition-colors">Cookie Policy</a>
+        </div>
       </footer>
 
     </div>

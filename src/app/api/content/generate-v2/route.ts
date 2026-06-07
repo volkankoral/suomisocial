@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServiceClient } from '@/lib/supabase/service'
 import { getUserOrgId, getUserOrgCountry } from '@/lib/supabase/get-org'
+import { generateLimiter } from '@/lib/rate-limit'
 import {
   generateSpecialDayContent,
   generateRoutineContent,
@@ -37,6 +38,22 @@ interface Body {
 }
 
 export async function POST(req: NextRequest) {
+  // ── Rate limiting ────────────────────────────────────────────────────────
+  const ip =
+    req.headers.get('x-forwarded-for')?.split(',')[0].trim() ??
+    req.headers.get('x-real-ip') ??
+    'unknown'
+  const { ok: rlOk, retryAfter } = generateLimiter.check(ip)
+  if (!rlOk) {
+    return NextResponse.json(
+      { error: `Çok fazla istek. Lütfen ${retryAfter} saniye bekleyin.`, code: 'RATE_LIMITED' },
+      {
+        status: 429,
+        headers: { 'Retry-After': String(retryAfter ?? 60) },
+      }
+    )
+  }
+
   const orgId = await getUserOrgId()
   if (!orgId) return NextResponse.json({ error: 'Yetkisiz' }, { status: 401 })
 
@@ -52,12 +69,14 @@ export async function POST(req: NextRequest) {
     .single()
   const isAdmin = orgRow?.is_admin === true
 
-  // Admin'ler sınırsız
+  // Plan bilgisi — admin'ler için de slug lazım (FLUX kararı için)
+  let planSlug: string | null = null
+
   if (!isAdmin) {
     // Aktif abonelik ve plan limitini al
     const { data: sub } = await supabaseAdmin
       .from('subscriptions')
-      .select('plan_id, plans(limits)')
+      .select('plan_id, plans(slug, limits)')
       .eq('organization_id', orgId)
       .in('status', ['active', 'trialing'])
       .order('created_at', { ascending: false })
@@ -71,8 +90,11 @@ export async function POST(req: NextRequest) {
       )
     }
 
+    const subPlans = (sub as { plans?: { slug?: string; limits?: Record<string, number> } }).plans
+    planSlug = subPlans?.slug ?? null
+
     // Plan limitini oku (limits.ai_credits — -1 = sınırsız)
-    const planLimits = (sub as { plans?: { limits?: Record<string, number> } }).plans?.limits ?? {}
+    const planLimits = subPlans?.limits ?? {}
     const monthlyLimit: number = planLimits['ai_credits'] ?? 20
 
     if (monthlyLimit !== -1) {
@@ -194,8 +216,10 @@ export async function POST(req: NextRequest) {
       imageUrl = body.userMediaUrl
       imageProvider = 'user-upload'
     } else {
-      // Admin → FLUX 1.1 Pro (Replicate), diğerleri → Pollinations (ücretsiz)
-      const provider = isAdmin && process.env.REPLICATE_API_TOKEN ? 'flux' : 'pollinations'
+      // FLUX: admin veya Pro/Business plan → yüksek kalite
+      // Starter / abonelik yok → Pollinations (ücretsiz)
+      const useFLUX = (isAdmin || planSlug === 'pro' || planSlug === 'business') && !!process.env.REPLICATE_API_TOKEN
+      const provider = useFLUX ? 'flux' : 'pollinations'
       const image = await generateImage(generated.image_prompt, { aspect, provider })
       imageUrl = image.url
       imageProvider = image.provider

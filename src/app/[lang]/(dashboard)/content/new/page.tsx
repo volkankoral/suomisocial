@@ -30,13 +30,21 @@ export default async function NewContentPage({ params, searchParams }: Props) {
     redirect(`/${lang}/brand?new=1`)
   }
 
-  // Admin kontrolü
-  const { data: orgRow } = await supabase
-    .from('organizations')
-    .select('is_admin')
-    .eq('id', orgId)
-    .maybeSingle()
+  // Admin + plan tier kontrolü (FLUX erişimi için)
+  const [{ data: orgRow }, { data: sub }] = await Promise.all([
+    supabase.from('organizations').select('is_admin').eq('id', orgId).maybeSingle(),
+    supabase
+      .from('subscriptions')
+      .select('plans(slug)')
+      .eq('organization_id', orgId)
+      .in('status', ['active', 'trialing'])
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle(),
+  ])
   const isAdmin = orgRow?.is_admin === true
+  const planSlug = (sub as { plans?: { slug?: string } } | null)?.plans?.slug ?? null
+  const usesFlux = isAdmin || planSlug === 'pro' || planSlug === 'business'
 
   // Bölgeye göre özel günler
   const countryCode = await getUserOrgCountry()
@@ -59,7 +67,7 @@ export default async function NewContentPage({ params, searchParams }: Props) {
           daysUntil: d.daysUntil,
           date: d.resolvedDate.toISOString().slice(0, 10),
         }))}
-        isAdmin={isAdmin}
+        isAdmin={usesFlux}
       />
     </Suspense>
   )
