@@ -1,53 +1,98 @@
-@AGENTS.md
+# Occaly — AI Sosyal Medya & Reklam Otomasyon Platformu
 
-# SuomiSocial — Proje Rehberliği
+**Proje klasörü:** `C:\Users\GoldenPizzeria\Projects\suomisocial`
+**Canlı URL:** https://occaly.com
+**GitHub:** volkankoral/suomisocial → main → Vercel auto-deploy
+**Supabase proje ID:** bsyatpkxpxzkhzkmvxiv
 
-Finlandiya'ya özgü özel günler için otomatik AI sosyal medya & reklam yönetimi platformu. Önce kullanıcının pizzeria'sı için MVP, sonra subscription bazlı SaaS.
-
-Tam yol haritası ve onaylı plan: `C:\Users\GoldenPizzeria\.claude\plans\selam-bir-proje-d-n-yorum-graceful-cherny.md`
-
-## Mimari Kuralları
-
-- **Multi-tenant baştan**: Her domain tablosunda `organization_id` kolonu olmalı, RLS politikası ile diğer org datalarına erişim engellensin.
-- **Düzenlenebilir taslak akışı**: AI üretir → kullanıcı düzenler/onaylar → sonra yayınlanır. Tam otomatik post YOK.
-- **Düşük maliyetli AI**: FLUX schnell (görsel) + Remotion (video) + Claude Haiku (metin). DALL-E/Sora kullanma — pahalı.
-- **i18n**: Tüm kullanıcı-yüzü metinler `src/dictionaries/{tr,en,fi}.json` içinde, hardcode etme. Native Next.js dictionary pattern kullanılıyor (next-intl değil).
+---
 
 ## Stack
 
-- Next.js 16 (App Router, src/, Turbopack)
-- React 19, TypeScript 5, Tailwind v4
-- Supabase (Postgres + Auth + Storage)
-- Inngest (Faz 2'de eklenecek)
-- Remotion (Faz 2)
-- shadcn/ui
+| Katman | Teknoloji |
+|---|---|
+| Frontend | Next.js 16 (App Router) + TypeScript |
+| UI | Tailwind v4 + shadcn/ui |
+| DB | Supabase Postgres (RLS multi-tenant) |
+| Auth | Supabase Auth |
+| Görsel AI | Replicate FLUX 1.1 Pro (admin) / Pollinations.ai (free) |
+| Metin AI | Groq Llama 3.3 70B |
+| Görsel overlay | `@napi-rs/canvas` + Sharp |
+| Sosyal medya | Meta Graph API v21 (IG + FB), TikTok Content API |
+| Ödeme | Stripe |
+| Hosting | Vercel |
 
-## Önemli Next.js 16 Farkları
+---
 
-- `middleware.ts` → **`proxy.ts`** olarak yeniden adlandırıldı.
-- `params` artık async: her zaman `await params` yapılır.
-- `PageProps<"/[lang]">` ve `LayoutProps<"/[lang]">` global TypeScript helper'ları var, manuel tip yazma.
-- Detaylar için `node_modules/next/dist/docs/` klasörünü oku.
+## Kritik Kurallar
 
-## Klasör Yapısı
+- **Multi-tenant:** Her tabloda `organization_id` var, RLS aktif. Service client ile yazarken org check zorunlu.
+- **Kullanıcı onayı:** Tam otomatik post yok. İçerik → taslak → onay → yayın.
+- **Maliyet:** FLUX Pro sadece `organizations.is_admin = true` için.
+- **Build kritik:** `@napi-rs/canvas` ve `sharp` → `next.config.ts`'de `serverExternalPackages`'ta. Kaldırılırsa Vercel build bozulur.
+- **i18n:** `src/lib/translations.ts` dosyasında TR/FI/EN/SV. Yeni string eklenince üç dile de eklenmeli.
+- **params async:** Next.js 16'da `await params` zorunlu.
+
+---
+
+## Tamamlanan Fazlar (2026-05 itibarıyla)
+
+- ✅ Faz 0: Foundation (Next.js + Supabase + Auth + layout)
+- ✅ Faz 1: Finnish Calendar (tatiller + nimipäivä)
+- ✅ Faz 2: AI içerik üretimi (Groq caption + FLUX/Pollinations görsel + draft yönetimi)
+- ✅ Faz 3: Meta OAuth, IG + FB post sync, engagement metrikleri
+- ✅ Extras: FLUX Pro admin, CSS metin şablonları (picker), Stripe abonelik, Reklamlar sayfası
+
+## Devam Eden
+
+- 🔄 TikTok post gönderme — OAuth çalışıyor, Vercel→TikTok API bloklu
+- 🔄 Google Business post — API başvurusu lazım
+- ⏳ AI reklam optimizasyonu (haftalık rapor)
+- ⏳ Landing page
+
+---
+
+## Kritik Dosyalar
 
 ```
 src/
-  app/
-    [lang]/
-      layout.tsx       # Root layout, html/body burada
-      page.tsx         # Ana sayfa
-    globals.css
-  dictionaries/
-    tr.json
-    en.json
-    fi.json
-  dictionaries.ts      # getDictionary helper
-  proxy.ts             # Locale routing (eski middleware.ts)
+├── app/
+│   ├── [lang]/(dashboard)/
+│   │   ├── content/
+│   │   │   ├── page.tsx
+│   │   │   ├── new/
+│   │   │   └── _components/
+│   │   │       ├── EditDraftModal.tsx       ← şablon picker buraya entegre
+│   │   │       ├── TextTemplatePicker.tsx   ← 7 CSS overlay şablonu
+│   │   │       ├── ImageOverlayPreview.tsx  ← canlı önizleme
+│   │   │       └── overlayTemplates.ts      ← şablon tanımları
+│   │   ├── posts/        ← yayın geçmişi + metrikler
+│   │   ├── social/       ← hesap bağlantıları
+│   │   ├── ads/          ← reklam izleme
+│   │   ├── brand/        ← marka ayarları
+│   │   └── billing/      ← Stripe abonelik
+│   └── api/
+│       ├── content/generate-v2/
+│       ├── drafts/[id]/
+│       ├── posts/sync/
+│       └── oauth/meta|tiktok|google-business/
+├── lib/
+│   ├── ai/generate-content.ts   ← Groq caption
+│   ├── ai/generate-image.ts     ← FLUX/Pollinations
+│   ├── ai/add-text-overlay.ts   ← @napi-rs/canvas
+│   ├── supabase/server.ts       ← user client (RLS)
+│   ├── supabase/service.ts      ← service client (bypass)
+│   ├── translations.ts          ← i18n
+│   └── vault.ts                 ← token şifre çözme
+next.config.ts                   ← serverExternalPackages kritik
 ```
 
-## Yapılma Şekli
+---
 
-- Adım adım, her adım deploy edilebilir/test edilebilir.
-- Türkçe konuşan kullanıcı, açıklamalar Türkçe.
-- Reklam/sosyal medya API'lerinde production'a almadan önce sandbox/test mode'da doğrulama zorunlu.
+## Bilinen Sorunlar
+
+| Sorun | Durum |
+|---|---|
+| TikTok post — Vercel → TikTok API ulaşamıyor | Açık |
+| Google Business API erişimi | Başvuru gerekiyor |
+| Yayınlar metrikleri 0 | FB token scope sorunu, bağlantı yenilenince düzeliyor |

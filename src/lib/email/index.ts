@@ -188,3 +188,52 @@ export async function sendPaymentFailedEmail(opts: {
     html: layout(body),
   })
 }
+
+// ─── Autopilot: Taslaklar Hazır ─────────────────────────────────────────────
+export async function sendAutopilotReadyEmail(opts: {
+  to:           string
+  businessName: string
+  draftCount:   number
+  lang?:        string
+}) {
+  const lang     = opts.lang ?? 'en'
+  const reviewUrl = `${APP_URL}/${lang}/autopilot`
+
+  const subjects: Record<string, string> = {
+    tr: `🤖 ${opts.draftCount} yeni içerik taslağın hazır — onayla!`,
+    fi: `🤖 ${opts.draftCount} uutta luonnosta odottaa hyväksyntää`,
+    en: `🤖 ${opts.draftCount} new content drafts ready for review`,
+  }
+  const subject = subjects[lang] ?? subjects.en
+
+  const bodies: Record<string, string> = {
+    tr: `
+      ${h2(`🤖 ${opts.draftCount} taslak hazırlandı`)}
+      ${p(`Merhaba ${opts.businessName || 'işletmeniz'},`)}
+      ${p(`Autopilot bu hafta <strong style="color:#fafafa;">${opts.draftCount} adet sosyal medya içeriği</strong> üretti. Taslakları inceleyip onaylayabilir veya düzenleyebilirsiniz.`)}
+      ${p('Bir taslağı onayladığınızda Instagram ve Facebook\'ta paylaşıma hazır hale gelir.')}
+      ${btn('Taslakları İncele →', reviewUrl)}
+    `,
+    fi: `
+      ${h2(`🤖 ${opts.draftCount} luonnosta valmiina`)}
+      ${p(`Hei ${opts.businessName || ''},`)}
+      ${p(`Autopilot on luonut <strong style="color:#fafafa;">${opts.draftCount} uutta some-sisältöä</strong>. Tarkista ja hyväksy luonnokset ennen julkaisua.`)}
+      ${btn('Tarkista luonnokset →', reviewUrl)}
+    `,
+    en: `
+      ${h2(`🤖 ${opts.draftCount} drafts ready`)}
+      ${p(`Hi ${opts.businessName || 'there'},`)}
+      ${p(`Autopilot created <strong style="color:#fafafa;">${opts.draftCount} social media content drafts</strong> for you. Review and approve them before publishing.`)}
+      ${btn('Review Drafts →', reviewUrl)}
+    `,
+  }
+
+  const body = bodies[lang] ?? bodies.en
+
+  await resend.emails.send({
+    from:    FROM,
+    to:      opts.to,
+    subject,
+    html:    layout(body),
+  })
+}
