@@ -1,11 +1,11 @@
 /**
- * Görsel üretimi — Replicate FLUX schnell (premium) + Pollinations.ai (fallback/free)
+ * Görsel üretimi — Replicate FLUX 1.1 Pro Ultra (premium) + Pollinations.ai (fallback/free)
  *
  * Kullanım:
  *   await generateImage(prompt, { aspect: 'square' })  // tier'a göre otomatik seçer
  *
  * Üretici öncelik sırası:
- *   1. REPLICATE_API_TOKEN varsa → FLUX schnell (~$0.003/img, kaliteli)
+ *   1. REPLICATE_API_TOKEN varsa → FLUX 1.1 Pro Ultra (~$0.06/img, en yüksek kalite)
  *   2. Yoksa → Pollinations.ai (ücretsiz, daha düşük kalite)
  */
 
@@ -78,7 +78,8 @@ const FLUX_NEGATIVE_PROMPT = [
 ].join(', ')
 
 /**
- * Replicate FLUX 1.1 Pro — ~$0.04/görsel, yüksek kalite
+ * Replicate FLUX 1.1 Pro Ultra — ~$0.06/görsel, en yüksek kalite
+ * Ultra, negative_prompt desteklemiyor; bunun yerine raw=false ile prompt enhancement açık.
  * Synchronous mode (Prefer: wait) kullanıyoruz, polling gerekmez.
  */
 async function generateWithFlux(prompt: string, aspect: ImageAspect, seed?: number): Promise<string> {
@@ -87,7 +88,7 @@ async function generateWithFlux(prompt: string, aspect: ImageAspect, seed?: numb
 
   const ratio = ASPECT_DIMS[aspect].ratio
 
-  const res = await fetch('https://api.replicate.com/v1/models/black-forest-labs/flux-1.1-pro/predictions', {
+  const res = await fetch('https://api.replicate.com/v1/models/black-forest-labs/flux-1.1-pro-ultra/predictions', {
     method: 'POST',
     headers: {
       'Authorization': `Bearer ${token}`,
@@ -97,12 +98,11 @@ async function generateWithFlux(prompt: string, aspect: ImageAspect, seed?: numb
     body: JSON.stringify({
       input: {
         prompt,
-        negative_prompt:   FLUX_NEGATIVE_PROMPT,
-        aspect_ratio:      ratio,
-        output_format:     'jpg',
-        output_quality:    95,
-        safety_tolerance:  2,
-        prompt_upsampling: true,
+        aspect_ratio:     ratio,
+        output_format:    'jpg',
+        output_quality:   95,
+        safety_tolerance: 2,
+        raw:              false,  // false = prompt enhancement açık (daha iyi sonuç)
         ...(seed !== undefined ? { seed } : {}),
       },
     }),
