@@ -114,15 +114,32 @@ export async function POST(req: NextRequest) {
       const used = usage?.content_generated ?? 0
 
       if (used >= monthlyLimit) {
-        return NextResponse.json(
-          {
-            error: `Aylık ${monthlyLimit} içerik limitine ulaştınız (${used}/${monthlyLimit}). Planınızı yükseltin.`,
-            code: 'QUOTA_EXCEEDED',
-            used,
-            limit: monthlyLimit,
-          },
-          { status: 429 }
-        )
+        // Aylık limit aşıldı — satın alınmış kredi var mı kontrol et
+        const { data: creditOk, error: creditErr } = await supabaseAdmin
+          .rpc('consume_credit', { p_org_id: orgId })
+
+        if (creditErr || !creditOk) {
+          // Kredi de yok → quota exceeded
+          const { data: balance } = await supabaseAdmin
+            .from('credit_balance')
+            .select('balance')
+            .eq('organization_id', orgId)
+            .maybeSingle()
+
+          return NextResponse.json(
+            {
+              error: `Aylık ${monthlyLimit} içerik limitine ulaştınız (${used}/${monthlyLimit}). Ek kredi satın alın veya planınızı yükseltin.`,
+              code:    'QUOTA_EXCEEDED',
+              used,
+              limit:   monthlyLimit,
+              credits: balance?.balance ?? 0,
+            },
+            { status: 429 }
+          )
+        }
+        // Kredi tüketildi — üretim devam etsin (increment_usage çağrılmaz, kredi zaten düşüldü)
+        // flagCreditUsed = true ile aşağıda increment_usage'ı atlarız
+        ;(req as { _creditUsed?: boolean })._creditUsed = true
       }
     }
   }
@@ -272,8 +289,9 @@ export async function POST(req: NextRequest) {
 
     // ──────────────────────────────────────────────────────────
     // KULLANIM SAYACI — başarılı üretimde artır (admin hariç)
+    // Kredi tüketildiyse increment_usage çağrılmaz (consume_credit zaten düştü)
     // ──────────────────────────────────────────────────────────
-    if (!isAdmin) {
+    if (!isAdmin && !(req as { _creditUsed?: boolean })._creditUsed) {
       const periodStart = new Date()
       periodStart.setUTCDate(1)
       periodStart.setUTCHours(0, 0, 0, 0)

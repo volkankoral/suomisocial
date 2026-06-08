@@ -80,6 +80,38 @@ export async function POST(req: NextRequest) {
 
       case 'checkout.session.completed': {
         const session = event.data.object as Stripe.Checkout.Session
+
+        // ── Kredi satın alma ──────────────────────────────────────────────────
+        if (session.mode === 'payment' && session.metadata?.type === 'credit_topup') {
+          const orgId   = session.metadata?.org_id
+          const credits = parseInt(session.metadata?.credits ?? '0', 10)
+          const paymentIntent = session.payment_intent as string | undefined
+
+          if (orgId && credits > 0) {
+            await supabase.rpc('add_credits', {
+              p_org_id:         orgId,
+              p_amount:         credits,
+              p_description:    `Credit topup — ${session.metadata?.package_id} (${credits} credits)`,
+              p_payment_intent: paymentIntent ?? null,
+            })
+
+            // Bildirim emaili
+            const { name: orgName, email } = await getOrgInfo(supabase, orgId)
+            if (email) {
+              // Basit payment success emaili — kredi bilgisiyle
+              sendPaymentSuccessEmail({
+                to:             email,
+                businessName:   orgName,
+                planName:       `${credits} AI Credits`,
+                amount:         `€${((session.amount_total ?? 0) / 100).toFixed(2)}`,
+                nextBillingDate: 'No expiry',
+              }).catch(console.error)
+            }
+          }
+          break
+        }
+
+        // ── Abonelik checkout ─────────────────────────────────────────────────
         if (session.mode !== 'subscription') break
 
         const orgId  = session.metadata?.org_id

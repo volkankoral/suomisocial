@@ -31,12 +31,11 @@ export default async function BillingPage({ params }: Props) {
     .eq('is_active', true)
     .order('price_monthly', { ascending: true })
 
-  // Org Stripe müşteri ID
-  const { data: org } = await supabase
-    .from('organizations')
-    .select('stripe_customer_id, name')
-    .eq('id', orgId)
-    .single()
+  // Org Stripe müşteri ID + kredi bakiyesi
+  const [{ data: org }, { data: creditRow }] = await Promise.all([
+    supabase.from('organizations').select('stripe_customer_id, name').eq('id', orgId).single(),
+    supabase.from('credit_balance').select('balance').eq('organization_id', orgId).maybeSingle(),
+  ])
 
   const loadingText = translations[lang].billing.loading
 
@@ -46,6 +45,7 @@ export default async function BillingPage({ params }: Props) {
         subscription={subscription}
         plans={plans ?? []}
         hasStripeCustomer={!!org?.stripe_customer_id}
+        creditBalance={creditRow?.balance ?? 0}
       />
     </Suspense>
   )

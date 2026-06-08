@@ -26,19 +26,30 @@ interface Subscription {
   plans: Plan | null
 }
 
+const CREDIT_PACKAGES = [
+  { id: 'starter', credits: 50,  price: 19,  label: '50 Kredi',  popular: false },
+  { id: 'growth',  credits: 150, price: 49,  label: '150 Kredi', popular: true  },
+  { id: 'power',   credits: 500, price: 149, label: '500 Kredi', popular: false },
+]
+
 interface Props {
   subscription: Subscription | null
   plans: Plan[]
   hasStripeCustomer: boolean
+  creditBalance: number
 }
 
-export function BillingClient({ subscription, plans, hasStripeCustomer }: Props) {
+export function BillingClient({ subscription, plans, hasStripeCustomer, creditBalance }: Props) {
   const searchParams = useSearchParams()
-  const success  = searchParams.get('success')
-  const canceled = searchParams.get('canceled')
+  const success        = searchParams.get('success')
+  const canceled       = searchParams.get('canceled')
+  const creditsSuccess = searchParams.get('credits') === 'success'
+  const creditsCanceled = searchParams.get('credits') === 'canceled'
+  const creditsAmount  = searchParams.get('amount')
 
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'yearly'>('monthly')
   const [loading, setLoading] = useState<string | null>(null)
+  const [balance, setBalance] = useState(creditBalance)
 
   const t = useT()
   const b = t.billing
@@ -74,6 +85,23 @@ export function BillingClient({ subscription, plans, hasStripeCustomer }: Props)
     }
   }
 
+  async function buyCredits(packageId: string) {
+    setLoading(`credits_${packageId}`)
+    const lang = window.location.pathname.split('/')[1] ?? 'tr'
+    try {
+      const res = await fetch('/api/stripe/credits', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ packageId, lang }),
+      })
+      const data = await res.json()
+      if (data.url) window.location.href = data.url
+      else alert(data.error ?? t.common.error)
+    } finally {
+      setLoading(null)
+    }
+  }
+
   async function openPortal() {
     setLoading('portal')
     try {
@@ -104,6 +132,16 @@ export function BillingClient({ subscription, plans, hasStripeCustomer }: Props)
         </div>
       )}
       {canceled && (
+        <div className="rounded-xl border border-white/12 bg-white/4 px-5 py-4 text-muted-foreground text-sm">
+          {b.canceledMsg}
+        </div>
+      )}
+      {creditsSuccess && (
+        <div className="rounded-xl border border-green-500/30 bg-green-500/10 px-5 py-4 text-green-300 text-sm">
+          ✅ {creditsAmount} {b.creditsAdded}
+        </div>
+      )}
+      {creditsCanceled && (
         <div className="rounded-xl border border-white/12 bg-white/4 px-5 py-4 text-muted-foreground text-sm">
           {b.canceledMsg}
         </div>
@@ -281,6 +319,68 @@ export function BillingClient({ subscription, plans, hasStripeCustomer }: Props)
             )
           })}
         </div>
+      </section>
+
+      {/* Kredi Paketleri */}
+      <section className="space-y-4">
+        <div className="flex items-center justify-between flex-wrap gap-3">
+          <div>
+            <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-widest">{b.creditsTitle}</h2>
+            <p className="text-xs text-muted-foreground mt-0.5">{b.creditsSubtitle}</p>
+          </div>
+          {balance > 0 && (
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-orange-500/10 border border-orange-500/20">
+              <span className="text-orange-400 text-sm">⚡</span>
+              <span className="text-sm font-semibold text-foreground">{balance}</span>
+              <span className="text-xs text-muted-foreground">{b.creditsRemaining}</span>
+            </div>
+          )}
+        </div>
+
+        <div className="grid gap-4 sm:grid-cols-3">
+          {CREDIT_PACKAGES.map(pkg => {
+            const isLoading = loading === `credits_${pkg.id}`
+            return (
+              <div
+                key={pkg.id}
+                className={`rounded-xl border bg-card overflow-hidden flex flex-col transition-all ${
+                  pkg.popular ? 'border-primary/40 ring-1 ring-primary/20' : 'border-white/8'
+                }`}
+              >
+                {pkg.popular && <div className="h-0.5 bg-gradient-to-r from-orange-500 to-pink-600" />}
+                <div className="p-5 flex flex-col flex-1">
+                  <div className="flex items-start justify-between mb-3">
+                    <p className="font-bold text-foreground">{pkg.label}</p>
+                    {pkg.popular && (
+                      <span className="text-[9px] bg-orange-500/15 text-orange-400 border border-orange-500/20 px-2 py-0.5 rounded-full font-medium">
+                        {b.popular}
+                      </span>
+                    )}
+                  </div>
+                  <div className="mb-2">
+                    <span className="text-3xl font-bold text-foreground">€{pkg.price}</span>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      ~€{(pkg.price / pkg.credits).toFixed(2)} / {b.creditUnit}
+                    </p>
+                  </div>
+                  <p className="text-xs text-muted-foreground mb-4 flex-1">{b.creditsNoExpiry}</p>
+                  <button
+                    onClick={() => buyCredits(pkg.id)}
+                    disabled={!!loading}
+                    className={`w-full text-sm py-2.5 rounded-xl font-medium transition-all disabled:opacity-40 mt-auto ${
+                      pkg.popular
+                        ? 'bg-gradient-to-r from-orange-500 to-pink-600 text-white hover:opacity-90 shadow-lg shadow-orange-900/25'
+                        : 'border border-white/12 text-muted-foreground hover:text-foreground hover:border-white/25'
+                    }`}
+                  >
+                    {isLoading ? b.btnLoading : b.creditsBuy}
+                  </button>
+                </div>
+              </div>
+            )
+          })}
+        </div>
+        <p className="text-xs text-muted-foreground">{b.creditsHint}</p>
       </section>
 
       {/* FAQ */}
