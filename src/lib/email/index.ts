@@ -1,6 +1,11 @@
 import { Resend } from 'resend'
 
-const resend = new Resend(process.env.RESEND_API_KEY)
+// Lazy init — build sırasında RESEND_API_KEY olmayabilir, runtime'da olacak
+let _resend: Resend | null = null
+function getResend(): Resend {
+  if (!_resend) _resend = new Resend(process.env.RESEND_API_KEY)
+  return _resend
+}
 
 const FROM = 'Occaly <noreply@occaly.com>'
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://occaly.com'
@@ -85,7 +90,7 @@ export async function sendWelcomeEmail(opts: {
     ${btn('Go to Dashboard →', dashUrl)}
   `
 
-  return resend.emails.send({
+  return getResend().emails.send({
     from: FROM,
     to: opts.to,
     subject: '🎉 Welcome to Occaly — let\'s get started',
@@ -125,7 +130,7 @@ export async function sendPaymentSuccessEmail(opts: {
     ${btn('View Billing →', billingUrl)}
   `
 
-  return resend.emails.send({
+  return getResend().emails.send({
     from: FROM,
     to: opts.to,
     subject: `✅ Payment confirmed — ${opts.planName} plan`,
@@ -154,7 +159,7 @@ export async function sendSubscriptionCanceledEmail(opts: {
     ${btn('Manage Subscription →', billingUrl)}
   `
 
-  return resend.emails.send({
+  return getResend().emails.send({
     from: FROM,
     to: opts.to,
     subject: `Subscription canceled — access until ${opts.accessUntil}`,
@@ -181,7 +186,7 @@ export async function sendPaymentFailedEmail(opts: {
     ${btn('Update Payment Method →', billingUrl)}
   `
 
-  return resend.emails.send({
+  return getResend().emails.send({
     from: FROM,
     to: opts.to,
     subject: '⚠️ Payment failed — action required',
@@ -230,7 +235,7 @@ export async function sendAutopilotReadyEmail(opts: {
 
   const body = bodies[lang] ?? bodies.en
 
-  await resend.emails.send({
+  await getResend().emails.send({
     from:    FROM,
     to:      opts.to,
     subject,
