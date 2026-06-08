@@ -13,6 +13,31 @@ export interface BrandContext {
   products: unknown
   /** Genelde pizzacı için 'restaurant' / 'pizzeria' */
   business_type?: string | null
+  /** Sektör — AI görsel stratejisini yönlendirir (restaurant, beauty, retail, fitness, services, other) */
+  business_category?: string | null
+}
+
+/**
+ * Sektöre göre görsel üretim stratejisi.
+ * image_prompt'a hangi tür fotoğrafın üretileceğini söyler.
+ * Sistem restoran için tasarlandı ama bu fonksiyon yatay açılımı sağlar.
+ */
+const VISUAL_STRATEGIES: Record<string, string> = {
+  restaurant: `STRATEGY: make the FOOD the absolute hero. Close-up dishes with rich texture (cheese pull, rising steam, fresh ingredients artfully arranged), rustic wooden table, warm ambient lighting. If people appear, ONLY hands reaching for food or heavily blurred background silhouettes.`,
+
+  beauty: `STRATEGY: showcase the RESULT and atmosphere — elegant salon interior, professional styling tools, beauty products beautifully arranged, macro close-ups of styled hair / manicured nails / glowing skin texture. Clean, bright, aspirational mood. Show hands at work or styled details, never identifiable faces.`,
+
+  retail: `STRATEGY: make the PRODUCT the hero — crisp commercial product photography, attractive arrangement on a clean surface, tasteful props and lifestyle context that fits the store. Bright even lighting, shallow depth of field to isolate the product.`,
+
+  fitness: `STRATEGY: convey ENERGY and movement — gym equipment, dynamic training atmosphere, dramatic high-contrast lighting, subtle motion blur for dynamism, sweat-and-effort textures. Show equipment, the space, or action silhouettes, never identifiable faces.`,
+
+  services: `STRATEGY: clean, professional, conceptual imagery relevant to the service — the tools of the trade, an organized modern workspace, a polished before/after concept. Trustworthy, premium feel. Modern soft lighting.`,
+
+  other: `STRATEGY: appealing professional photography that highlights the business's core offering — relevant objects or the space itself as the hero, attractive styling, inviting atmosphere.`,
+}
+
+function getVisualStrategy(category?: string | null): string {
+  return VISUAL_STRATEGIES[category ?? 'restaurant'] ?? VISUAL_STRATEGIES.restaurant
 }
 
 export interface SpecialDayContext {
@@ -53,7 +78,7 @@ const LANG_TAGS: Record<ContentLang, string> = {
 }
 
 /** Dile göre ortak JSON kuralları */
-function commonRules(lang: ContentLang): string {
+function commonRules(lang: ContentLang, category?: string | null): string {
   const langName = LANG_NAME[lang]
   // Birincil dil Türkçe değilse referans çeviri Türkçe; Türkçeyse İngilizce
   const refLang = lang === 'tr' ? 'ENGLISH' : 'TURKISH'
@@ -70,7 +95,7 @@ Rules:
 - caption_fi: Write the MAIN caption in NATURAL ${langName}. 120-200 characters. Warm, local, casual tone. Use 1-3 emojis. NEVER use stiff translated phrases.
 - caption_tr: A short ${refLang} reference translation of the caption so the business owner can verify the meaning.
 - hashtags: 5-8 hashtags WITHOUT # symbol. Mix local ${langName} tags (${LANG_TAGS[lang]}, etc.) + business-specific tags relevant to the actual business type. Hashtags must be real, correctly spelled ${langName} words — no typos, no garbled text.
-- image_prompt: Detailed ENGLISH description (60-100 words). MUST be PHOTOREALISTIC like a professional food magazine photo. STRATEGY: make the FOOD the absolute hero of the image. For restaurants/pizzerias: close-up pizza with melting cheese pull, ingredients artfully arranged, steam rising, rustic wooden table, warm ambient lighting. People are OPTIONAL — if included, show ONLY hands reaching for food, or heavily blurred silhouettes in background (depth of field f/1.4 bokeh). ABSOLUTELY NO visible faces, NO children, NO portraits. This is food photography, not people photography. Specify: lighting (e.g. "dramatic side light, warm orange tones"), exact composition (e.g. "overhead flat lay", "45-degree hero shot", "macro cheese pull"), and texture details.
+- image_prompt: Detailed ENGLISH description (60-100 words). MUST be PHOTOREALISTIC, professional magazine quality. ${getVisualStrategy(category)} PEOPLE RULE (all categories): AVOID visible faces, children and portraits — prefer hands, objects, the space, or heavily blurred silhouettes (depth of field f/1.4 bokeh). Always specify: lighting (e.g. "dramatic side light, warm orange tones"), exact composition (e.g. "overhead flat lay", "45-degree hero shot", "macro detail"), and texture details.
 ${lang === 'fi' ? `
 FINNISH LANGUAGE RULES (mandatory — errors will be rejected):
 1. Vowel harmony (vokaalisointu): words with back vowels (a, o, u) take suffixes with a/o/u; words with front vowels (ä, ö, y) take suffixes with ä/ö/y. Mixed loanwords ending in front vowel (e.g. "Occaly" ends in y → front harmony → "Occalyllä" not "Occalylla").
@@ -89,6 +114,7 @@ function buildBrandBlock(brand: BrandContext): string {
     : ''
 
   return `Business name: ${brand.business_name}
+Business category: ${brand.business_category ?? 'restaurant'}
 Business type: ${brand.business_type ?? 'local Finnish business'}
 Description: ${brand.description ?? 'A local Finnish business'}
 Tone: ${brand.tone ?? 'warm, friendly, local'}
@@ -146,7 +172,7 @@ ${buildBrandBlock(brand)}
 
 Task: Create an Instagram/Facebook post for a SPECIAL DAY.
 Connect the special day NATURALLY to the business. Don't be forced.
-${commonRules(lang)}
+${commonRules(lang, brand.business_category)}
 
 Visual hint (use in image_prompt if relevant): ${day.visual_hint ?? '(none)'}`
 
@@ -173,7 +199,7 @@ export async function generateRoutineContent(
 ${buildBrandBlock(brand)}
 
 Task: Create a SHORT, CASUAL weekly post — a friendly greeting that fits ${routine.name_fi}.
-${commonRules(lang)}
+${commonRules(lang, brand.business_category)}
 
 Visual hint: ${routine.visual_hint ?? '(none)'}`
 
@@ -200,7 +226,7 @@ ${buildBrandBlock(brand)}
 
 Task: Create a CAMPAIGN/PROMOTION post in ${langName}.
 Be enthusiastic but not pushy. Include a clear call-to-action.
-${commonRules(lang)}`
+${commonRules(lang, brand.business_category)}`
 
   const dateInfo = [
     campaign.start_date ? `Starts: ${campaign.start_date}` : '',

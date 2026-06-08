@@ -40,11 +40,12 @@ function extractContent(html: string): { title: string; meta: string; text: stri
 }
 
 interface BrandExtract {
-  business_name: string
-  description:   string
-  business_type: string
-  products:      string[]
-  tone:          string
+  business_name:     string
+  description:       string
+  business_type:     string
+  business_category: string
+  products:          string[]
+  tone:              string
 }
 
 export async function POST(req: NextRequest) {
@@ -98,9 +99,11 @@ Respond ONLY in JSON (no markdown):
   "business_name": "...",
   "description": "1-2 sentence description IN THE SAME LANGUAGE as the website",
   "business_type": "e.g. restaurant, cafe, retail shop, hair salon, gym, SaaS, etc.",
+  "business_category": "ONE of exactly: restaurant | beauty | retail | fitness | services | other",
   "products": ["main product/service", "..."],
   "tone": "ONE of exactly: samimi ve sıcak | profesyonel | eğlenceli ve renkli | minimalist"
 }
+business_category mapping: food/cafe/bar→restaurant, hair/nails/spa/cosmetics→beauty, shop/store/e-commerce→retail, gym/yoga/sports→fitness, consulting/repair/cleaning/professional→services, anything else→other.
 Keep products to 3-6 items. Pick the tone that best matches the brand's style.`
 
   const userPrompt = `Website: ${target}
@@ -138,12 +141,14 @@ ${text}`
   }
 
   const validTones = ['samimi ve sıcak', 'profesyonel', 'eğlenceli ve renkli', 'minimalist']
+  const validCategories = ['restaurant', 'beauty', 'retail', 'fitness', 'services', 'other']
 
   return NextResponse.json({
-    business_name: extract.business_name ?? title ?? '',
-    description:   extract.description ?? meta ?? '',
-    business_type: extract.business_type ?? '',
-    products:      Array.isArray(extract.products) ? extract.products.slice(0, 6) : [],
-    tone:          validTones.includes(extract.tone) ? extract.tone : 'samimi ve sıcak',
+    business_name:     extract.business_name ?? title ?? '',
+    description:       extract.description ?? meta ?? '',
+    business_type:     extract.business_type ?? '',
+    business_category: validCategories.includes(extract.business_category) ? extract.business_category : 'restaurant',
+    products:          Array.isArray(extract.products) ? extract.products.slice(0, 6) : [],
+    tone:              validTones.includes(extract.tone) ? extract.tone : 'samimi ve sıcak',
   })
 }

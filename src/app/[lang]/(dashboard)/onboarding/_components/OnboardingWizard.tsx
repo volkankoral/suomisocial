@@ -49,6 +49,7 @@ export function OnboardingWizard({ lang, existingBrand, plans, hasSubscription }
   const [description, setDescription]   = useState('')
   const [products, setProducts]         = useState('')
   const [tone, setTone]                 = useState(existingBrand?.tone ?? 'samimi ve sıcak')
+  const [businessCategory, setBusinessCategory] = useState('restaurant')
   const [saving, setSaving]             = useState(false)
 
   // Adım 2 — plan
@@ -75,6 +76,7 @@ export function OnboardingWizard({ lang, existingBrand, plans, hasSubscription }
       setDescription(data.description ?? '')
       setProducts(Array.isArray(data.products) ? data.products.join(', ') : '')
       if (data.tone) setTone(data.tone)
+      if (data.business_category) setBusinessCategory(data.business_category)
       setStep(1)
     } catch {
       setAnalyzeErr(o.analyzeError)
@@ -94,6 +96,7 @@ export function OnboardingWizard({ lang, existingBrand, plans, hasSubscription }
           business_name: businessName,
           description,
           tone,
+          business_category: businessCategory,
           products: products.split(',').map(p => p.trim()).filter(Boolean),
           country_code: REGION_CONFIG[region].defaultCountry,
         }),

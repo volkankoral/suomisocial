@@ -15,6 +15,7 @@ interface BrandData {
   logo_url?: string | null
   overlay_text?: boolean | null
   content_language?: string | null
+  business_category?: string | null
 }
 
 interface CountryOption {
@@ -56,10 +57,20 @@ export function BrandForm({ brand, countryCode, countries }: Props) {
     tone:             brand?.tone ?? 'samimi ve sıcak',
     primary_color:    brand?.primary_color ?? '#f97316',
     products:         Array.isArray(brand?.products) ? (brand.products as string[]).join(', ') : '',
-    country_code:     countryCode,
-    overlay_text:     brand?.overlay_text !== false,
-    content_language: brand?.content_language ?? '',   // '' = auto/null
+    country_code:      countryCode,
+    overlay_text:      brand?.overlay_text !== false,
+    content_language:  brand?.content_language ?? '',   // '' = auto/null
+    business_category: brand?.business_category ?? 'restaurant',
   })
+
+  const CATEGORY_OPTIONS = [
+    { value: 'restaurant', label: b.catRestaurant },
+    { value: 'beauty',     label: b.catBeauty },
+    { value: 'retail',     label: b.catRetail },
+    { value: 'fitness',    label: b.catFitness },
+    { value: 'services',   label: b.catServices },
+    { value: 'other',      label: b.catOther },
+  ]
 
   async function handleLogoUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
@@ -92,11 +103,12 @@ export function BrandForm({ brand, countryCode, countries }: Props) {
           description:      form.description,
           tone:             form.tone,
           primary_color:    form.primary_color,
-          products:         form.products.split(',').map(p => p.trim()).filter(Boolean),
-          country_code:     form.country_code,
-          logo_url:         logoUrl,
-          overlay_text:     form.overlay_text,
-          content_language: form.content_language || null,  // '' → null (auto)
+          products:          form.products.split(',').map(p => p.trim()).filter(Boolean),
+          country_code:      form.country_code,
+          logo_url:          logoUrl,
+          overlay_text:      form.overlay_text,
+          content_language:  form.content_language || null,  // '' → null (auto)
+          business_category: form.business_category,
         }),
       })
       const json = await res.json()
@@ -174,6 +186,31 @@ export function BrandForm({ brand, countryCode, countries }: Props) {
           className="w-full rounded-lg border border-white/10 bg-card px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-orange-500/40"
           placeholder="Örn. Bella Pizzeria"
         />
+      </div>
+
+      {/* Sektör */}
+      <div>
+        <label className="block text-sm font-medium text-foreground mb-1.5">
+          {b.category} <span className="text-muted-foreground font-normal ml-1">{b.categoryHint}</span>
+        </label>
+        <div className="grid grid-cols-2 gap-2">
+          {CATEGORY_OPTIONS.map(opt => (
+            <label
+              key={opt.value}
+              className={`flex items-center gap-2 rounded-lg border px-3 py-2 cursor-pointer text-sm transition-colors ${
+                form.business_category === opt.value
+                  ? 'border-orange-500/50 bg-orange-500/10 text-foreground'
+                  : 'border-white/10 bg-card text-muted-foreground hover:border-white/20 hover:text-foreground'
+              }`}
+            >
+              <input type="radio" name="business_category" value={opt.value}
+                checked={form.business_category === opt.value}
+                onChange={e => setForm(f => ({ ...f, business_category: e.target.value }))}
+                className="sr-only" />
+              {opt.label}
+            </label>
+          ))}
+        </div>
       </div>
 
       {/* Açıklama */}

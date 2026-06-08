@@ -15,7 +15,7 @@ export default withSentryConfig(nextConfig, {
 
   // Performans izleme — route bazlı otomatik enstrümantasyon
   widenClientFileUpload: true,
-  hideSourceMaps: true,
+  sourcemaps: { disable: false },
   disableLogger: true,
   automaticVercelMonitors: true,
 })
