@@ -213,6 +213,24 @@ export async function GET(req: NextRequest) {
             const image = await generateImage(textContent.image_prompt, { aspect: 'square', provider: 'pollinations' })
             imageUrl    = image.url
 
+            // Pollinations URL'i de Storage'a mirror'la (uzun vadeli erişim için)
+            if (imageUrl) {
+              try {
+                const imgRes = await fetch(imageUrl)
+                if (imgRes.ok) {
+                  const buf  = await imgRes.arrayBuffer()
+                  const path = `${orgId}/auto_${Date.now()}.jpg`
+                  const { error: upErr } = await supabaseAdmin
+                    .storage.from('post-media')
+                    .upload(path, buf, { contentType: 'image/jpeg', upsert: false })
+                  if (!upErr) {
+                    const { data: pub } = supabaseAdmin.storage.from('post-media').getPublicUrl(path)
+                    if (pub?.publicUrl) imageUrl = pub.publicUrl
+                  }
+                }
+              } catch { /* mirror başarısız → orijinal URL */ }
+            }
+
             // Overlay
             const overlayEnabled = (brand as { overlay_text?: boolean }).overlay_text !== false
             if (imageUrl && overlayEnabled) {

@@ -240,6 +240,27 @@ export async function POST(req: NextRequest) {
       const image = await generateImage(generated.image_prompt, { aspect, provider })
       imageUrl = image.url
       imageProvider = image.provider
+
+      // FLUX URL'leri ~1 saat içinde sürüyor → Supabase Storage'a mirror'la
+      if (image.provider === 'flux' && imageUrl) {
+        try {
+          const imgRes = await fetch(imageUrl)
+          if (imgRes.ok) {
+            const buf  = await imgRes.arrayBuffer()
+            const path = `${orgId}/${Date.now()}.jpg`
+            const { error: upErr } = await supabase
+              .storage.from('post-media')
+              .upload(path, buf, { contentType: 'image/jpeg', upsert: false })
+            if (!upErr) {
+              const { data: pub } = supabase.storage.from('post-media').getPublicUrl(path)
+              if (pub?.publicUrl) imageUrl = pub.publicUrl
+            }
+          }
+        } catch (mirrorErr) {
+          // Mirror başarısız → orijinal (geçici) URL ile devam et
+          console.error('Storage mirror hatası (devam):', mirrorErr)
+        }
+      }
     }
 
     // Metin overlay — video değilse uygula (brand overlay_text false yapabilir)
