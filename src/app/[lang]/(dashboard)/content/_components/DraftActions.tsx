@@ -1,6 +1,7 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useRef } from 'react'
+import { createPortal } from 'react-dom'
 import { useRouter } from 'next/navigation'
 import { useT } from '@/lib/useT'
 
@@ -15,6 +16,8 @@ export function DraftActions({ draftId, currentStatus, archived = false }: Props
   const [publishing, setPublishing] = useState(false)
   const [pubError, setPubError]     = useState<string | null>(null)
   const [menuOpen, setMenuOpen]     = useState(false)
+  const [menuPos, setMenuPos]       = useState<{ top: number; right: number } | null>(null)
+  const menuBtnRef                  = useRef<HTMLButtonElement>(null)
   const router = useRouter()
   const t      = useT()
   const c      = t.content
@@ -131,22 +134,35 @@ export function DraftActions({ draftId, currentStatus, archived = false }: Props
   overflowItems.push({ label: `📦 ${c.archiveBtn}`, onClick: toggleArchive })
   if (currentStatus !== 'posted') overflowItems.push({ label: `🗑 ${t.common.delete}`, onClick: deleteDraft, danger: true })
 
+  function toggleMenu() {
+    if (menuOpen) { setMenuOpen(false); return }
+    const rect = menuBtnRef.current?.getBoundingClientRect()
+    if (rect) {
+      setMenuPos({ top: rect.bottom + 6, right: window.innerWidth - rect.right })
+    }
+    setMenuOpen(true)
+  }
+
   function OverflowMenu() {
     if (overflowItems.length === 0) return null
     return (
-      <div className="relative">
+      <>
         <button
-          onClick={() => setMenuOpen(o => !o)}
+          ref={menuBtnRef}
+          onClick={toggleMenu}
           disabled={loading}
           className="text-xs px-2.5 py-2 sm:py-1.5 rounded-lg border border-white/12 text-muted-foreground hover:text-foreground hover:border-white/24 transition-colors disabled:opacity-40"
           title="Diğer işlemler"
         >
           ⋯
         </button>
-        {menuOpen && (
+        {menuOpen && menuPos && typeof document !== 'undefined' && createPortal(
           <>
-            <div className="fixed inset-0 z-10" onClick={() => setMenuOpen(false)} />
-            <div className="absolute right-0 top-full mt-1 z-20 min-w-[150px] rounded-xl border border-white/12 bg-[#11151c] shadow-xl py-1 overflow-hidden">
+            <div className="fixed inset-0 z-[60]" onClick={() => setMenuOpen(false)} />
+            <div
+              className="fixed z-[61] min-w-[150px] rounded-xl border border-white/12 bg-[#11151c] shadow-2xl py-1 overflow-hidden"
+              style={{ top: menuPos.top, right: menuPos.right }}
+            >
               {overflowItems.map((it, i) => (
                 <button
                   key={i}
@@ -160,9 +176,10 @@ export function DraftActions({ draftId, currentStatus, archived = false }: Props
                 </button>
               ))}
             </div>
-          </>
+          </>,
+          document.body
         )}
-      </div>
+      </>
     )
   }
 
