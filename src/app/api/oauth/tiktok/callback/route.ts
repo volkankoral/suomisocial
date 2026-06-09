@@ -40,41 +40,48 @@ export async function GET(request: NextRequest) {
     // 1. Code → Access Token değişimi
     const redirectUri = `${APP_URL}/api/oauth/tiktok/callback`
 
-    const tokenRes = await fetch('https://open.tiktokapi.com/v2/oauth/token/', {
-      method: 'POST',
-      headers: {
-        'Content-Type':  'application/x-www-form-urlencoded',
-        'Cache-Control': 'no-cache',
-      },
-      // Next.js fetch cache'ini devre dışı bırak
-      cache: 'no-store',
-      body: new URLSearchParams({
-        client_key:    process.env.TIKTOK_CLIENT_KEY!,
-        client_secret: process.env.TIKTOK_CLIENT_SECRET!,
-        code,
-        grant_type:    'authorization_code',
-        redirect_uri:  redirectUri,
-      }).toString(),
+    const tokenBody = new URLSearchParams({
+      client_key:    process.env.TIKTOK_CLIENT_KEY!,
+      client_secret: process.env.TIKTOK_CLIENT_SECRET!,
+      code,
+      grant_type:    'authorization_code',
+      redirect_uri:  redirectUri,
     })
 
+    console.log('[tiktok/callback] code_len:', code.length, 'redirect_uri:', redirectUri, 'client_key:', process.env.TIKTOK_CLIENT_KEY?.slice(0, 8))
+
+    const tokenRes = await fetch('https://open-api.tiktok.com/v2/oauth/token/', {
+      method: 'POST',
+      headers: {
+        'Content-Type':  'application/x-www-form-urlencoded;charset=UTF-8',
+        'Cache-Control': 'no-cache',
+      },
+      cache: 'no-store',
+      body: tokenBody.toString(),
+    })
+
+    const rawBody = await tokenRes.text()
+    console.log('[tiktok/callback] status:', tokenRes.status, 'body:', rawBody.slice(0, 300))
+
     if (!tokenRes.ok) {
-      const err = await tokenRes.text()
-      console.error('[tiktok/callback] token error:', err)
-      return NextResponse.redirect(`${APP_URL}/${lang}/social?error=tiktok_token_failed&detail=${encodeURIComponent(err.slice(0, 120))}`)
+      return NextResponse.redirect(`${APP_URL}/${lang}/social?error=tiktok_token_failed&detail=${encodeURIComponent(rawBody.slice(0, 200))}`)
     }
 
-    const tokenData = await tokenRes.json()
-    console.log('[tiktok/callback] tokenData keys:', Object.keys(tokenData))
-    const { access_token, open_id, expires_in, refresh_token, refresh_expires_in } = tokenData
+    let tokenData: Record<string, unknown>
+    try { tokenData = JSON.parse(rawBody) } catch { tokenData = {} }
+
+    const { access_token, open_id, expires_in, refresh_token, refresh_expires_in } = tokenData as {
+      access_token?: string; open_id?: string; expires_in?: number
+      refresh_token?: string; refresh_expires_in?: number
+    }
 
     if (!access_token || !open_id) {
-      console.error('[tiktok/callback] missing token fields:', JSON.stringify(tokenData))
-      return NextResponse.redirect(`${APP_URL}/${lang}/social?error=tiktok_no_token&detail=${encodeURIComponent(JSON.stringify(tokenData).slice(0, 120))}`)
+      return NextResponse.redirect(`${APP_URL}/${lang}/social?error=tiktok_no_token&detail=${encodeURIComponent(rawBody.slice(0, 200))}`)
     }
 
     // 2. Kullanıcı bilgisi al
     const userRes = await fetch(
-      'https://open.tiktokapi.com/v2/user/info/?fields=display_name,avatar_url,username',
+      'https://open-api.tiktok.com/v2/user/info/?fields=display_name,avatar_url,username',
       { headers: { Authorization: `Bearer ${access_token}` } },
     )
 
@@ -144,8 +151,13 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.redirect(`${APP_URL}/${lang}/social?connected=tiktok`)
   } catch (err: unknown) {
-    const msg = err instanceof Error ? err.message : String(err)
+    let msg = err instanceof Error ? err.message : String(err)
+    // Fetch error'larında cause daha açıklayıcı olur
+    if (err instanceof Error && (err as NodeJS.ErrnoException).cause) {
+      const cause = (err as NodeJS.ErrnoException).cause
+      msg += ' | cause: ' + (cause instanceof Error ? cause.message : String(cause))
+    }
     console.error('[tiktok/callback] unexpected error:', msg)
-    return NextResponse.redirect(`${APP_URL}/${lang}/social?error=oauth_failed&detail=${encodeURIComponent(msg.slice(0, 150))}`)
+    return NextResponse.redirect(`${APP_URL}/${lang}/social?error=oauth_failed&detail=${encodeURIComponent(msg.slice(0, 200))}`)
   }
 }
