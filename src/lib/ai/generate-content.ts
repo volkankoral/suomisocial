@@ -92,13 +92,14 @@ Respond ONLY in JSON (no other text, no markdown fences):
 }
 
 Rules:
+- BRAND NAME: Use ONLY the exact "Business name" given in the BRAND section below. NEVER invent, translate, or substitute another brand name. Do NOT use any brand or product name that appears in these instructions/examples — those are illustrative only.
 - caption_fi: Write the MAIN caption in NATURAL ${langName}. 120-200 characters. Warm, local, casual tone. Use 1-3 emojis. NEVER use stiff translated phrases.
 - caption_tr: A short ${refLang} reference translation of the caption so the business owner can verify the meaning.
 - hashtags: 5-8 hashtags WITHOUT # symbol. Mix local ${langName} tags (${LANG_TAGS[lang]}, etc.) + business-specific tags relevant to the actual business type. Hashtags must be real, correctly spelled ${langName} words — no typos, no garbled text.
 - image_prompt: Detailed ENGLISH description (60-100 words). MUST be PHOTOREALISTIC, professional magazine quality. ${getVisualStrategy(category)} PEOPLE RULE (all categories): AVOID visible faces, children and portraits — prefer hands, objects, the space, or heavily blurred silhouettes (depth of field f/1.4 bokeh). Always specify: lighting (e.g. "dramatic side light, warm orange tones"), exact composition (e.g. "overhead flat lay", "45-degree hero shot", "macro detail"), and texture details.
 ${lang === 'fi' ? `
 FINNISH LANGUAGE RULES (mandatory — errors will be rejected):
-1. Vowel harmony (vokaalisointu): words with back vowels (a, o, u) take suffixes with a/o/u; words with front vowels (ä, ö, y) take suffixes with ä/ö/y. Mixed loanwords ending in front vowel (e.g. "Occaly" ends in y → front harmony → "Occalyllä" not "Occalylla").
+1. Vowel harmony (vokaalisointu): words with back vowels (a, o, u) take suffixes with a/o/u; words with front vowels (ä, ö, y) take suffixes with ä/ö/y. A loanword ending in the front vowel "y" takes front-harmony suffixes (e.g. a name ending in -y → "-llä" not "-lla").
 2. Inflection (taivutus): use correct case suffixes. Illative plural of "asia" = "asioihin" (NOT "asiin"). Genitive plural of "rakas" = "rakkaiden" (NOT "rakkaitten" in modern text).
 3. Company/brand names: apply Finnish vowel harmony based on the last vowel of the brand name.
 4. Spell all hashtags as complete, correct Finnish words. No abbreviations, no garbled text (e.g. "#isänpäivä" NOT "#isnpiv").
