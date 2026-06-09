@@ -50,7 +50,8 @@ export default async function DashboardLayout({ children, params }: Props) {
     { href: `/${lang}/ads`,       label: t.nav.ads,       icon: '📊' },
     { href: `/${lang}/brand`,      label: t.nav.brand,      icon: '⚙️' },
     { href: `/${lang}/billing`,   label: t.nav.billing,   icon: '💳' },
-    { href: `/${lang}/autopilot`, label: t.nav.autopilot, icon: '🤖' },
+    { href: `/${lang}/autopilot`, label: t.nav.autopilot, icon: '⚡' },
+    { href: `/${lang}/agent`,     label: t.nav.agent,     icon: '🤖' },
     ...(isAdmin ? [{ href: `/${lang}/admin`, label: t.nav.admin, icon: '🛡️' }] : []),
   ]
 
