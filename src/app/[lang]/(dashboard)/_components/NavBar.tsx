@@ -168,7 +168,7 @@ export function NavBar({ links, email, lang }: Props) {
               onClick={() => { setUserOpen(!userOpen); setLangOpen(false) }}
               className="flex shrink-0 items-center gap-2 px-3 py-1.5 rounded-lg border border-white/8 bg-white/4 hover:border-white/20 transition-colors"
             >
-              <div className="w-5 h-5 rounded-full bg-gradient-to-br from-orange-500 to-pink-600 flex items-center justify-center text-[9px] font-bold text-white shrink-0">
+              <div className="w-5 h-5 rounded-full bg-gradient-to-br from-sky-500 to-primary flex items-center justify-center text-[9px] font-bold text-white shrink-0">
                 {email.charAt(0).toUpperCase()}
               </div>
               <span className="text-xs text-muted-foreground font-mono hidden md:block max-w-[120px] truncate">
@@ -234,7 +234,7 @@ export function NavBar({ links, email, lang }: Props) {
             {/* User + lang row */}
             <div className="flex items-center justify-between px-5 py-4 border-b border-white/8">
               <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-full bg-gradient-to-br from-orange-500 to-pink-600 flex items-center justify-center text-sm font-bold text-white shrink-0">
+                <div className="w-9 h-9 rounded-full bg-gradient-to-br from-sky-500 to-primary flex items-center justify-center text-sm font-bold text-white shrink-0">
                   {email.charAt(0).toUpperCase()}
                 </div>
                 <p className="text-sm text-muted-foreground truncate max-w-[180px]">{email}</p>

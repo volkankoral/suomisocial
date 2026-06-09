@@ -167,7 +167,7 @@ export function BrandForm({ brand, countryCode, countries }: Props) {
         <select
           value={form.country_code}
           onChange={e => setForm(f => ({ ...f, country_code: e.target.value }))}
-          className="w-full rounded-lg border border-white/10 bg-card px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-orange-500/40"
+          className="w-full rounded-lg border border-white/10 bg-card px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40"
         >
           {countries.map(c => (
             <option key={c.code} value={c.code} className="bg-zinc-900">{c.name} ({c.code})</option>
@@ -183,7 +183,7 @@ export function BrandForm({ brand, countryCode, countries }: Props) {
           type="text" required
           value={form.business_name}
           onChange={e => setForm(f => ({ ...f, business_name: e.target.value }))}
-          className="w-full rounded-lg border border-white/10 bg-card px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-orange-500/40"
+          className="w-full rounded-lg border border-white/10 bg-card px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40"
           placeholder="Örn. Bella Pizzeria"
         />
       </div>
@@ -199,7 +199,7 @@ export function BrandForm({ brand, countryCode, countries }: Props) {
               key={opt.value}
               className={`flex items-center gap-2 rounded-lg border px-3 py-2 cursor-pointer text-sm transition-colors ${
                 form.business_category === opt.value
-                  ? 'border-orange-500/50 bg-orange-500/10 text-foreground'
+                  ? 'border-primary/50 bg-primary/10 text-foreground'
                   : 'border-white/10 bg-card text-muted-foreground hover:border-white/20 hover:text-foreground'
               }`}
             >
@@ -222,7 +222,7 @@ export function BrandForm({ brand, countryCode, countries }: Props) {
           rows={3}
           value={form.description}
           onChange={e => setForm(f => ({ ...f, description: e.target.value }))}
-          className="w-full rounded-lg border border-white/10 bg-card px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-orange-500/40 resize-none"
+          className="w-full rounded-lg border border-white/10 bg-card px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40 resize-none"
         />
       </div>
 
@@ -235,7 +235,7 @@ export function BrandForm({ brand, countryCode, countries }: Props) {
               key={opt.value}
               className={`flex items-center gap-2 rounded-lg border px-3 py-2 cursor-pointer text-sm transition-colors ${
                 form.tone === opt.value
-                  ? 'border-orange-500/50 bg-orange-500/10 text-foreground'
+                  ? 'border-primary/50 bg-primary/10 text-foreground'
                   : 'border-white/10 bg-card text-muted-foreground hover:border-white/20 hover:text-foreground'
               }`}
             >
@@ -256,7 +256,7 @@ export function BrandForm({ brand, countryCode, countries }: Props) {
           type="text"
           value={form.products}
           onChange={e => setForm(f => ({ ...f, products: e.target.value }))}
-          className="w-full rounded-lg border border-white/10 bg-card px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-orange-500/40"
+          className="w-full rounded-lg border border-white/10 bg-card px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40"
         />
       </div>
 
@@ -280,7 +280,7 @@ export function BrandForm({ brand, countryCode, countries }: Props) {
         <label className="flex items-center gap-3 cursor-pointer group">
           <div
             onClick={() => setForm(f => ({ ...f, overlay_text: !f.overlay_text }))}
-            className={`relative w-11 h-6 rounded-full transition-colors shrink-0 ${form.overlay_text ? 'bg-orange-500' : 'bg-white/15'}`}
+            className={`relative w-11 h-6 rounded-full transition-colors shrink-0 ${form.overlay_text ? 'bg-primary' : 'bg-white/15'}`}
           >
             <span className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform ${form.overlay_text ? 'translate-x-5' : 'translate-x-0'}`} />
           </div>
@@ -305,7 +305,7 @@ export function BrandForm({ brand, countryCode, countries }: Props) {
               key={opt.value}
               className={`flex items-center gap-2 rounded-lg border px-3 py-2 cursor-pointer text-sm transition-colors ${
                 form.content_language === opt.value
-                  ? 'border-orange-500/50 bg-orange-500/10 text-foreground'
+                  ? 'border-primary/50 bg-primary/10 text-foreground'
                   : 'border-white/10 bg-card text-muted-foreground hover:border-white/20 hover:text-foreground'
               }`}
             >
@@ -329,7 +329,7 @@ export function BrandForm({ brand, countryCode, countries }: Props) {
         <button
           type="submit"
           disabled={saving || logoUploading}
-          className="px-5 py-2 rounded-lg bg-gradient-to-r from-orange-500 to-pink-600 text-white text-sm font-medium hover:opacity-90 transition-opacity disabled:opacity-40"
+          className="px-5 py-2 rounded-lg bg-gradient-to-r from-sky-500 to-primary text-white text-sm font-medium hover:opacity-90 transition-opacity disabled:opacity-40"
         >
           {saving ? t.common.saving : t.common.save}
         </button>

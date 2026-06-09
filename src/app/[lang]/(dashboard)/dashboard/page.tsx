@@ -138,7 +138,7 @@ export default async function DashboardPage({ params }: { params: Promise<{ lang
         {upcoming.length > 0 ? (
           <Link
             href={`/${lang}/content/new?category=special_day&specialDayId=${upcoming[0].id}`}
-            className="group rounded-2xl border border-white/8 bg-gradient-to-br from-pink-950/30 to-card p-5 hover:border-pink-500/30 transition-all duration-200"
+            className="group rounded-2xl border border-white/8 bg-gradient-to-br from-primary/10 to-card p-5 hover:border-primary/30 transition-all duration-200"
           >
             <div className="flex items-start justify-between mb-3">
               <span className="text-3xl">🎉</span>

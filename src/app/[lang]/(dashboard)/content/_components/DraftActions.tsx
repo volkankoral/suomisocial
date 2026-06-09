@@ -157,11 +157,11 @@ export function DraftActions({ draftId, currentStatus, archived = false }: Props
         {currentStatus === 'approved' && (
           <>
             <button onClick={publishToBoth} disabled={publishing}
-              className={`${btnBase} bg-gradient-to-r from-pink-600 to-blue-600 text-white hover:opacity-90 flex items-center gap-1.5`}>
+              className={`${btnBase} bg-gradient-to-r from-sky-500 to-primary text-white hover:opacity-90 flex items-center gap-1.5`}>
               {publishing ? c.publishing : c.publishBoth}
             </button>
             <button onClick={publishToInstagram} disabled={publishing}
-              className={`${btnBase} bg-pink-600/20 text-pink-300 border border-pink-500/30 hover:bg-pink-600/30`}>
+              className={`${btnBase} bg-primary/15 text-sky-300 border border-primary/30 hover:bg-primary/20`}>
               {c.publishIg}
             </button>
             <button onClick={publishToFacebook} disabled={publishing}

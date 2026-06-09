@@ -50,9 +50,9 @@ export default async function CalendarPage({ params }: Props) {
       {/* Today banner */}
       {todaySpecial && (
         <Animate delay={0.05}>
-          <div className="rounded-2xl border border-orange-500/25 bg-orange-950/20 p-5 relative overflow-hidden">
+          <div className="rounded-2xl border border-primary/25 bg-primary/5 p-5 relative overflow-hidden">
             <div className="absolute inset-0 bg-gradient-to-r from-orange-600/10 to-transparent pointer-events-none" />
-            <p className="text-[10px] font-mono text-orange-400 mb-1.5 uppercase tracking-widest">{c.todayLabel}</p>
+            <p className="text-[10px] font-mono text-sky-300 mb-1.5 uppercase tracking-widest">{c.todayLabel}</p>
             <p className="text-xl font-bold text-foreground mb-1">{todaySpecial.name}</p>
             <div className="flex gap-2 mt-3 flex-wrap">
               {todaySpecial.isBankHoliday && (
@@ -88,7 +88,7 @@ export default async function CalendarPage({ params }: Props) {
                     <div
                       className={`flex items-start gap-4 rounded-xl border px-4 py-3 transition-all duration-200 ${
                         isToday
-                          ? 'border-orange-500/30 bg-orange-950/20'
+                          ? 'border-primary/30 bg-orange-950/20'
                           : day.isBankHoliday
                           ? 'border-amber-500/20 bg-amber-950/10 hover:border-amber-500/35'
                           : 'border-white/8 bg-card hover:border-white/15'

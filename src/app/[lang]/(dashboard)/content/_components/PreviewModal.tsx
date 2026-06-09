@@ -78,7 +78,7 @@ export function PreviewModal({ draft, brandName = 'yourbrand', igUsername, logoU
                 <div className="bg-white text-black">
                   {/* Header */}
                   <div className="flex items-center gap-2.5 px-3 py-2.5">
-                    <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-yellow-400 via-pink-500 to-purple-600 flex items-center justify-center text-white text-xs font-bold overflow-hidden shrink-0">
+                    <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-yellow-400 via-primary to-purple-600 flex items-center justify-center text-white text-xs font-bold overflow-hidden shrink-0">
                       {logoUrl ? (
                         // eslint-disable-next-line @next/next/no-img-element
                         <img src={logoUrl} alt={brandName} className="w-full h-full object-cover" />

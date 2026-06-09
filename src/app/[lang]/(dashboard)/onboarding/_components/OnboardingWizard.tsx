@@ -202,7 +202,7 @@ export function OnboardingWizard({ lang, existingBrand, plans, hasSubscription }
                   <button
                     onClick={analyzeSite}
                     disabled={!url.trim() || analyzing}
-                    className="w-full py-3 rounded-xl bg-gradient-to-r from-orange-500 to-pink-600 text-white font-semibold text-sm hover:opacity-90 transition-opacity disabled:opacity-40"
+                    className="w-full py-3 rounded-xl bg-gradient-to-r from-sky-500 to-primary text-white font-semibold text-sm hover:opacity-90 transition-opacity disabled:opacity-40"
                   >
                     {analyzing ? o.analyzing : o.analyze}
                   </button>
@@ -258,7 +258,7 @@ export function OnboardingWizard({ lang, existingBrand, plans, hasSubscription }
                       key={tn.value}
                       onClick={() => setTone(tn.value)}
                       className={`rounded-lg border px-3 py-2 text-sm transition-colors ${
-                        tone === tn.value ? 'border-orange-500/50 bg-orange-500/10 text-foreground' : 'border-white/10 bg-card text-muted-foreground hover:border-white/20'
+                        tone === tn.value ? 'border-primary/50 bg-primary/10 text-foreground' : 'border-white/10 bg-card text-muted-foreground hover:border-white/20'
                       }`}
                     >
                       {tn.label}
@@ -274,7 +274,7 @@ export function OnboardingWizard({ lang, existingBrand, plans, hasSubscription }
                 <button
                   onClick={saveBrandAndContinue}
                   disabled={!businessName.trim() || saving}
-                  className="flex-1 py-2.5 rounded-xl bg-gradient-to-r from-orange-500 to-pink-600 text-white font-semibold text-sm hover:opacity-90 transition-opacity disabled:opacity-40"
+                  className="flex-1 py-2.5 rounded-xl bg-gradient-to-r from-sky-500 to-primary text-white font-semibold text-sm hover:opacity-90 transition-opacity disabled:opacity-40"
                 >
                   {saving ? o.saving : o.next + ' →'}
                 </button>
@@ -306,7 +306,7 @@ export function OnboardingWizard({ lang, existingBrand, plans, hasSubscription }
                         onClick={() => subscribe(plan.id)}
                         disabled={!!checkoutLoading}
                         className={`text-xs px-3 py-2 rounded-lg font-medium transition-all disabled:opacity-50 ${
-                          plan.is_featured ? 'bg-gradient-to-r from-orange-500 to-pink-600 text-white hover:opacity-90' : 'border border-white/15 text-muted-foreground hover:text-foreground'
+                          plan.is_featured ? 'bg-gradient-to-r from-sky-500 to-primary text-white hover:opacity-90' : 'border border-white/15 text-muted-foreground hover:text-foreground'
                         }`}
                       >
                         {checkoutLoading === plan.id ? '…' : '✓'}
@@ -341,7 +341,7 @@ export function OnboardingWizard({ lang, existingBrand, plans, hasSubscription }
               <p className="text-sm text-muted-foreground">{o.finishSub}</p>
               <button
                 onClick={() => { router.push(`/${lang}/content`); router.refresh() }}
-                className="w-full py-3 rounded-xl bg-gradient-to-r from-orange-500 to-pink-600 text-white font-semibold text-sm hover:opacity-90 transition-opacity"
+                className="w-full py-3 rounded-xl bg-gradient-to-r from-sky-500 to-primary text-white font-semibold text-sm hover:opacity-90 transition-opacity"
               >
                 {o.goToContent}
               </button>

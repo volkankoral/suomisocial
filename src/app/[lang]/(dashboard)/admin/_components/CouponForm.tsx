@@ -175,7 +175,7 @@ export function CouponForm({ plans }: { plans: Plan[] }) {
       <button
         type="submit"
         disabled={loading}
-        className="w-full py-2.5 rounded-xl bg-gradient-to-r from-orange-500 to-pink-600 text-white font-semibold text-sm hover:opacity-90 transition-opacity disabled:opacity-40"
+        className="w-full py-2.5 rounded-xl bg-gradient-to-r from-sky-500 to-primary text-white font-semibold text-sm hover:opacity-90 transition-opacity disabled:opacity-40"
       >
         {loading ? 'Oluşturuluyor…' : '🎟️ Kupon Oluştur'}
       </button>

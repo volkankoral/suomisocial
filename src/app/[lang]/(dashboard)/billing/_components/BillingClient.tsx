@@ -253,7 +253,7 @@ export function BillingClient({ subscription, plans, hasStripeCustomer, creditBa
                 }`}
               >
                 {plan.is_featured && (
-                  <div className="h-0.5 bg-gradient-to-r from-orange-500 to-pink-600" />
+                  <div className="h-0.5 bg-gradient-to-r from-sky-500 to-primary" />
                 )}
                 <div className="p-5 flex flex-col flex-1">
                   <div className="flex items-start justify-between mb-3">
@@ -264,7 +264,7 @@ export function BillingClient({ subscription, plans, hasStripeCustomer, creditBa
                       )}
                     </div>
                     {plan.is_featured && (
-                      <span className="text-[9px] bg-orange-500/15 text-orange-400 border border-orange-500/20 px-2 py-0.5 rounded-full font-medium whitespace-nowrap">
+                      <span className="text-[9px] bg-primary/15 text-sky-300 border border-primary/25 px-2 py-0.5 rounded-full font-medium whitespace-nowrap">
                         {b.popular}
                       </span>
                     )}
@@ -300,7 +300,7 @@ export function BillingClient({ subscription, plans, hasStripeCustomer, creditBa
                       isCurrent
                         ? 'bg-green-900/30 text-green-400 border border-green-500/20'
                         : plan.is_featured
-                        ? 'bg-gradient-to-r from-orange-500 to-pink-600 text-white hover:opacity-90 shadow-lg shadow-orange-900/25'
+                        ? 'bg-gradient-to-r from-sky-500 to-primary text-white hover:opacity-90 shadow-lg shadow-primary/25'
                         : 'border border-white/12 text-muted-foreground hover:text-foreground hover:border-white/25'
                     }`}
                   >
@@ -329,8 +329,8 @@ export function BillingClient({ subscription, plans, hasStripeCustomer, creditBa
             <p className="text-xs text-muted-foreground mt-0.5">{b.creditsSubtitle}</p>
           </div>
           {balance > 0 && (
-            <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-orange-500/10 border border-orange-500/20">
-              <span className="text-orange-400 text-sm">⚡</span>
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-primary/10 border border-primary/20">
+              <span className="text-sky-300 text-sm">⚡</span>
               <span className="text-sm font-semibold text-foreground">{balance}</span>
               <span className="text-xs text-muted-foreground">{b.creditsRemaining}</span>
             </div>
@@ -347,12 +347,12 @@ export function BillingClient({ subscription, plans, hasStripeCustomer, creditBa
                   pkg.popular ? 'border-primary/40 ring-1 ring-primary/20' : 'border-white/8'
                 }`}
               >
-                {pkg.popular && <div className="h-0.5 bg-gradient-to-r from-orange-500 to-pink-600" />}
+                {pkg.popular && <div className="h-0.5 bg-gradient-to-r from-sky-500 to-primary" />}
                 <div className="p-5 flex flex-col flex-1">
                   <div className="flex items-start justify-between mb-3">
                     <p className="font-bold text-foreground">{pkg.label}</p>
                     {pkg.popular && (
-                      <span className="text-[9px] bg-orange-500/15 text-orange-400 border border-orange-500/20 px-2 py-0.5 rounded-full font-medium">
+                      <span className="text-[9px] bg-primary/15 text-sky-300 border border-primary/25 px-2 py-0.5 rounded-full font-medium">
                         {b.popular}
                       </span>
                     )}
@@ -369,7 +369,7 @@ export function BillingClient({ subscription, plans, hasStripeCustomer, creditBa
                     disabled={!!loading}
                     className={`w-full text-sm py-2.5 rounded-xl font-medium transition-all disabled:opacity-40 mt-auto ${
                       pkg.popular
-                        ? 'bg-gradient-to-r from-orange-500 to-pink-600 text-white hover:opacity-90 shadow-lg shadow-orange-900/25'
+                        ? 'bg-gradient-to-r from-sky-500 to-primary text-white hover:opacity-90 shadow-lg shadow-primary/25'
                         : 'border border-white/12 text-muted-foreground hover:text-foreground hover:border-white/25'
                     }`}
                   >

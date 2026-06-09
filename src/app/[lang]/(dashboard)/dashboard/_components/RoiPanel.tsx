@@ -11,7 +11,7 @@ export function RoiPanel({ roi }: { roi: RoiSummary }) {
   const nf = (n: number) => n.toLocaleString()
 
   return (
-    <section className="rounded-2xl border border-orange-500/20 bg-gradient-to-br from-orange-950/25 via-card to-pink-950/15 p-5 sm:p-6">
+    <section className="rounded-2xl border border-primary/25 bg-gradient-to-br from-orange-950/25 via-card to-pink-950/15 p-5 sm:p-6">
       <h2 className="text-xs font-semibold text-orange-300/80 uppercase tracking-widest mb-3">
         {r.title}
       </h2>

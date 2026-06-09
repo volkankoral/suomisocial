@@ -46,7 +46,7 @@ export function GenerateButton({ day, orgId, countryCode }: Props) {
       <button
         onClick={handleGenerate}
         disabled={loading}
-        className="text-xs px-3 py-1.5 rounded-lg bg-gradient-to-r from-orange-500 to-pink-600 text-white font-medium hover:opacity-90 transition-opacity disabled:opacity-40"
+        className="text-xs px-3 py-1.5 rounded-lg bg-gradient-to-r from-sky-500 to-primary text-white font-medium hover:opacity-90 transition-opacity disabled:opacity-40"
       >
         {loading ? '⏳ Üretiliyor…' : '✨ İçerik Üret'}
       </button>

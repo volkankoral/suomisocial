@@ -147,7 +147,7 @@ export default async function ContentPage({ params, searchParams }: Props) {
           </div>
           <Link
             href={`/${lang}/content/new`}
-            className="shrink-0 text-xs sm:text-sm px-3 sm:px-4 py-2 rounded-xl bg-gradient-to-r from-orange-500 to-pink-600 text-white font-medium hover:opacity-90 transition-opacity whitespace-nowrap"
+            className="shrink-0 text-xs sm:text-sm px-3 sm:px-4 py-2 rounded-xl bg-gradient-to-r from-sky-500 to-primary text-white font-medium hover:opacity-90 transition-opacity whitespace-nowrap"
           >
             {t.content.newContent}
           </Link>

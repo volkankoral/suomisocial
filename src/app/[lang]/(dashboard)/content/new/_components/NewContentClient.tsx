@@ -432,7 +432,7 @@ export function NewContentClient({
       <button
         onClick={generate}
         disabled={loading || mediaUploading}
-        className="w-full py-4 rounded-xl bg-gradient-to-r from-orange-500 to-pink-600 text-white font-semibold hover:opacity-90 transition-opacity disabled:opacity-40"
+        className="w-full py-4 rounded-xl bg-gradient-to-r from-sky-500 to-primary text-white font-semibold hover:opacity-90 transition-opacity disabled:opacity-40"
       >
         {loading
           ? (mediaMode === 'upload' ? n.captioningBtn : n.generatingBtn)

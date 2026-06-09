@@ -19,7 +19,7 @@ export default async function PrivacyPage({
       <nav className="border-b border-white/8 bg-background/80 backdrop-blur-xl px-6 py-4">
         <div className="mx-auto max-w-3xl flex items-center justify-between">
           <Link href={`/${lang}`} className="flex items-center gap-2.5">
-            <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-orange-500 to-pink-600 flex items-center justify-center">
+            <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-sky-500 to-primary flex items-center justify-center">
               <span className="text-white text-[10px] font-bold">Po</span>
             </div>
             <span className="font-semibold text-sm tracking-tight">Occaly</span>

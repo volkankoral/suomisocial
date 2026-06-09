@@ -65,7 +65,7 @@ export function PlanCard({ plan }: { plan: Plan }) {
   return (
     <div className={`rounded-xl border bg-card overflow-hidden ${plan.is_featured ? 'border-primary/40' : 'border-white/8'}`}>
       {plan.is_featured && (
-        <div className="h-1 bg-gradient-to-r from-orange-500 to-pink-600" />
+        <div className="h-1 bg-gradient-to-r from-sky-500 to-primary" />
       )}
       <div className="p-5 space-y-4">
         <div className="flex items-start justify-between">
@@ -83,7 +83,7 @@ export function PlanCard({ plan }: { plan: Plan }) {
           </div>
           <div className="flex flex-col items-end gap-1">
             {plan.is_featured && (
-              <span className="text-[10px] bg-orange-500/15 text-orange-400 border border-orange-500/20 px-2 py-0.5 rounded-full font-medium">
+              <span className="text-[10px] bg-primary/15 text-sky-300 border border-primary/25 px-2 py-0.5 rounded-full font-medium">
                 ⭐ Öne Çıkan
               </span>
             )}

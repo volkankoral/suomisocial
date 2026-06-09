@@ -187,7 +187,7 @@ export default async function AdsPage({ params }: Props) {
 
           {/* TikTok */}
           <div className="rounded-xl border border-white/8 bg-card overflow-hidden">
-            <div className="h-1.5 bg-gradient-to-r from-purple-600 to-pink-600" />
+            <div className="h-1.5 bg-gradient-to-r from-primary to-sky-400" />
             <div className="p-4">
               <div className="flex items-center justify-between mb-2">
                 <span className="text-2xl">🎵</span>

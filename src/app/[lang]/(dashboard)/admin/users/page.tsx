@@ -60,7 +60,7 @@ export default async function AdminUsersPage({ params }: Props) {
               return (
                 <tr key={o.id} className="border-b border-white/6 last:border-0 hover:bg-white/2 transition-colors">
                   <td className="px-4 py-3 font-medium text-foreground">{o.name}</td>
-                  <td className="px-4 py-3 text-muted-foreground">{sub?.plans?.name ?? <span className="text-orange-400 text-xs">Plan yok</span>}</td>
+                  <td className="px-4 py-3 text-muted-foreground">{sub?.plans?.name ?? <span className="text-sky-300 text-xs">Plan yok</span>}</td>
                   <td className="px-4 py-3">
                     {sub ? (
                       <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium border ${

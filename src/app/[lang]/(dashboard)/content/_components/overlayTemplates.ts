@@ -36,9 +36,9 @@ export const OVERLAY_TEMPLATES: OverlayTemplate[] = [
   {
     id: 'top_bar',
     label: 'Üst Şerit',
-    previewBg: 'bg-orange-500',
+    previewBg: 'bg-primary',
     wrapperClass:
-      'absolute inset-x-0 top-0 bg-orange-500 py-[3%] px-[5%] flex flex-col items-center justify-center',
+      'absolute inset-x-0 top-0 bg-primary py-[3%] px-[5%] flex flex-col items-center justify-center',
     textClass:
       'text-white font-black uppercase tracking-widest text-center leading-none',
     subTextClass: 'text-white/80 text-[0.6em] tracking-[0.2em] mt-0.5',

@@ -100,13 +100,13 @@ export function AutopilotPage({ lang, isPro, initialSettings, initialDrafts }: P
 
       {/* Pro değilse gate */}
       {!isPro && (
-        <div className="rounded-2xl border border-orange-500/20 bg-orange-500/5 p-6 text-center space-y-3">
+        <div className="rounded-2xl border border-primary/25 bg-primary/5 p-6 text-center space-y-3">
           <p className="text-2xl">⚡</p>
           <p className="font-semibold text-foreground">{ap.proRequired}</p>
           <p className="text-sm text-muted-foreground">{ap.proRequiredDesc}</p>
           <a
             href={`/${lang}/billing`}
-            className="inline-block mt-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-orange-500 to-pink-600 text-white font-semibold text-sm hover:opacity-90 transition-opacity"
+            className="inline-block mt-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-sky-500 to-primary text-white font-semibold text-sm hover:opacity-90 transition-opacity"
           >
             {ap.upgradeBtn}
           </a>
@@ -123,7 +123,7 @@ export function AutopilotPage({ lang, isPro, initialSettings, initialDrafts }: P
           {/* Master toggle */}
           <button
             onClick={() => setSettings(s => ({ ...s, enabled: !s.enabled }))}
-            className={`relative w-12 h-6 rounded-full transition-colors shrink-0 ${settings.enabled ? 'bg-orange-500' : 'bg-white/15'}`}
+            className={`relative w-12 h-6 rounded-full transition-colors shrink-0 ${settings.enabled ? 'bg-primary' : 'bg-white/15'}`}
           >
             <span className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform ${settings.enabled ? 'translate-x-6' : 'translate-x-0'}`} />
           </button>
@@ -139,7 +139,7 @@ export function AutopilotPage({ lang, isPro, initialSettings, initialDrafts }: P
                 onClick={() => setSettings(s => ({ ...s, day_of_week: i }))}
                 className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
                   settings.day_of_week === i
-                    ? 'bg-orange-500/20 border border-orange-500/40 text-foreground'
+                    ? 'bg-primary/20 border border-primary/40 text-foreground'
                     : 'border border-white/10 text-muted-foreground hover:border-white/25 hover:text-foreground'
                 }`}
               >
@@ -159,7 +159,7 @@ export function AutopilotPage({ lang, isPro, initialSettings, initialDrafts }: P
             min={1} max={7}
             value={settings.drafts_per_run}
             onChange={e => setSettings(s => ({ ...s, drafts_per_run: Number(e.target.value) }))}
-            className="w-full accent-orange-500"
+            className="w-full accent-primary"
           />
           <div className="flex justify-between text-[10px] text-muted-foreground/50 mt-1">
             <span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span>
@@ -178,7 +178,7 @@ export function AutopilotPage({ lang, isPro, initialSettings, initialDrafts }: P
           <button
             onClick={saveSettings}
             disabled={saving}
-            className="px-5 py-2 rounded-lg bg-gradient-to-r from-orange-500 to-pink-600 text-white text-sm font-medium hover:opacity-90 transition-opacity disabled:opacity-40"
+            className="px-5 py-2 rounded-lg bg-gradient-to-r from-sky-500 to-primary text-white text-sm font-medium hover:opacity-90 transition-opacity disabled:opacity-40"
           >
             {saving ? t.common.saving : t.common.save}
           </button>
@@ -193,7 +193,7 @@ export function AutopilotPage({ lang, isPro, initialSettings, initialDrafts }: P
         <ul className="space-y-1.5">
           {[ap.how1, ap.how2, ap.how3, ap.how4].map((item, i) => (
             <li key={i} className="text-sm text-muted-foreground flex gap-2">
-              <span className="text-orange-400 shrink-0">{i + 1}.</span>
+              <span className="text-sky-300 shrink-0">{i + 1}.</span>
               <span>{item}</span>
             </li>
           ))}
@@ -206,7 +206,7 @@ export function AutopilotPage({ lang, isPro, initialSettings, initialDrafts }: P
           <h2 className="text-base font-semibold text-foreground">
             🤖 {ap.pendingTitle}
             {pendingDrafts.length > 0 && (
-              <span className="ml-2 px-2 py-0.5 rounded-full text-xs bg-orange-500/20 text-orange-300 font-normal">
+              <span className="ml-2 px-2 py-0.5 rounded-full text-xs bg-primary/20 text-sky-300 font-normal">
                 {pendingDrafts.length}
               </span>
             )}
@@ -253,7 +253,7 @@ export function AutopilotPage({ lang, isPro, initialSettings, initialDrafts }: P
                       </div>
                       <p className="text-sm text-foreground line-clamp-3">{caption}</p>
                       {draft.hashtags && draft.hashtags.length > 0 && (
-                        <p className="text-xs text-orange-400/70 truncate">
+                        <p className="text-xs text-sky-300/70 truncate">
                           {draft.hashtags.slice(0, 5).map(h => `#${h.replace(/^#/, '')}`).join(' ')}
                         </p>
                       )}
