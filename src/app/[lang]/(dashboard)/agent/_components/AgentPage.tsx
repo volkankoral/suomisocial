@@ -117,19 +117,21 @@ export function AgentPage({ lang, isPro, plan: initialPlan, items: initialItems 
     }
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
-  async function createPlan() {
+  async function createPlan(force = false) {
     setCreating(true)
     setCreateErr(null)
     try {
-      const res  = await fetch('/api/agent/run', { method: 'POST' })
+      const res  = await fetch('/api/agent/run', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ force }),
+      })
       const json = await res.json() as { planId?: string; error?: string }
       if (!res.ok) {
         setCreateErr(json.error ?? ag.genError)
         return
       }
-      // Start polling — the run endpoint is fire-and-return (returns planId immediately or waits)
       setPolling(true)
-      // Immediately fetch to get the latest state
       await pollPlan()
     } catch {
       setCreateErr(ag.genError)
@@ -210,7 +212,7 @@ export function AgentPage({ lang, isPro, plan: initialPlan, items: initialItems 
 
         {isPro && !isPlanning && (
           <button
-            onClick={createPlan}
+            onClick={() => createPlan(!!plan)}
             disabled={creating}
             className="shrink-0 px-5 py-2.5 rounded-xl bg-gradient-to-r from-sky-500 to-primary text-white font-semibold text-sm hover:opacity-90 transition-opacity disabled:opacity-50 shadow-lg shadow-primary/20"
           >
@@ -264,7 +266,7 @@ export function AgentPage({ lang, isPro, plan: initialPlan, items: initialItems 
           <p className="font-semibold text-foreground text-base">{ag.noPlan}</p>
           <p className="text-sm text-muted-foreground max-w-md mx-auto">{ag.noPlanHint}</p>
           <button
-            onClick={createPlan}
+            onClick={() => createPlan(false)}
             disabled={creating}
             className="mt-4 inline-block px-6 py-3 rounded-xl bg-gradient-to-r from-sky-500 to-primary text-white font-semibold text-sm hover:opacity-90 transition-opacity disabled:opacity-50 shadow-lg shadow-primary/20"
           >
@@ -333,9 +335,14 @@ export function AgentPage({ lang, isPro, plan: initialPlan, items: initialItems 
               </h2>
 
               <div className="space-y-3">
-                {items.map(item => {
-                  const draft   = item.content_drafts
-                  const caption = lang === 'tr' ? draft?.caption_tr : draft?.caption_fi
+                {items
+                  .filter(i => ['ready', 'approved', 'rejected'].includes(i.status))
+                  .map(item => {
+                  const draft      = item.content_drafts
+                  // Her zaman Fince caption göster (müşteriye gönderilecek içerik)
+                  // Türkçe referans olarak altında gösterilir
+                  const captionFi  = draft?.caption_fi
+                  const captionTr  = draft?.caption_tr
                   const date    = new Date(item.scheduled_date + 'T00:00:00Z').toLocaleDateString(
                     lang === 'fi' ? 'fi-FI' : lang === 'tr' ? 'tr-TR' : 'en-GB',
                     { weekday: 'short', month: 'short', day: 'numeric' }
@@ -382,9 +389,15 @@ export function AgentPage({ lang, isPro, plan: initialPlan, items: initialItems 
                             <StatusPill status={item.status} labels={statusMap} />
                           </div>
 
-                          {/* Caption */}
-                          {caption && (
-                            <p className="text-sm text-foreground line-clamp-2 leading-relaxed">{caption}</p>
+                          {/* Caption — Fince (asıl paylaşım içeriği) */}
+                          {captionFi && (
+                            <p className="text-sm text-foreground line-clamp-3 leading-relaxed">{captionFi}</p>
+                          )}
+                          {/* Türkçe referans — sadece UI dili TR ise göster */}
+                          {lang === 'tr' && captionTr && captionTr !== captionFi && (
+                            <p className="text-xs text-muted-foreground/60 line-clamp-2 leading-relaxed border-l-2 border-white/10 pl-2 italic">
+                              🇹🇷 {captionTr}
+                            </p>
                           )}
 
                           {/* Hashtags */}

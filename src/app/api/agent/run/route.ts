@@ -201,7 +201,14 @@ export async function POST(req: NextRequest) {
   const weekStart = monday.toISOString().slice(0, 10)
   const weekEnd   = sunday.toISOString().slice(0, 10)
 
-  // Mevcut plan varsa dön (idempotent)
+  // force=true → planı yeniden oluştur (mevcut plan ne olursa olsun)
+  let forceRecreate = false
+  try {
+    const body = await req.json() as { force?: boolean }
+    forceRecreate = !!body.force
+  } catch { /* body yok */ }
+
+  // Mevcut plan varsa dön (idempotent) — force veya failed değilse
   const { data: existing } = await supabase
     .from('agent_plans')
     .select('id, status')
@@ -209,20 +216,25 @@ export async function POST(req: NextRequest) {
     .eq('week_start', weekStart)
     .maybeSingle()
 
-  if (existing && existing.status !== 'failed') {
+  if (existing && existing.status !== 'failed' && !forceRecreate) {
     return NextResponse.json({ planId: existing.id, existing: true })
+  }
+
+  // Eski plan varsa — eski items + planı temizle (yeniden oluşturma)
+  if (existing) {
+    await supabase.from('agent_plan_items').delete().eq('plan_id', existing.id)
+    await supabase.from('agent_plans').delete().eq('id', existing.id)
   }
 
   // Yeni plan kaydı oluştur
   const { data: planRow, error: planErr } = await supabase
     .from('agent_plans')
-    .upsert({
-      id:              existing?.id,
+    .insert({
       organization_id: orgId,
       week_start:      weekStart,
       status:          'planning',
       error_message:   null,
-    }, { onConflict: 'id' })
+    })
     .select('id')
     .single()
 
@@ -294,60 +306,55 @@ export async function POST(req: NextRequest) {
     let successCount = 0
 
     for (const item of agentPlan.items.slice(0, 7)) {
+      // İçerik oluşturulmadan önce row EKLEME —
+      // başarısız olursa ghost 'pending' row kalmaz
+      let textContent: Awaited<ReturnType<typeof generateRoutineContent>> | null = null
+      let dayLabel    = 'İçerik'
+      let specialDayId: string | null = null
+
       try {
-        // Plan kalemini "generating" olarak ekle
-        const { data: itemRow } = await supabase
-          .from('agent_plan_items')
-          .insert({
-            plan_id:        planId,
-            organization_id: orgId,
-            scheduled_date: item.day,
-            rationale:      item.rationale,
-            priority:       item.priority ?? 2,
-            status:         'generating',
-          })
-          .select('id')
-          .single()
-
-        if (!itemRow) continue
-
-        // İçerik metni üret
-        let textContent: Awaited<ReturnType<typeof generateRoutineContent>>
-        let dayLabel: string
-        let specialDayId: string | null = null
-
+        // ── Metin üretimi ─────────────────────────────────────────────────────
         if (item.category === 'special_day' && item.special_day_id) {
           const day = findSpecialDay(region, item.special_day_id)
-          if (!day) { await supabase.from('agent_plan_items').update({ status: 'pending' }).eq('id', itemRow.id); continue }
-
-          const resolved = getResolvedSpecialDays(region, year).find(d => d.id === day.id)
-          const dayDate  = resolved?.resolvedDate.toISOString().slice(0, 10) ?? item.day
-          dayLabel     = day.name_fi
-          specialDayId = day.id
-          textContent  = await generateSpecialDayContent(brandCtx,
-            { date: dayDate, name_fi: day.name_fi, context_fi: day.context_fi, visual_hint: day.visual_hint },
-            lang)
+          if (day) {
+            const resolved = getResolvedSpecialDays(region, year).find(d => d.id === day.id)
+            const dayDate  = resolved?.resolvedDate.toISOString().slice(0, 10) ?? item.day
+            dayLabel       = day.name_fi
+            specialDayId   = day.id
+            textContent    = await generateSpecialDayContent(brandCtx,
+              { date: dayDate, name_fi: day.name_fi, context_fi: day.context_fi, visual_hint: day.visual_hint },
+              lang)
+          }
         }
-        else if (item.category === 'weekly_routine' && item.routine_id) {
+
+        if (!textContent && item.category === 'weekly_routine' && item.routine_id) {
           const routine = findRoutine(region, item.routine_id)
-          if (!routine) { await supabase.from('agent_plan_items').update({ status: 'pending' }).eq('id', itemRow.id); continue }
-
-          dayLabel    = routine.name_fi
-          textContent = await generateRoutineContent(brandCtx,
-            { name_fi: routine.name_fi, context_fi: routine.context_fi, visual_hint: routine.visual_hint },
-            lang)
+          if (routine) {
+            dayLabel    = routine.name_fi
+            textContent = await generateRoutineContent(brandCtx,
+              { name_fi: routine.name_fi, context_fi: routine.context_fi, visual_hint: routine.visual_hint },
+              lang)
+          }
         }
-        else {
-          dayLabel    = 'Kampanya'
+
+        if (!textContent) {
+          // Kampanya veya fallback
+          dayLabel    = item.category === 'campaign' ? 'Kampanya' : dayLabel
           textContent = await generateCampaignContent(brandCtx,
-            { brief: item.brief ?? 'Genel kampanya' },
+            { brief: item.brief ?? dayLabel },
             lang)
         }
+      } catch (textErr) {
+        console.error('[agent/run] metin üretim hatası (atlandı):', textErr)
+        continue // Metin üretimi tamamen başarısız → bu item'ı atla, gösterme
+      }
 
-        // Görsel üret (Pro/admin → FLUX, diğerleri → Pollinations)
-        const useFLUX = (isAdmin || true) && !!process.env.REPLICATE_API_TOKEN
+      // ── Görsel üretimi (başarısız → null, item yine oluşturulur) ────────────
+      let imageUrl: string | null = null
+      try {
+        const useFLUX = !!process.env.REPLICATE_API_TOKEN
         const image   = await generateImage(textContent.image_prompt, { aspect: 'square', provider: useFLUX ? 'flux' : 'pollinations' })
-        let imageUrl  = image.url
+        imageUrl = image.url ?? null
 
         // Storage'a mirror
         if (imageUrl) {
@@ -355,7 +362,7 @@ export async function POST(req: NextRequest) {
             const imgRes = await fetch(imageUrl)
             if (imgRes.ok) {
               const buf  = await imgRes.arrayBuffer()
-              const path = `${orgId}/agent_${Date.now()}.jpg`
+              const path = `${orgId}/agent_${planId.slice(0,8)}_${Date.now()}.jpg`
               const { error: upErr } = await supabase
                 .storage.from('post-media')
                 .upload(path, buf, { contentType: 'image/jpeg', upsert: false })
@@ -364,7 +371,7 @@ export async function POST(req: NextRequest) {
                 if (pub?.publicUrl) imageUrl = pub.publicUrl
               }
             }
-          } catch { /* mirror başarısız → orijinal */ }
+          } catch { /* mirror başarısız → CDN URL */ }
         }
 
         // Overlay
@@ -372,10 +379,30 @@ export async function POST(req: NextRequest) {
         if (imageUrl && overlayEnabled) {
           try {
             imageUrl = await addTextOverlay({ orgId, businessName: brand.business_name, label: dayLabel, imageUrl })
-          } catch { /* overlay başarısız → orijinal */ }
+          } catch { /* overlay başarısız → görseli koru */ }
         }
+      } catch (imgErr) {
+        console.error('[agent/run] görsel hatası (metin ile devam):', imgErr)
+        // imageUrl = null olarak bırak — item yine oluşturulur
+      }
 
-        // Draft oluştur (scheduled, pending)
+      // ── Plan kalemi + Draft kaydet ─────────────────────────────────────────
+      try {
+        const { data: itemRow } = await supabase
+          .from('agent_plan_items')
+          .insert({
+            plan_id:         planId,
+            organization_id: orgId,
+            scheduled_date:  item.day,
+            rationale:       item.rationale,
+            priority:        item.priority ?? 2,
+            status:          'generating',
+          })
+          .select('id')
+          .single()
+
+        if (!itemRow) continue
+
         const { data: draft } = await supabase
           .from('content_drafts')
           .insert({
@@ -388,25 +415,24 @@ export async function POST(req: NextRequest) {
             caption_fi:           textContent.caption_fi,
             caption_tr:           textContent.caption_tr,
             hashtags:             textContent.hashtags,
-            image_url:            imageUrl,
+            image_url:            imageUrl,        // null olabilir
             image_prompt:         textContent.image_prompt,
             platforms:            ['instagram', 'facebook'],
             scheduled_at:         `${item.day}T09:00:00.000Z`,
             status:               'pending',
-            is_autopilot:         true,   // agent drafted = autopilot flag
+            is_autopilot:         true,
           })
           .select('id')
           .single()
 
-        // Plan kalemini güncelle
         await supabase
           .from('agent_plan_items')
           .update({ status: 'ready', draft_id: draft?.id ?? null })
           .eq('id', itemRow.id)
 
         successCount++
-      } catch (itemErr) {
-        console.error('[agent/run] kalem hatası:', itemErr)
+      } catch (saveErr) {
+        console.error('[agent/run] kaydetme hatası:', saveErr)
       }
     }
 
