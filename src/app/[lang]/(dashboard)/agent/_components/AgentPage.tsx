@@ -393,7 +393,7 @@ export function AgentPage({ lang, isPro, plan: initialPlan, items: initialItems 
                             <StatusPill status={item.status} labels={statusMap} />
                           </div>
                           {/* Oluşturulma zamanı */}
-                          <p className="text-[10px] text-muted-foreground/40">
+                          <p className="text-xs text-muted-foreground">
                             🕐 {createdAt}
                           </p>
 
