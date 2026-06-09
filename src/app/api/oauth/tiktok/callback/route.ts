@@ -50,7 +50,7 @@ export async function GET(request: NextRequest) {
 
     console.log('[tiktok/callback] code_len:', code.length, 'redirect_uri:', redirectUri, 'client_key:', process.env.TIKTOK_CLIENT_KEY?.slice(0, 8))
 
-    const tokenRes = await fetch('https://open-api.tiktok.com/v2/oauth/token/', {
+    const tokenRes = await fetch('https://open.tiktokapis.com/v2/oauth/token/', {
       method: 'POST',
       headers: {
         'Content-Type':  'application/x-www-form-urlencoded;charset=UTF-8',
@@ -81,7 +81,7 @@ export async function GET(request: NextRequest) {
 
     // 2. Kullanıcı bilgisi al
     const userRes = await fetch(
-      'https://open-api.tiktok.com/v2/user/info/?fields=display_name,avatar_url,username',
+      'https://open.tiktokapis.com/v2/user/info/?fields=display_name,avatar_url,username',
       { headers: { Authorization: `Bearer ${access_token}` } },
     )
 

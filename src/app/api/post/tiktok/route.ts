@@ -2,6 +2,19 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createServiceClient } from '@/lib/supabase/service'
 import { getUserOrgId } from '@/lib/supabase/get-org'
+import { getSocialToken } from '@/lib/vault'
+
+/**
+ * TikTok Content Posting API v2 — fotoğraf paylaşımı
+ *
+ * TikTok'un Content Posting API'si video ve fotoğrafı destekler.
+ * Fotoğraf için media_type=PHOTO + source=PULL_FROM_URL kullanılır.
+ * Gerekli scope: video.upload + video.publish
+ *
+ * Dokümantasyon: https://developers.tiktok.com/doc/content-posting-api-get-started
+ */
+
+const TIKTOK_API = 'https://open.tiktokapis.com/v2'
 
 export async function POST(request: NextRequest) {
   const authClient = await createClient()
@@ -12,184 +25,122 @@ export async function POST(request: NextRequest) {
   if (!orgId) return NextResponse.json({ error: 'Organizasyon bulunamadı' }, { status: 403 })
 
   const supabase = createServiceClient()
-  const body = await request.json()
+  const body = await request.json() as { draftId?: string }
+  const draftId = body.draftId
 
-  // Support both direct posting and draft-based posting
-  let caption: string
-  let video_url: string
-  let thumbnail_url: string | undefined
-  let draftId: string | undefined
+  if (!draftId) return NextResponse.json({ error: 'draftId gerekli' }, { status: 400 })
 
-  if (body.draftId) {
-    // Draft-based posting
-    draftId = body.draftId
-    const { data: draft, error: draftErr } = await supabase
-      .from('content_drafts')
-      .select('*')
-      .eq('id', draftId)
-      .eq('organization_id', orgId)
-      .single()
+  // ── Draft ─────────────────────────────────────────────────────────────────
+  const { data: draft, error: draftErr } = await supabase
+    .from('content_drafts')
+    .select('*')
+    .eq('id', draftId)
+    .eq('organization_id', orgId)
+    .single()
 
-    if (draftErr || !draft) {
-      return NextResponse.json({ error: 'Taslak bulunamadı' }, { status: 404 })
-    }
-
-    if (draft.status !== 'approved') {
-      return NextResponse.json({ error: 'Sadece onaylı taslaklar paylaşılabilir' }, { status: 400 })
-    }
-
-    caption = [
-      draft.caption_fi,
-      draft.hashtags?.length ? draft.hashtags.map((h: string) => `#${h}`).join(' ') : '',
-    ].filter(Boolean).join('\n\n')
-
-    // TikTok requires video, but we have image. For now, we'll create a simple video from the image
-    // or return an error asking for video upload
-    if (draft.image_url && !draft.video_url) {
-      return NextResponse.json({
-        error: 'TikTok video gerekli. Şu anda sadece fotoğraf var. Video yükleyin veya Remotion ile video üretin.'
-      }, { status: 400 })
-    }
-
-    video_url = draft.video_url
-    thumbnail_url = draft.image_url || undefined
-  } else {
-    // Direct posting with explicit parameters
-    const { caption: c, video_url: v, thumbnail_url: t } = body as {
-      caption?: string
-      video_url?: string
-      thumbnail_url?: string
-    }
-
-    if (!c || !v) {
-      return NextResponse.json({ error: 'Caption ve video_url gerekli' }, { status: 400 })
-    }
-
-    caption = c
-    video_url = v
-    thumbnail_url = t
+  if (draftErr || !draft) {
+    return NextResponse.json({ error: 'Taslak bulunamadı' }, { status: 404 })
+  }
+  if (draft.status !== 'approved') {
+    return NextResponse.json({ error: 'Sadece onaylı taslaklar paylaşılabilir' }, { status: 400 })
+  }
+  if (!draft.image_url) {
+    return NextResponse.json({ error: 'TikTok paylaşımı için görsel zorunlu' }, { status: 400 })
   }
 
+  // ── TikTok hesabı ─────────────────────────────────────────────────────────
+  const { data: account } = await supabase
+    .from('social_accounts')
+    .select('id, platform_account_id, access_token_vault_id, access_token, metadata')
+    .eq('organization_id', orgId)
+    .eq('platform', 'tiktok')
+    .eq('is_active', true)
+    .maybeSingle()
+
+  if (!account) {
+    return NextResponse.json({
+      error: 'Bağlı TikTok hesabı bulunamadı. Sosyal Medya sayfasından hesabını bağla.',
+    }, { status: 404 })
+  }
+
+  const accessToken = await getSocialToken(account)
+  if (!accessToken) {
+    return NextResponse.json({ error: 'TikTok token okunamadı' }, { status: 500 })
+  }
+
+  // ── Caption (TikTok title = caption) ─────────────────────────────────────
+  const caption = [
+    draft.caption_fi,
+    draft.hashtags?.length ? draft.hashtags.map((h: string) => `#${h}`).join(' ') : '',
+  ].filter(Boolean).join('\n\n')
+
+  // TikTok title max 150 karakter
+  const title = caption.slice(0, 150)
+
   try {
-    const supabase = createServiceClient()
-
-    // Get TikTok account token
-    const { data: account } = await supabase
-      .from('social_accounts')
-      .select('access_token, platform_user_id')
-      .eq('organization_id', orgId)
-      .eq('platform', 'tiktok')
-      .single()
-
-    if (!account?.access_token) {
-      return NextResponse.json({ error: 'TikTok hesabı bağlı değil' }, { status: 403 })
-    }
-
-    // Initialize upload (get upload URL from TikTok)
-    const initResponse = await fetch('https://open.tiktokapi.com/v1/post/publish/video/init/', {
+    // ── Fotoğraf paylaşımı (Content Posting API v2) ────────────────────────
+    const postRes = await fetch(`${TIKTOK_API}/post/publish/content/init/`, {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${account.access_token}`,
+        'Content-Type': 'application/json; charset=UTF-8',
+        Authorization: `Bearer ${accessToken}`,
       },
       body: JSON.stringify({
-        source_info: {
-          source: 'SCHEDULE_VIDEO',
-          privacy_level: 'PUBLIC_TO_EVERYONE',
-        },
-      }),
-    })
-
-    if (!initResponse.ok) {
-      const err = await initResponse.text()
-      console.error('TikTok init error:', err)
-      return NextResponse.json({ error: 'Failed to initialize upload' }, { status: 500 })
-    }
-
-    const { data: initData } = await initResponse.json()
-    const uploadUrl = initData.upload_url
-    const publishId = initData.publish_id
-
-    // Upload video file
-    const videoResponse = await fetch(video_url)
-    const videoBuffer = await videoResponse.arrayBuffer()
-
-    const uploadFormData = new FormData()
-    uploadFormData.append('video', new Blob([videoBuffer], { type: 'video/mp4' }))
-
-    const uploadRes = await fetch(uploadUrl, {
-      method: 'POST',
-      body: uploadFormData,
-    })
-
-    if (!uploadRes.ok) {
-      console.error('TikTok upload error:', await uploadRes.text())
-      return NextResponse.json({ error: 'Failed to upload video' }, { status: 500 })
-    }
-
-    // Publish video
-    const publishResponse = await fetch('https://open.tiktokapi.com/v1/post/publish/action/publish/', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${account.access_token}`,
-      },
-      body: JSON.stringify({
-        publish_id: publishId,
+        media_type: 'PHOTO',
+        post_mode:  'DIRECT_POST',
         post_info: {
-          title: caption,
-          cover: {
-            type: 'FILE',
-          },
+          title,
+          privacy_level:   'PUBLIC_TO_EVERYONE',
+          disable_duet:    false,
+          disable_comment: false,
+          disable_stitch:  false,
+        },
+        source_info: {
+          source:             'PULL_FROM_URL',
+          photo_images:       [draft.image_url],
+          photo_cover_index:  0,
         },
       }),
     })
 
-    if (!publishResponse.ok) {
-      const err = await publishResponse.text()
-      console.error('TikTok publish error:', err)
-      return NextResponse.json({ error: 'Failed to publish video' }, { status: 500 })
+    const postData = await postRes.json()
+
+    if (!postRes.ok || postData.error?.code !== 'ok') {
+      const errMsg = postData.error?.message ?? postData.error?.code ?? 'TikTok paylaşım hatası'
+      console.error('[post/tiktok] hata:', JSON.stringify(postData))
+      return NextResponse.json({ error: errMsg }, { status: 500 })
     }
 
-    const { data: publishData } = await publishResponse.json()
-    const tiktokVideoId = publishData.item_id
+    const publishId: string = postData.data?.publish_id ?? postData.data?.item_id ?? ''
 
-    // Update draft status if it's draft-based posting
-    if (draftId) {
-      await supabase
-        .from('content_drafts')
-        .update({
-          status: 'posted',
-          platforms: ['tiktok'],
-        })
-        .eq('id', draftId)
-    }
+    // ── Draft durumunu güncelle ────────────────────────────────────────────
+    await supabase
+      .from('content_drafts')
+      .update({ status: 'posted' })
+      .eq('id', draftId)
 
-    // Save to posts table
-    const { data: post, error: saveError } = await supabase
-      .from('posts')
-      .insert({
-        organization_id: orgId,
-        draft_id: draftId || null,
-        platform: 'tiktok',
-        platform_account_id: account.platform_user_id,
-        platform_post_id: tiktokVideoId,
+    // ── Posts tablosuna kayıt ──────────────────────────────────────────────
+    await supabase.from('posts').upsert(
+      {
+        organization_id:   orgId,
+        draft_id:          draftId,
+        social_account_id: account.id,
+        platform:          'tiktok',
+        platform_post_id:  publishId || `tiktok_${draftId}_${Date.now()}`,
         caption,
-        media_url: video_url,
-        status: 'published',
-        published_at: new Date().toISOString(),
-      })
-      .select()
-      .single()
+        hashtags:          draft.hashtags ?? [],
+        image_url:         draft.image_url ?? null,
+        status:            'posted',
+        posted_at:         new Date().toISOString(),
+      },
+      { onConflict: 'platform_post_id' },
+    )
 
-    if (saveError) {
-      console.error('Database error:', saveError)
-      return NextResponse.json({ error: saveError.message }, { status: 500 })
-    }
+    return NextResponse.json({ ok: true, publishId })
 
-    return NextResponse.json({ ok: true, post })
   } catch (err) {
-    console.error('Error:', err)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    const msg = err instanceof Error ? err.message : 'Bilinmeyen hata'
+    console.error('[post/tiktok] hata:', msg)
+    return NextResponse.json({ error: msg }, { status: 500 })
   }
 }
