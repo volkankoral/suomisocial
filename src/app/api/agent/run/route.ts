@@ -356,13 +356,34 @@ export async function POST(req: NextRequest) {
         const image   = await generateImage(textContent.image_prompt, { aspect: 'square', provider: useFLUX ? 'flux' : 'pollinations' })
         imageUrl = image.url ?? null
 
-        // Storage'a mirror
+        // Storage'a mirror — CDN URL'nin gerçekten hazır olduğundan emin ol
         if (imageUrl) {
           try {
-            const imgRes = await fetch(imageUrl)
-            if (imgRes.ok) {
-              const buf  = await imgRes.arrayBuffer()
-              const path = `${orgId}/agent_${planId.slice(0,8)}_${Date.now()}.jpg`
+            // Pollinations dinamik üretiyor, biraz bekle
+            const isPollinations = imageUrl.includes('pollinations.ai')
+            if (isPollinations) await new Promise(r => setTimeout(r, 3000))
+
+            // Retry: 3 deneme, 2sn aralıkla
+            let buf: ArrayBuffer | null = null
+            for (let attempt = 0; attempt < 3; attempt++) {
+              try {
+                const ctrl    = new AbortController()
+                const timeout = setTimeout(() => ctrl.abort(), 20000)
+                const imgRes  = await fetch(imageUrl, { signal: ctrl.signal })
+                clearTimeout(timeout)
+                if (imgRes.ok) {
+                  const ct = imgRes.headers.get('content-type') ?? ''
+                  if (ct.startsWith('image/')) {
+                    buf = await imgRes.arrayBuffer()
+                    break
+                  }
+                }
+              } catch { /* deneme başarısız */ }
+              if (attempt < 2) await new Promise(r => setTimeout(r, 2000))
+            }
+
+            if (buf) {
+              const path = `${orgId}/agent_${Date.now()}.jpg`
               const { error: upErr } = await supabase
                 .storage.from('post-media')
                 .upload(path, buf, { contentType: 'image/jpeg', upsert: false })

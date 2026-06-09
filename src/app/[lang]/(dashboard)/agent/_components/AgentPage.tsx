@@ -79,6 +79,7 @@ export function AgentPage({ lang, isPro, plan: initialPlan, items: initialItems 
 
   const [plan,        setPlan]        = useState<AgentPlan | null>(initialPlan)
   const [items,       setItems]       = useState<AgentItem[]>(initialItems)
+  const [imgErrors,   setImgErrors]   = useState<Record<string, boolean>>({})
   const [creating,    setCreating]    = useState(false)
   const [polling,     setPolling]     = useState(false)
   const [createErr,   setCreateErr]   = useState<string | null>(null)
@@ -361,19 +362,17 @@ export function AgentPage({ lang, isPro, plan: initialPlan, items: initialItems 
                       <div className="flex gap-4 p-4">
 
                         {/* Image */}
-                        {draft?.image_url ? (
+                        {draft?.image_url && !imgErrors[item.id] ? (
                           // eslint-disable-next-line @next/next/no-img-element
                           <img
                             src={draft.image_url}
-                            alt={draft.special_day_label ?? 'content'}
+                            alt=""
                             className="w-24 h-24 rounded-xl object-cover shrink-0"
+                            onError={() => setImgErrors(prev => ({ ...prev, [item.id]: true }))}
                           />
                         ) : (
-                          <div className="w-24 h-24 rounded-xl bg-white/5 border border-white/8 flex items-center justify-center shrink-0">
-                            {item.status === 'generating'
-                              ? <span className="text-xl animate-spin" style={{ animationDuration: '2s' }}>⚙️</span>
-                              : <span className="text-2xl opacity-20">🖼</span>
-                            }
+                          <div className="w-24 h-24 rounded-xl bg-gradient-to-br from-primary/20 to-sky-900/30 border border-primary/15 flex items-center justify-center shrink-0">
+                            <span className="text-3xl">🍕</span>
                           </div>
                         )}
 
