@@ -15,7 +15,7 @@ export const translations = {
       brand:        'Marka',
       billing:      'Abonelik',
       autopilot:    'Autopilot',
-      agent:        '🤖 Agent',
+      agent:        'Agent',
       admin:        'Admin',
     },
     langSwitcher: {
@@ -612,7 +612,7 @@ export const translations = {
       brand:        'Merkki',
       billing:      'Tilaus',
       autopilot:    'Autopilot',
-      agent:        '🤖 Agent',
+      agent:        'Agent',
       admin:        'Admin',
     },
     langSwitcher: {
@@ -1209,7 +1209,7 @@ export const translations = {
       brand:        'Brand',
       billing:      'Billing',
       autopilot:    'Autopilot',
-      agent:        '🤖 Agent',
+      agent:        'Agent',
       admin:        'Admin',
     },
     langSwitcher: {

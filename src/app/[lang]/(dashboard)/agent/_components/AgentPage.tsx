@@ -135,7 +135,7 @@ function PreviewModal({ item, lang, onClose, onApprove, onReject, onSave }: Moda
         </div>
 
         {/* Image — full width */}
-        <div className="w-full aspect-square bg-gradient-to-br from-primary/20 to-sky-900/30 relative overflow-hidden">
+        <div className="w-full h-80 bg-gradient-to-br from-primary/20 to-sky-900/30 relative overflow-hidden flex-shrink-0">
           {draft?.image_url && !imgError ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img
