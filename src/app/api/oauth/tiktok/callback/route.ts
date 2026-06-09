@@ -53,7 +53,7 @@ export async function GET(request: NextRequest) {
     const tokenRes = await fetch('https://open.tiktokapis.com/v2/oauth/token/', {
       method: 'POST',
       headers: {
-        'Content-Type':  'application/x-www-form-urlencoded;charset=UTF-8',
+        'Content-Type':  'application/x-www-form-urlencoded',
         'Cache-Control': 'no-cache',
       },
       cache: 'no-store',
@@ -63,8 +63,11 @@ export async function GET(request: NextRequest) {
     const rawBody = await tokenRes.text()
     console.log('[tiktok/callback] status:', tokenRes.status, 'body:', rawBody.slice(0, 300))
 
+    // Teşhis bilgisi — hata URL'sine gömülür
+    const diag = `s=${tokenRes.status}|clen=${code.length}|ck=${process.env.TIKTOK_CLIENT_KEY?.slice(0, 6)}|ru=${redirectUri}`
+
     if (!tokenRes.ok) {
-      return NextResponse.redirect(`${APP_URL}/${lang}/social?error=tiktok_token_failed&detail=${encodeURIComponent(rawBody.slice(0, 200))}`)
+      return NextResponse.redirect(`${APP_URL}/${lang}/social?error=tiktok_token_failed&detail=${encodeURIComponent(rawBody.slice(0, 160) + ' || ' + diag)}`)
     }
 
     let tokenData: Record<string, unknown>
@@ -76,7 +79,7 @@ export async function GET(request: NextRequest) {
     }
 
     if (!access_token || !open_id) {
-      return NextResponse.redirect(`${APP_URL}/${lang}/social?error=tiktok_no_token&detail=${encodeURIComponent(rawBody.slice(0, 200))}`)
+      return NextResponse.redirect(`${APP_URL}/${lang}/social?error=tiktok_no_token&detail=${encodeURIComponent(rawBody.slice(0, 160) + ' || ' + diag)}`)
     }
 
     // 2. Kullanıcı bilgisi al
