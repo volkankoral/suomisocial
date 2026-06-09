@@ -366,6 +366,16 @@ export function AgentPage({ lang, isPro, plan: initialPlan, items: initialItems 
   const readyCount    = items.filter(i => i.status === 'ready').length
   const approvedCount = items.filter(i => i.status === 'approved').length
 
+  const statusMeta = (() => {
+    switch (plan?.status) {
+      case 'done':   return { cls: 'bg-green-500/15 border-green-500/25 text-green-300', label: ag.statusDone }
+      case 'ready':  return { cls: 'bg-primary/15 border-primary/25 text-sky-200',       label: ag.statusReady }
+      case 'failed': return { cls: 'bg-red-500/15 border-red-500/25 text-red-300',       label: ag.statusFailed }
+      default:       return { cls: 'bg-white/8 border-white/10 text-muted-foreground',   label: ag.statusPlanning }
+    }
+  })()
+  const progressPct = plan?.items_total ? Math.round((approvedCount / plan.items_total) * 100) : 0
+
   const weekLabel = (() => {
     if (!plan?.week_start) return null
     const start = new Date(plan.week_start + 'T00:00:00Z')
@@ -402,7 +412,7 @@ export function AgentPage({ lang, isPro, plan: initialPlan, items: initialItems 
         />
       )}
 
-      <div className="max-w-4xl space-y-8">
+      <div className="max-w-6xl space-y-8">
 
         {/* ── Header ── */}
         <div className="flex items-start justify-between gap-4 flex-wrap">
@@ -471,52 +481,64 @@ export function AgentPage({ lang, isPro, plan: initialPlan, items: initialItems 
 
         {/* ── Plan exists ── */}
         {isPro && plan && plan.status !== 'planning' && (
-          <>
-            {/* Meta chips */}
-            <div className="flex items-center gap-2 flex-wrap text-sm">
-              {weekLabel && (
-                <span className="px-3 py-1 rounded-full bg-white/6 border border-white/10 text-muted-foreground">
-                  📅 {ag.weekOf} <span className="text-foreground font-medium">{weekLabel}</span>
-                </span>
-              )}
-              <span className="px-3 py-1 rounded-full bg-white/6 border border-white/10 text-muted-foreground">
-                📦 {ag.totalItems} <span className="text-foreground font-medium">{plan.items_total}</span>
-              </span>
-              <span className={`px-3 py-1 rounded-full font-medium border text-sm ${
-                plan.status === 'done'   ? 'bg-green-500/15 border-green-500/25 text-green-300' :
-                plan.status === 'ready'  ? 'bg-primary/15 border-primary/25 text-sky-200' :
-                plan.status === 'failed' ? 'bg-red-500/15 border-red-500/25 text-red-300' :
-                'bg-white/8 border-white/10 text-muted-foreground'
-              }`}>
-                {plan.status === 'done' ? ag.statusDone : plan.status === 'ready' ? ag.statusReady : plan.status === 'failed' ? ag.statusFailed : ag.statusPlanning}
-              </span>
-            </div>
+          <div className="grid gap-6 lg:grid-cols-[330px_1fr] items-start">
 
-            {/* Strategy */}
-            {plan.strategy_summary && (
-              <div className="rounded-2xl border border-primary/20 bg-primary/5 p-5 space-y-2">
-                <p className="text-xs font-semibold text-sky-300 uppercase tracking-wider">✦ {ag.strategyTitle}</p>
-                <p className="text-sm text-foreground/90 leading-relaxed whitespace-pre-wrap">{plan.strategy_summary}</p>
+            {/* ── Left: sticky summary ── */}
+            <aside className="space-y-4 lg:sticky lg:top-6 self-start">
+
+              {/* Summary card */}
+              <div className="rounded-2xl border border-white/8 bg-card p-4 space-y-3">
+                {weekLabel && (
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-muted-foreground">📅 {ag.weekOf}</span>
+                    <span className="text-foreground font-medium">{weekLabel}</span>
+                  </div>
+                )}
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-muted-foreground">📦 {ag.totalItems}</span>
+                  <span className="text-foreground font-medium">{plan.items_total}</span>
+                </div>
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-muted-foreground">{lang === 'fi' ? 'Tila' : lang === 'en' ? 'Status' : 'Durum'}</span>
+                  <span className={`px-2.5 py-0.5 rounded-full text-xs font-medium border ${statusMeta.cls}`}>
+                    {statusMeta.label}
+                  </span>
+                </div>
+
+                {/* Progress bar */}
+                {(readyCount + approvedCount) > 0 && (
+                  <div className="pt-1 space-y-1.5">
+                    <div className="flex justify-between text-[11px]">
+                      <span className="text-green-300 font-medium">✓ {approvedCount} onaylandı</span>
+                      <span className="text-sky-300">{readyCount} bekliyor</span>
+                    </div>
+                    <div className="h-1.5 rounded-full bg-white/8 overflow-hidden">
+                      <div className="h-full bg-gradient-to-r from-green-500 to-emerald-400 transition-all duration-500" style={{ width: `${progressPct}%` }} />
+                    </div>
+                  </div>
+                )}
               </div>
-            )}
 
-            {/* Approve all */}
-            {readyCount > 0 && (
-              <div className="flex items-center justify-between">
-                <p className="text-sm text-muted-foreground">
-                  {approvedCount > 0 && <span className="text-green-300 font-medium">✓ {approvedCount} onaylandı · </span>}
-                  <span className="text-sky-300">{readyCount} onay bekliyor</span>
-                </p>
+              {/* Strategy */}
+              {plan.strategy_summary && (
+                <div className="rounded-2xl border border-primary/20 bg-primary/5 p-4 space-y-2">
+                  <p className="text-xs font-semibold text-sky-300 uppercase tracking-wider">✦ {ag.strategyTitle}</p>
+                  <p className="text-sm text-foreground/90 leading-relaxed whitespace-pre-wrap">{plan.strategy_summary}</p>
+                </div>
+              )}
+
+              {/* Approve all */}
+              {readyCount > 0 && (
                 <button
                   onClick={approveAll} disabled={approvingAll}
-                  className="px-5 py-2 rounded-xl bg-gradient-to-r from-green-600 to-emerald-500 text-white font-semibold text-sm hover:opacity-90 transition-opacity disabled:opacity-50 shadow"
+                  className="w-full px-5 py-3 rounded-xl bg-gradient-to-r from-green-600 to-emerald-500 text-white font-semibold text-sm hover:opacity-90 transition-opacity disabled:opacity-50 shadow"
                 >
-                  {approvingAll ? ag.approvingAll : `${ag.approveAll} (${readyCount})`}
+                  {approvingAll ? ag.approvingAll : `✓ ${ag.approveAll} (${readyCount})`}
                 </button>
-              </div>
-            )}
+              )}
+            </aside>
 
-            {/* Items grid */}
+            {/* ── Right: items grid ── */}
             {visibleItems.length > 0 ? (
               <div className="space-y-3">
                 <h2 className="text-base font-semibold text-foreground">🗂 {ag.itemsTitle}</h2>
@@ -601,7 +623,7 @@ export function AgentPage({ lang, isPro, plan: initialPlan, items: initialItems 
                 <p className="text-muted-foreground text-sm">{ag.noItems}</p>
               </div>
             )}
-          </>
+          </div>
         )}
       </div>
     </>

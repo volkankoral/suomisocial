@@ -113,20 +113,22 @@ export default async function ContentPage({ params, searchParams }: Props) {
                 </p>
               )}
 
-              <div className="flex items-center gap-2 flex-wrap">
+              <div className="flex items-end justify-between gap-x-4 gap-y-2 flex-wrap pt-3 mt-1 border-t border-white/5">
                 <DraftActions draftId={draft.id} currentStatus={draft.status} archived={!!draft.archived} />
-                <EditDraftModal
-                  draftId={draft.id}
-                  captionFi={draft.caption_fi ?? ''}
-                  captionTr={draft.caption_tr ?? ''}
-                  hashtags={draft.hashtags ?? []}
-                  imageUrl={draft.image_url}
-                  overlayTemplate={draft.overlay_template}
-                  overlayText={draft.overlay_text}
-                  businessName={brandName}
-                  specialDayLabel={draft.special_day_label_tr}
-                />
-                <PreviewModal draft={draft} brandName={brandName} igUsername={igUsername} logoUrl={logoUrl} />
+                <div className="flex items-center gap-2 shrink-0">
+                  <EditDraftModal
+                    draftId={draft.id}
+                    captionFi={draft.caption_fi ?? ''}
+                    captionTr={draft.caption_tr ?? ''}
+                    hashtags={draft.hashtags ?? []}
+                    imageUrl={draft.image_url}
+                    overlayTemplate={draft.overlay_template}
+                    overlayText={draft.overlay_text}
+                    businessName={brandName}
+                    specialDayLabel={draft.special_day_label_tr}
+                  />
+                  <PreviewModal draft={draft} brandName={brandName} igUsername={igUsername} logoUrl={logoUrl} />
+                </div>
               </div>
             </div>
           </div>

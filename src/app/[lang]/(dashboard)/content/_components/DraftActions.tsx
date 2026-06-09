@@ -14,6 +14,7 @@ export function DraftActions({ draftId, currentStatus, archived = false }: Props
   const [loading, setLoading]       = useState(false)
   const [publishing, setPublishing] = useState(false)
   const [pubError, setPubError]     = useState<string | null>(null)
+  const [menuOpen, setMenuOpen]     = useState(false)
   const router = useRouter()
   const t      = useT()
   const c      = t.content
@@ -124,10 +125,51 @@ export function DraftActions({ draftId, currentStatus, archived = false }: Props
 
   const btnBase = 'text-xs px-3 py-2 sm:py-1.5 rounded-lg font-medium transition-colors disabled:opacity-40 active:scale-95'
 
-  // Arşivdeki taslaklar — sadece geri al + sil
+  // ── Taşma menüsü (ikincil aksiyonlar: Beklet / Arşivle / Sil) ──────────────
+  const overflowItems: { label: string; onClick: () => void; danger?: boolean }[] = []
+  if (currentStatus === 'approved') overflowItems.push({ label: `⏸ ${c.hold}`, onClick: () => updateStatus('pending') })
+  overflowItems.push({ label: `📦 ${c.archiveBtn}`, onClick: toggleArchive })
+  if (currentStatus !== 'posted') overflowItems.push({ label: `🗑 ${t.common.delete}`, onClick: deleteDraft, danger: true })
+
+  function OverflowMenu() {
+    if (overflowItems.length === 0) return null
+    return (
+      <div className="relative">
+        <button
+          onClick={() => setMenuOpen(o => !o)}
+          disabled={loading}
+          className="text-xs px-2.5 py-2 sm:py-1.5 rounded-lg border border-white/12 text-muted-foreground hover:text-foreground hover:border-white/24 transition-colors disabled:opacity-40"
+          title="Diğer işlemler"
+        >
+          ⋯
+        </button>
+        {menuOpen && (
+          <>
+            <div className="fixed inset-0 z-10" onClick={() => setMenuOpen(false)} />
+            <div className="absolute right-0 top-full mt-1 z-20 min-w-[150px] rounded-xl border border-white/12 bg-[#11151c] shadow-xl py-1 overflow-hidden">
+              {overflowItems.map((it, i) => (
+                <button
+                  key={i}
+                  onClick={() => { setMenuOpen(false); it.onClick() }}
+                  disabled={loading}
+                  className={`w-full text-left text-xs px-3 py-2 transition-colors disabled:opacity-40 ${
+                    it.danger ? 'text-red-300 hover:bg-red-500/10' : 'text-muted-foreground hover:bg-white/5 hover:text-foreground'
+                  }`}
+                >
+                  {it.label}
+                </button>
+              ))}
+            </div>
+          </>
+        )}
+      </div>
+    )
+  }
+
+  // ── Arşivdeki taslaklar — sadece geri al + sil ──────────────────────────────
   if (archived) {
     return (
-      <div className="flex items-center gap-2 flex-wrap w-full">
+      <div className="flex items-center gap-2 flex-wrap">
         <button onClick={toggleArchive} disabled={loading}
           className={`${btnBase} bg-amber-600/20 text-amber-300 border border-amber-500/30 hover:bg-amber-600/30`}>
           {c.unarchiveBtn}
@@ -145,46 +187,48 @@ export function DraftActions({ draftId, currentStatus, archived = false }: Props
   }
 
   return (
-    <div className="space-y-2 w-full">
+    <div className="space-y-2">
       <div className="flex items-center gap-2 flex-wrap">
+        {/* PENDING / REJECTED → Onayla */}
         {currentStatus !== 'approved' && currentStatus !== 'posted' && (
           <button onClick={() => updateStatus('approved')} disabled={loading}
             className={`${btnBase} bg-green-600 text-white hover:bg-green-700`}>
-            {t.common.approve}
+            ✓ {t.common.approve}
           </button>
         )}
 
+        {/* APPROVED → birincil yayın + platform segmenti */}
         {currentStatus === 'approved' && (
           <>
             <button onClick={publishToBoth} disabled={publishing}
-              className={`${btnBase} bg-gradient-to-r from-sky-500 to-primary text-white hover:opacity-90 flex items-center gap-1.5`}>
-              {publishing ? c.publishing : c.publishBoth}
+              className={`${btnBase} bg-gradient-to-r from-sky-500 to-primary text-white hover:opacity-90`}>
+              {publishing ? c.publishing : `📤 ${c.publishBoth}`}
             </button>
-            <button onClick={publishToInstagram} disabled={publishing}
-              className={`${btnBase} bg-primary/15 text-sky-300 border border-primary/30 hover:bg-primary/20`}>
-              {c.publishIg}
-            </button>
-            <button onClick={publishToFacebook} disabled={publishing}
-              className={`${btnBase} bg-blue-600/20 text-blue-300 border border-blue-500/30 hover:bg-blue-600/30`}>
-              {c.publishFb}
-            </button>
-            <button onClick={publishToTikTok} disabled={publishing}
-              className={`${btnBase} bg-purple-600/20 text-purple-300 border border-purple-500/30 hover:bg-purple-600/30`}>
-              {c.publishTt}
-            </button>
-            <button onClick={() => updateStatus('pending')} disabled={loading}
-              className={`${btnBase} border border-white/12 text-muted-foreground hover:text-foreground`}>
-              {c.hold}
-            </button>
+            <div className="inline-flex items-center gap-0.5 p-0.5 rounded-lg bg-white/5 border border-white/10">
+              <button onClick={publishToInstagram} disabled={publishing} title="Instagram"
+                className="text-xs px-2.5 py-1.5 rounded-md text-sky-300 hover:bg-primary/15 transition-colors disabled:opacity-40">
+                {c.publishIg}
+              </button>
+              <button onClick={publishToFacebook} disabled={publishing} title="Facebook"
+                className="text-xs px-2.5 py-1.5 rounded-md text-blue-300 hover:bg-blue-600/20 transition-colors disabled:opacity-40">
+                {c.publishFb}
+              </button>
+              <button onClick={publishToTikTok} disabled={publishing} title="TikTok"
+                className="text-xs px-2.5 py-1.5 rounded-md text-purple-300 hover:bg-purple-600/20 transition-colors disabled:opacity-40">
+                {c.publishTt}
+              </button>
+            </div>
           </>
         )}
 
+        {/* POSTED → rozet */}
         {currentStatus === 'posted' && (
           <span className={`${btnBase} bg-blue-500/15 text-blue-400 border border-blue-500/20`}>
-            {t.status.posted}
+            ✓ {t.status.posted}
           </span>
         )}
 
+        {/* Reddet */}
         {currentStatus !== 'rejected' && currentStatus !== 'posted' && (
           <button onClick={() => updateStatus('rejected')} disabled={loading}
             className={`${btnBase} bg-red-900/30 text-red-300 hover:opacity-80`}>
@@ -192,21 +236,8 @@ export function DraftActions({ draftId, currentStatus, archived = false }: Props
           </button>
         )}
 
-        <button onClick={toggleArchive} disabled={loading}
-          className={`${btnBase} border border-white/12 text-muted-foreground hover:text-foreground`}>
-          {c.archiveBtn}
-        </button>
-
-        {currentStatus !== 'posted' && (
-          <button
-            onClick={deleteDraft}
-            disabled={loading}
-            className="text-xs px-2 py-2 sm:py-1.5 text-zinc-400 hover:text-red-500 transition-colors disabled:opacity-40 active:scale-95"
-            title={t.common.delete}
-          >
-            🗑
-          </button>
-        )}
+        {/* Taşma menüsü */}
+        <OverflowMenu />
       </div>
 
       {pubError && (
