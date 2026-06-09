@@ -34,6 +34,7 @@ interface AgentItem {
   rationale: string | null
   priority: number
   status: 'pending' | 'generating' | 'ready' | 'approved' | 'rejected'
+  created_at: string
   content_drafts: ContentDraft | null
 }
 
@@ -348,6 +349,10 @@ export function AgentPage({ lang, isPro, plan: initialPlan, items: initialItems 
                     lang === 'fi' ? 'fi-FI' : lang === 'tr' ? 'tr-TR' : 'en-GB',
                     { weekday: 'short', month: 'short', day: 'numeric' }
                   )
+                  const createdAt = new Date(item.created_at).toLocaleString(
+                    lang === 'fi' ? 'fi-FI' : lang === 'tr' ? 'tr-TR' : 'en-GB',
+                    { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }
+                  )
 
                   return (
                     <div
@@ -387,6 +392,10 @@ export function AgentPage({ lang, isPro, plan: initialPlan, items: initialItems 
                             />
                             <StatusPill status={item.status} labels={statusMap} />
                           </div>
+                          {/* Oluşturulma zamanı */}
+                          <p className="text-[10px] text-muted-foreground/40">
+                            🕐 {createdAt}
+                          </p>
 
                           {/* Caption — Fince (asıl paylaşım içeriği) */}
                           {captionFi && (

@@ -51,7 +51,7 @@ export default async function AgentPageRoute({ params }: Props) {
   const { data: rawItems } = plan ? await supabase
     .from('agent_plan_items')
     .select(`
-      id, scheduled_date, rationale, priority, status,
+      id, scheduled_date, rationale, priority, status, created_at,
       content_drafts (
         id, caption_fi, caption_tr, hashtags, image_url,
         special_day_label, category, scheduled_at
