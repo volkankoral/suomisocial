@@ -36,19 +36,19 @@ const ASPECT_DIMS: Record<ImageAspect, { w: number; h: number; ratio: string }> 
  */
 export async function generateImage(prompt: string, opts: ImageOptions = {}): Promise<GeneratedImage> {
   const aspect = opts.aspect ?? 'square'
-  const provider = opts.provider ?? (process.env.REPLICATE_API_TOKEN ? 'flux' : 'pollinations')
+  const provider = opts.provider ?? (process.env.REPLICATE_API_TOKEN ? 'flux' : 'loremflickr')
 
   if (provider === 'flux') {
     try {
       const url = await generateWithFlux(prompt, aspect, opts.seed)
       return { url, provider: 'flux', prompt }
     } catch (err) {
-      console.error('FLUX hatası, Pollinations\'a düşülüyor:', err)
+      console.error('FLUX hatası, loremflickr\'a düşülüyor:', err)
       // Hata durumunda fallback
     }
   }
 
-  const url = buildPollinationsUrl(prompt, aspect, opts.seed)
+  const url = buildLoremFlickrUrl(prompt, aspect, opts.seed)
   return { url, provider: 'pollinations', prompt }
 }
 
@@ -147,33 +147,24 @@ async function pollReplicate(predictionId: string, token: string): Promise<strin
   throw new Error('FLUX zaman aşımı (30sn)')
 }
 
-// Pollinations negative prompt — video game / CGI görünümünü engeller
-const NEGATIVE_PROMPT = [
-  'cartoon', 'anime', 'illustration', 'drawing', 'sketch',
-  'video game', 'CGI', '3D render', 'plastic', 'toy',
-  'distorted face', 'deformed', 'blurry', 'low quality',
-  'watermark', 'text overlay', 'logo',
-].join(', ')
-
 /**
- * Pollinations.ai — ücretsiz, hemen URL döner (URL'nin kendisi görsel)
+ * LoremFlickr — ücretsiz stok fotoğraf servisi, keyword'e göre gerçek fotoğraflar döner.
+ * Her çağrıda farklı görsel gelebilir; agent/run'da Storage'a mirror edilir.
  */
-function buildPollinationsUrl(prompt: string, aspect: ImageAspect, seed?: number): string {
+function buildLoremFlickrUrl(prompt: string, aspect: ImageAspect, seed?: number): string {
   const { w, h } = ASPECT_DIMS[aspect]
 
-  // Prompt'a kalite artırıcı kelimeler ekle
-  const enhancedPrompt = `${prompt}, photorealistic, 8K, professional photography, natural lighting, sharp focus, cinematic`
+  // Prompt'tan yiyecek/restoran anahtar kelimelerini çıkar
+  const lower = prompt.toLowerCase()
+  const foodTerms = ['pizza', 'pasta', 'burger', 'sushi', 'salad', 'soup', 'dessert', 'cake',
+    'coffee', 'drink', 'cocktail', 'steak', 'seafood', 'sandwich', 'bakery', 'bread',
+    'restaurant', 'cafe', 'food', 'meal', 'dinner', 'lunch', 'breakfast']
+  const found = foodTerms.filter(t => lower.includes(t))
+  const tags  = found.length > 0 ? found.slice(0, 3).join(',') : 'food,restaurant'
 
-  const params = new URLSearchParams({
-    width:    String(w),
-    height:   String(h),
-    model:    'flux-realism',
-    nologo:   'true',
-    enhance:  'true',
-    negative: NEGATIVE_PROMPT,
-    ...(seed !== undefined ? { seed: String(seed) } : {}),
-  })
-  return `https://image.pollinations.ai/prompt/${encodeURIComponent(enhancedPrompt)}?${params.toString()}`
+  // lock=seed ile aynı keyword'de tutarlı fotoğraf seç
+  const lockParam = seed !== undefined ? `?lock=${seed}` : `?lock=${Math.floor(Math.random() * 9999)}`
+  return `https://loremflickr.com/${w}/${h}/${tags}${lockParam}`
 }
 
 // === Geriye dönük uyumluluk (eski kodun bozulmaması için) ===
@@ -184,9 +175,9 @@ export function buildImageUrl(prompt: string, opts: { width?: number; height?: n
     width === height ? 'square' :
     width > height ? 'landscape' :
     height / width > 1.5 ? 'story' : 'portrait'
-  return buildPollinationsUrl(prompt, aspect)
+  return buildLoremFlickrUrl(prompt, aspect)
 }
 
 export function buildStoryImageUrl(prompt: string): string {
-  return buildPollinationsUrl(prompt, 'story')
+  return buildLoremFlickrUrl(prompt, 'story')
 }
