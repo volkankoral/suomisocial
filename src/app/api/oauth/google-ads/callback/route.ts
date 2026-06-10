@@ -3,10 +3,10 @@ import { createClient } from '@/lib/supabase/server'
 import { createServiceClient } from '@/lib/supabase/service'
 import { getUserOrgId } from '@/lib/supabase/get-org'
 
-const lang = 'tr'
 const GOOGLE_ADS_API = 'https://googleads.googleapis.com/v18'
 
 export async function GET(request: NextRequest) {
+  const lang = request.cookies.get('NEXT_LOCALE')?.value ?? 'tr'
   const { searchParams } = request.nextUrl
   const code       = searchParams.get('code')
   const state      = searchParams.get('state')

@@ -48,8 +48,6 @@ export async function GET(request: NextRequest) {
       redirect_uri:  redirectUri,
     })
 
-    console.log('[tiktok/callback] code_len:', code.length, 'redirect_uri:', redirectUri, 'client_key:', process.env.TIKTOK_CLIENT_KEY?.slice(0, 8))
-
     const tokenRes = await fetch('https://open.tiktokapis.com/v2/oauth/token/', {
       method: 'POST',
       headers: {
@@ -61,25 +59,21 @@ export async function GET(request: NextRequest) {
     })
 
     const rawBody = await tokenRes.text()
-    console.log('[tiktok/callback] status:', tokenRes.status, 'body:', rawBody.slice(0, 300))
-
-    // Teşhis bilgisi — hata URL'sine gömülür
-    const diag = `s=${tokenRes.status}|clen=${code.length}|ck=${process.env.TIKTOK_CLIENT_KEY?.slice(0, 6)}|ru=${redirectUri}`
 
     if (!tokenRes.ok) {
-      return NextResponse.redirect(`${APP_URL}/${lang}/social?error=tiktok_token_failed&detail=${encodeURIComponent(rawBody.slice(0, 160) + ' || ' + diag)}`)
+      return NextResponse.redirect(`${APP_URL}/${lang}/social?error=tiktok_token_failed`)
     }
 
     let tokenData: Record<string, unknown>
     try { tokenData = JSON.parse(rawBody) } catch { tokenData = {} }
 
-    const { access_token, open_id, expires_in, refresh_token, refresh_expires_in } = tokenData as {
+    const { access_token, open_id, expires_in, refresh_token } = tokenData as {
       access_token?: string; open_id?: string; expires_in?: number
-      refresh_token?: string; refresh_expires_in?: number
+      refresh_token?: string
     }
 
     if (!access_token || !open_id) {
-      return NextResponse.redirect(`${APP_URL}/${lang}/social?error=tiktok_no_token&detail=${encodeURIComponent(rawBody.slice(0, 160) + ' || ' + diag)}`)
+      return NextResponse.redirect(`${APP_URL}/${lang}/social?error=tiktok_no_token`)
     }
 
     // 2. Kullanıcı bilgisi al
@@ -125,7 +119,7 @@ export async function GET(request: NextRequest) {
       const msg = vaultErr instanceof Error ? vaultErr.message : String(vaultErr)
       console.error('[tiktok/callback] vault error:', msg)
       return NextResponse.redirect(
-        `${APP_URL}/${lang}/social?error=tiktok_vault_failed&detail=${encodeURIComponent(msg.slice(0, 150))}`,
+        `${APP_URL}/${lang}/social?error=tiktok_vault_failed`,
       )
     }
 
@@ -148,8 +142,8 @@ export async function GET(request: NextRequest) {
     )
 
     if (dbErr) {
-      console.error('[tiktok/callback] db error:', dbErr)
-      return NextResponse.redirect(`${APP_URL}/${lang}/social?error=tiktok_db_failed&detail=${encodeURIComponent(dbErr.message.slice(0, 120))}`)
+      console.error('[tiktok/callback] db error:', dbErr.message)
+      return NextResponse.redirect(`${APP_URL}/${lang}/social?error=tiktok_db_failed`)
     }
 
     return NextResponse.redirect(`${APP_URL}/${lang}/social?connected=tiktok`)
@@ -161,6 +155,6 @@ export async function GET(request: NextRequest) {
       msg += ' | cause: ' + (cause instanceof Error ? cause.message : String(cause))
     }
     console.error('[tiktok/callback] unexpected error:', msg)
-    return NextResponse.redirect(`${APP_URL}/${lang}/social?error=oauth_failed&detail=${encodeURIComponent(msg.slice(0, 200))}`)
+    return NextResponse.redirect(`${APP_URL}/${lang}/social?error=oauth_failed`)
   }
 }

@@ -2,13 +2,14 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 
 export async function GET(request: NextRequest) {
+  const lang = request.cookies.get('NEXT_LOCALE')?.value ?? 'tr'
   const supabase = await createClient()
   const {
     data: { user },
   } = await supabase.auth.getUser()
 
   if (!user) {
-    return NextResponse.redirect(new URL('/tr/login', request.url))
+    return NextResponse.redirect(new URL(`/${lang}/login`, request.url))
   }
 
   const platform = request.nextUrl.searchParams.get('platform') ?? 'instagram'
@@ -16,7 +17,7 @@ export async function GET(request: NextRequest) {
   const appId = process.env.META_APP_ID
   if (!appId) {
     return NextResponse.redirect(
-      new URL('/tr/social?error=meta_not_configured', request.url),
+      new URL(`/${lang}/social?error=meta_not_configured`, request.url),
     )
   }
 

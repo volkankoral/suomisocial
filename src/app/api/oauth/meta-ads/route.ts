@@ -2,12 +2,13 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 
 export async function GET(request: NextRequest) {
+  const lang = request.cookies.get('NEXT_LOCALE')?.value ?? 'tr'
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return NextResponse.redirect(new URL('/tr/login', request.url))
+  if (!user) return NextResponse.redirect(new URL(`/${lang}/login`, request.url))
 
   const appId = process.env.META_APP_ID
-  if (!appId) return NextResponse.redirect(new URL('/tr/ads?error=meta_not_configured', request.url))
+  if (!appId) return NextResponse.redirect(new URL(`/${lang}/ads?error=meta_not_configured`, request.url))
 
   const stateRaw = `${user.id}:meta_ads:${Date.now()}`
   const state    = Buffer.from(stateRaw).toString('base64url')

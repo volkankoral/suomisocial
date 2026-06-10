@@ -19,11 +19,12 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Henüz Stripe müşterisi yok' }, { status: 400 })
   }
 
+  const lang   = req.cookies.get('NEXT_LOCALE')?.value ?? 'tr'
   const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000'
 
   const session = await stripe.billingPortal.sessions.create({
     customer:   org.stripe_customer_id,
-    return_url: `${appUrl}/tr/billing`,
+    return_url: `${appUrl}/${lang}/billing`,
   })
 
   return NextResponse.json({ url: session.url })

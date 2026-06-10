@@ -4,13 +4,14 @@ import { gbpClientId, gbpConfigured, GBP_SCOPE } from '@/lib/google-business'
 
 // Google Business Profile OAuth akışını başlatır → Google izin ekranına yönlendirir
 export async function GET(request: NextRequest) {
+  const lang = request.cookies.get('NEXT_LOCALE')?.value ?? 'tr'
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return NextResponse.redirect(new URL('/tr/login', request.url))
+  if (!user) return NextResponse.redirect(new URL(`/${lang}/login`, request.url))
 
   if (!gbpConfigured()) {
     return NextResponse.redirect(
-      new URL('/tr/social?error=google_business_not_configured', request.url),
+      new URL(`/${lang}/social?error=google_business_not_configured`, request.url),
     )
   }
 

@@ -5,8 +5,6 @@ import { getUserOrgId } from '@/lib/supabase/get-org'
 import { upsertToken } from '@/lib/vault'
 import { exchangeGoogleCode, GBP_ACCOUNT_API, GBP_INFO_API } from '@/lib/google-business'
 
-const lang = 'tr'
-
 interface GbpAccountInfo  { name: string; accountName?: string }
 interface GbpLocationInfo {
   name:  string
@@ -15,6 +13,7 @@ interface GbpLocationInfo {
 }
 
 export async function GET(request: NextRequest) {
+  const lang = request.cookies.get('NEXT_LOCALE')?.value ?? 'tr'
   const { searchParams } = request.nextUrl
   const code       = searchParams.get('code')
   const state      = searchParams.get('state')
