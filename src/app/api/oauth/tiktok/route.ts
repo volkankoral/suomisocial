@@ -20,7 +20,7 @@ export async function GET(request: NextRequest) {
   // user.info.basic  → Login Kit (profil bilgisi)
   // video.upload     → Content Posting API (yükleme + yayınlama)
   // Not: video.publish artık ayrı bir scope değil, video.upload içinde
-  authUrl.searchParams.set('scope', 'user.info.basic,user.info.profile,video.upload')
+  authUrl.searchParams.set('scope', 'user.info.basic,video.upload,video.publish')
   authUrl.searchParams.set('response_type', 'code')
   authUrl.searchParams.set('redirect_uri', redirectUri)
   authUrl.searchParams.set('state', state)
