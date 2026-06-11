@@ -11,6 +11,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createServiceClient } from '@/lib/supabase/service'
 import { getUserOrgId, getUserOrgCountry } from '@/lib/supabase/get-org'
 import { analyzeSentiment, generateReplyDraft } from '@/lib/ai/reviews'
+import { getValidGoogleToken, GBP_V4_API } from '@/lib/google-business'
 import { getRegionForCountry, getContentLang } from '@/lib/regions'
 import type { BrandContext } from '@/lib/ai/generate-content'
 import { agentLimiter } from '@/lib/rate-limit'
@@ -110,12 +111,67 @@ export async function POST(req: NextRequest, { params }: Params) {
       return NextResponse.json({ error: 'reply_text gerekli' }, { status: 400 })
     }
 
-    // TODO Faz 1: GBP kota onayı gelince gerçek API çağrısı buraya eklenir.
-    // Şu an sadece DB'yi günceller.
+    const replyText = body.reply_text.trim()
+
+    // ── Faz 1: GBP'ye gerçek API çağrısı ──────────────────────────────────
+    // Google Business Profile kota onayı (Case 1-0742000041045) geldikten
+    // sonra bu blok aktifleşir. Onay olmadan API 403 döner.
+    if (review.platform === 'google_business' && review.social_account_id) {
+      try {
+        const { data: account } = await supabase
+          .from('social_accounts')
+          .select('id, access_token_vault_id, refresh_token_vault_id, token_expires_at, metadata')
+          .eq('id', review.social_account_id)
+          .single()
+
+        if (account) {
+          const accessToken = await getValidGoogleToken(account)
+          if (accessToken) {
+            const meta            = account.metadata as {
+              account_resource?:  string
+              location_resource?: string
+            } | null
+            const accountResource  = meta?.account_resource  ?? ''
+            const locationResource = meta?.location_resource ?? ''
+
+            if (accountResource && locationResource) {
+              // PUT https://mybusiness.googleapis.com/v4/accounts/{a}/locations/{l}/reviews/{r}/reply
+              const replyUrl = `${GBP_V4_API}/${accountResource}/${locationResource}/reviews/${review.platform_review_id}/reply`
+              const gbpRes   = await fetch(replyUrl, {
+                method:  'PUT',
+                headers: {
+                  Authorization:  `Bearer ${accessToken}`,
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ comment: replyText }),
+              })
+
+              if (!gbpRes.ok) {
+                const errBody = await gbpRes.text()
+                // 403 = kota onayı bekleniyor → DB'ye yaz, platformda yayınlanmaz
+                if (gbpRes.status !== 403) {
+                  console.error('[reply/post] GBP API hatası:', gbpRes.status, errBody.slice(0, 200))
+                  return NextResponse.json(
+                    { error: `GBP API ${gbpRes.status}`, code: 'GBP_ERROR' },
+                    { status: 502 },
+                  )
+                }
+                // 403 → sessizce geç, DB'ye kaydet
+              }
+            }
+          }
+        }
+      } catch (e) {
+        // GBP isteği başarısız → DB güncellemesini engelleme
+        console.error('[reply/post] GBP reply hatası:', e)
+      }
+    }
+
+    // ── DB güncelle ────────────────────────────────────────────────────────
     const { data: updated, error: updateErr } = await supabase
       .from('reviews')
       .update({
-        reply_text:      body.reply_text.trim(),
+        reply_text:      replyText,
         reply_status:    'posted',
         reply_posted_at: new Date().toISOString(),
       })
