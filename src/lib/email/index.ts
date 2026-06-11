@@ -242,3 +242,33 @@ export async function sendAutopilotReadyEmail(opts: {
     html:    layout(body),
   })
 }
+
+// ── Olumsuz yorum bildirimi ───────────────────────────────────────────────────
+
+export async function sendNegativeReviewAlert(opts: {
+  to:          string
+  platform:    string       // 'Google Business' | 'Facebook' | 'Instagram'
+  authorName:  string
+  rating:      number | null
+  comment:     string
+  reviewUrl:   string       // Occaly dashboard'daki yorum linki
+}) {
+  const stars  = opts.rating ? '⭐'.repeat(opts.rating) : ''
+  const preview = opts.comment.length > 200 ? opts.comment.slice(0, 200) + '…' : opts.comment
+
+  await getResend().emails.send({
+    from:    FROM,
+    to:      opts.to,
+    subject: `⚠️ Olumsuz yorum: ${opts.platform} — ${opts.authorName}`,
+    html: layout(`
+      ${h2('⚠️ Yeni olumsuz yorum')}
+      ${p(`<strong style="color:#fafafa;">${opts.authorName}</strong> ${opts.platform} üzerinde bir yorum bıraktı.`)}
+      ${stars ? p(`Puan: ${stars} (${opts.rating}/5)`) : ''}
+      <blockquote style="margin:16px 0;padding:12px 16px;border-left:3px solid #f97316;background:#1a1a1a;border-radius:0 8px 8px 0;">
+        <p style="margin:0;font-size:14px;color:#d4d4d8;line-height:1.6;font-style:italic;">"${preview}"</p>
+      </blockquote>
+      ${p('Occaly\'de AI taslak cevabı hazır — inceleyip düzenleyebilirsiniz.')}
+      ${btn('Yoruma Cevap Ver →', opts.reviewUrl)}
+    `),
+  })
+}
