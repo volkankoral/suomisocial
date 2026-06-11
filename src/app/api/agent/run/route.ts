@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServiceClient } from '@/lib/supabase/service'
 import { getUserOrgId, getUserOrgCountry } from '@/lib/supabase/get-org'
+import { agentLimiter } from '@/lib/rate-limit'
 import {
   generateSpecialDayContent,
   generateRoutineContent,
@@ -143,6 +144,19 @@ Create the optimal content plan for this week.`
 // ── Ana handler ───────────────────────────────────────────────────────────────
 
 export async function POST(req: NextRequest) {
+  // ── Rate limiting ────────────────────────────────────────────────────────
+  const ip =
+    req.headers.get('x-forwarded-for')?.split(',')[0].trim() ??
+    req.headers.get('x-real-ip') ??
+    'unknown'
+  const { ok: rlOk, retryAfter } = agentLimiter.check(ip)
+  if (!rlOk) {
+    return NextResponse.json(
+      { error: `Çok fazla istek. Lütfen ${retryAfter} saniye bekleyin.`, code: 'RATE_LIMITED' },
+      { status: 429, headers: { 'Retry-After': String(retryAfter ?? 300) } },
+    )
+  }
+
   const orgId = await getUserOrgId()
   if (!orgId) return NextResponse.json({ error: 'Yetkisiz' }, { status: 401 })
 

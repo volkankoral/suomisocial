@@ -1,11 +1,25 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createServiceClient } from '@/lib/supabase/service'
+import { generateLimiter } from '@/lib/rate-limit'
 import { generateContent } from '@/lib/ai/generate-content'
 import { buildImageUrl } from '@/lib/ai/generate-image'
 import { getSupportedCountries } from '@/lib/calendar'
 
 export async function POST(req: NextRequest) {
+  // ── Rate limiting ────────────────────────────────────────────────────────
+  const ip =
+    req.headers.get('x-forwarded-for')?.split(',')[0].trim() ??
+    req.headers.get('x-real-ip') ??
+    'unknown'
+  const { ok: rlOk, retryAfter } = generateLimiter.check(ip)
+  if (!rlOk) {
+    return NextResponse.json(
+      { error: `Çok fazla istek. Lütfen ${retryAfter} saniye bekleyin.`, code: 'RATE_LIMITED' },
+      { status: 429, headers: { 'Retry-After': String(retryAfter ?? 60) } },
+    )
+  }
+
   const authClient = await createClient()
   const { data: { user } } = await authClient.auth.getUser()
   if (!user) {

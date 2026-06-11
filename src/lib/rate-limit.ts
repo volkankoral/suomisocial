@@ -66,6 +66,9 @@ export class RateLimiter {
 /** AI içerik üretimi: dakikada 5 istek / IP */
 export const generateLimiter = new RateLimiter({ windowMs: 60_000, max: 5 })
 
+/** Agent haftalık plan (ağır pipeline): 5 dakikada 2 istek / IP */
+export const agentLimiter = new RateLimiter({ windowMs: 5 * 60_000, max: 2 })
+
 /** Auth (login/register): dakikada 10 istek / IP */
 export const authLimiter = new RateLimiter({ windowMs: 60_000, max: 10 })
 
@@ -78,6 +81,7 @@ export const apiLimiter = new RateLimiter({ windowMs: 60_000, max: 60 })
 // Her 5 dakikada bir eski kayıtları temizle
 setInterval(() => {
   generateLimiter.cleanup()
+  agentLimiter.cleanup()
   authLimiter.cleanup()
   analyzeLimiter.cleanup()
   apiLimiter.cleanup()
