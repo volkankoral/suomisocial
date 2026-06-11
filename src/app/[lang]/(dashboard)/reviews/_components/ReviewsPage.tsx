@@ -2,6 +2,7 @@
 
 import { useState, useTransition, useCallback, useRef } from 'react'
 import { useRouter, usePathname, useSearchParams } from 'next/navigation'
+import Link from 'next/link'
 import { useT } from '@/lib/useT'
 
 // ─── Types ───────────────────────────────────────────────────────────────────
@@ -304,7 +305,7 @@ function ReviewCard({
 
 // ─── Widget embed panel ───────────────────────────────────────────────────────
 
-function WidgetEmbedPanel({ orgId, settings }: { orgId: string; settings: Settings | null }) {
+function WidgetEmbedPanel({ orgId, lang, settings }: { orgId: string; lang: string; settings: Settings | null }) {
   const [copied, setCopied] = useState(false)
   const [theme, setTheme]   = useState<'dark' | 'light'>('dark')
   const codeRef = useRef<HTMLElement>(null)
@@ -337,13 +338,21 @@ function WidgetEmbedPanel({ orgId, settings }: { orgId: string; settings: Settin
             Yüksek puanlı yorumları müşteri web sitenize gömün
           </p>
         </div>
-        <span className={`shrink-0 text-xs px-2.5 py-1 rounded-full border font-medium ${
-          widgetEnabled
-            ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/20'
-            : 'bg-zinc-500/15 text-zinc-400 border-zinc-500/20'
-        }`}>
-          {widgetEnabled ? '● Aktif' : '● Kapalı'}
-        </span>
+        <div className="flex items-center gap-2 shrink-0">
+          <span className={`text-xs px-2.5 py-1 rounded-full border font-medium ${
+            widgetEnabled
+              ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/20'
+              : 'bg-zinc-500/15 text-zinc-400 border-zinc-500/20'
+          }`}>
+            {widgetEnabled ? '● Aktif' : '● Kapalı'}
+          </span>
+          <Link
+            href={`/${lang}/reviews/settings`}
+            className="text-xs px-2.5 py-1 rounded-lg border border-white/10 bg-white/5 text-muted-foreground hover:text-foreground hover:bg-white/10 transition-colors"
+          >
+            ⚙️
+          </Link>
+        </div>
       </div>
 
       <div className="px-5 py-4 space-y-4">
@@ -592,7 +601,7 @@ export function ReviewsPage({
       </div>
 
       {/* Widget embed panel */}
-      <WidgetEmbedPanel orgId={orgId} settings={settings} />
+      <WidgetEmbedPanel orgId={orgId} lang={lang} settings={settings} />
 
       {/* Filters */}
       <FilterBar filters={filters} />
