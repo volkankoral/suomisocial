@@ -4,6 +4,7 @@ import { redirect } from 'next/navigation'
 import { Suspense } from 'react'
 import { translations, type Lang } from '@/lib/translations'
 import { AgentPage } from './_components/AgentPage'
+import { SectionTabs } from '../_components/SectionTabs'
 
 interface Props { params: Promise<{ lang: string }> }
 
@@ -74,13 +75,16 @@ export default async function AgentPageRoute({ params }: Props) {
   const loadingText = translations[lang].common.loading
 
   return (
-    <Suspense fallback={<div className="text-muted-foreground text-sm p-8">{loadingText}</div>}>
-      <AgentPage
-        lang={lang}
-        isPro={isPro}
-        plan={plan ?? null}
-        items={items ?? []}
-      />
-    </Suspense>
+    <div className="space-y-6">
+      <SectionTabs group="automation" lang={lang} />
+      <Suspense fallback={<div className="text-muted-foreground text-sm p-8">{loadingText}</div>}>
+        <AgentPage
+          lang={lang}
+          isPro={isPro}
+          plan={plan ?? null}
+          items={items ?? []}
+        />
+      </Suspense>
+    </div>
   )
 }

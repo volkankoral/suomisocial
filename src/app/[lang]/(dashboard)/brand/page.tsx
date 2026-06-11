@@ -4,6 +4,7 @@ import { getSupportedCountries } from '@/lib/calendar'
 import { BrandForm } from './_components/BrandForm'
 import { Animate } from '@/components/ui/animate'
 import { translations, type Lang } from '@/lib/translations'
+import { SectionTabs } from '../_components/SectionTabs'
 
 interface Props {
   params: Promise<{ lang: string }>
@@ -25,6 +26,7 @@ export default async function BrandPage({ params }: Props) {
 
   return (
     <div className="space-y-8">
+      <SectionTabs group="settings" lang={lang} />
       <Animate>
         <div>
           <h1 className="text-3xl font-bold tracking-tight gradient-text">{t.brand.title}</h1>

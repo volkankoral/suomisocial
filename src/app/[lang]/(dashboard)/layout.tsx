@@ -41,18 +41,15 @@ export default async function DashboardLayout({ children, params }: Props) {
     hasActiveSubscription = isAdmin || !!sub
   }
 
+  // Üst menü 6 ana gruba indirildi. Gruplu sayfalar `match` ile aktif olur,
+  // grup içi geçiş sayfa üstündeki SectionTabs ile yapılır.
   const navLinks = [
-    { href: `/${lang}/dashboard`, label: t.nav.dashboard, icon: '⬡' },
-    { href: `/${lang}/calendar`,  label: t.nav.calendar,  icon: '🇫🇮' },
-    { href: `/${lang}/content`,   label: t.nav.content,   icon: '✨' },
-    { href: `/${lang}/posts`,     label: t.nav.posts,     icon: '📤' },
-    { href: `/${lang}/social`,    label: t.nav.social,    icon: '🔗' },
-    { href: `/${lang}/ads`,       label: t.nav.ads,       icon: '📊' },
-    { href: `/${lang}/brand`,      label: t.nav.brand,      icon: '⚙️' },
-    { href: `/${lang}/billing`,   label: t.nav.billing,   icon: '💳' },
-    { href: `/${lang}/autopilot`, label: t.nav.autopilot, icon: '⚡' },
-    { href: `/${lang}/agent`,     label: t.nav.agent,     icon: '🤖' },
-    { href: `/${lang}/reviews`,   label: t.nav.reviews,   icon: '⭐' },
+    { href: `/${lang}/dashboard`,  label: t.nav.dashboard,         icon: '🏠' },
+    { href: `/${lang}/content`,    label: t.navGroups.content,     icon: '✨', match: [`/${lang}/calendar`, `/${lang}/posts`] },
+    { href: `/${lang}/autopilot`,  label: t.navGroups.automation,  icon: '⚡', match: [`/${lang}/agent`] },
+    { href: `/${lang}/reviews`,    label: t.nav.reviews,           icon: '⭐' },
+    { href: `/${lang}/ads`,        label: t.nav.ads,               icon: '📊' },
+    { href: `/${lang}/social`,     label: t.navGroups.settings,    icon: '⚙️', match: [`/${lang}/brand`, `/${lang}/billing`] },
     ...(isAdmin ? [{ href: `/${lang}/admin`, label: t.nav.admin, icon: '🛡️' }] : []),
   ]
 

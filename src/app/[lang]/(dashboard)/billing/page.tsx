@@ -4,6 +4,7 @@ import { redirect } from 'next/navigation'
 import { Suspense } from 'react'
 import { BillingClient } from './_components/BillingClient'
 import { translations, type Lang } from '@/lib/translations'
+import { SectionTabs } from '../_components/SectionTabs'
 
 interface Props { params: Promise<{ lang: string }> }
 
@@ -40,13 +41,16 @@ export default async function BillingPage({ params }: Props) {
   const loadingText = translations[lang].billing.loading
 
   return (
-    <Suspense fallback={<div className="text-muted-foreground text-sm p-8">{loadingText}</div>}>
-      <BillingClient
-        subscription={subscription}
-        plans={plans ?? []}
-        hasStripeCustomer={!!org?.stripe_customer_id}
-        creditBalance={creditRow?.balance ?? 0}
-      />
-    </Suspense>
+    <div className="space-y-6">
+      <SectionTabs group="settings" lang={lang} />
+      <Suspense fallback={<div className="text-muted-foreground text-sm p-8">{loadingText}</div>}>
+        <BillingClient
+          subscription={subscription}
+          plans={plans ?? []}
+          hasStripeCustomer={!!org?.stripe_customer_id}
+          creditBalance={creditRow?.balance ?? 0}
+        />
+      </Suspense>
+    </div>
   )
 }

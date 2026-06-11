@@ -4,6 +4,7 @@ import { createServiceClient } from '@/lib/supabase/service'
 import { getUserOrgId } from '@/lib/supabase/get-org'
 import { translations, type Lang } from '@/lib/translations'
 import { AutopilotPage } from './_components/AutopilotPage'
+import { SectionTabs } from '../_components/SectionTabs'
 
 interface Props {
   params: Promise<{ lang: string }>
@@ -60,11 +61,14 @@ export default async function AutopilotServerPage({ params }: Props) {
   const isPro    = isAdmin || planSlug === 'pro' || planSlug === 'business'
 
   return (
-    <AutopilotPage
-      lang={lang}
-      isPro={isPro}
-      initialSettings={settingsRow ?? null}
-      initialDrafts={draftsData ?? []}
-    />
+    <div className="space-y-6">
+      <SectionTabs group="automation" lang={lang} />
+      <AutopilotPage
+        lang={lang}
+        isPro={isPro}
+        initialSettings={settingsRow ?? null}
+        initialDrafts={draftsData ?? []}
+      />
+    </div>
   )
 }

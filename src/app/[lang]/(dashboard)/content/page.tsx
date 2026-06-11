@@ -9,6 +9,7 @@ import { BulkDeleteButton } from './_components/BulkDeleteButton'
 import { ImageOverlayPreview } from './_components/ImageOverlayPreview'
 import { Animate, Stagger, FadeUpItem } from '@/components/ui/animate'
 import { translations, type Lang } from '@/lib/translations'
+import { SectionTabs } from '../_components/SectionTabs'
 import Link from 'next/link'
 
 interface Props {
@@ -139,6 +140,8 @@ export default async function ContentPage({ params, searchParams }: Props) {
 
   return (
     <div className="space-y-6 sm:space-y-8">
+
+      <SectionTabs group="content" lang={lang} />
 
       {/* Header */}
       <Animate>

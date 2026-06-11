@@ -2,6 +2,7 @@ import { getUpcomingSpecialDays, getSpecialDays, getSupportedCountries } from '@
 import { getUserOrgCountry } from '@/lib/supabase/get-org'
 import { Animate, Stagger, FadeUpItem } from '@/components/ui/animate'
 import { translations, type Lang } from '@/lib/translations'
+import { SectionTabs } from '../_components/SectionTabs'
 
 interface Props {
   params: Promise<{ lang: string }>
@@ -28,6 +29,8 @@ export default async function CalendarPage({ params }: Props) {
 
   return (
     <div className="space-y-8">
+
+      <SectionTabs group="content" lang={lang} />
 
       {/* Header */}
       <Animate>

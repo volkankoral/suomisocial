@@ -4,6 +4,7 @@ import { ConnectButton } from './_components/ConnectButton'
 import { DisconnectButton } from './_components/DisconnectButton'
 import { Animate, Stagger, FadeUpItem } from '@/components/ui/animate'
 import { translations, type Lang } from '@/lib/translations'
+import { SectionTabs } from '../_components/SectionTabs'
 
 interface Props {
   params: Promise<{ lang: string }>
@@ -107,6 +108,8 @@ export default async function SocialPage({ params, searchParams }: Props) {
 
   return (
     <div className="space-y-8">
+
+      <SectionTabs group="settings" lang={lang} />
 
       {/* Header */}
       <Animate>

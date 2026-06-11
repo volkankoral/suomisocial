@@ -19,6 +19,20 @@ export const translations = {
       reviews:      'Yorumlar',
       admin:        'Admin',
     },
+    navGroups: {
+      content:     'İçerik',
+      automation:  'Otomasyon',
+      settings:    'Ayarlar',
+      // sekme etiketleri
+      tGenerate:   'Üret',
+      tCalendar:   'Takvim',
+      tPosts:      'Yayınlar',
+      tAutopilot:  'Zamanlanmış',
+      tAgent:      'Haftalık Plan',
+      tAccounts:   'Hesaplar',
+      tBrand:      'Marka',
+      tBilling:    'Abonelik',
+    },
     langSwitcher: {
       label: 'Dil',
       tr: 'Türkçe',
@@ -677,6 +691,20 @@ export const translations = {
       reviews:      'Arvostelut',
       admin:        'Admin',
     },
+    navGroups: {
+      content:     'Sisältö',
+      automation:  'Automaatio',
+      settings:    'Asetukset',
+      // välilehtien nimet
+      tGenerate:   'Luo',
+      tCalendar:   'Kalenteri',
+      tPosts:      'Julkaisut',
+      tAutopilot:  'Ajastettu',
+      tAgent:      'Viikkosuunnitelma',
+      tAccounts:   'Tilit',
+      tBrand:      'Merkki',
+      tBilling:    'Tilaus',
+    },
     langSwitcher: {
       label: 'Kieli',
       tr: 'Turkki',
@@ -1334,6 +1362,20 @@ export const translations = {
       agent:        'Agent',
       reviews:      'Reviews',
       admin:        'Admin',
+    },
+    navGroups: {
+      content:     'Content',
+      automation:  'Automation',
+      settings:    'Settings',
+      // tab labels
+      tGenerate:   'Create',
+      tCalendar:   'Calendar',
+      tPosts:      'Posts',
+      tAutopilot:  'Scheduled',
+      tAgent:      'Weekly Plan',
+      tAccounts:   'Accounts',
+      tBrand:      'Brand',
+      tBilling:    'Billing',
     },
     langSwitcher: {
       label: 'Language',

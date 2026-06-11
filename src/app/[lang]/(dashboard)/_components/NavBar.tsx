@@ -10,6 +10,8 @@ interface NavLink {
   href: string
   label: string
   icon: string
+  /** ek path'ler — bu öğe altındaki gruplanmış sayfalar (aktif state için) */
+  match?: string[]
 }
 
 interface Props {
@@ -33,8 +35,11 @@ export function NavBar({ links, email, lang }: Props) {
   const [userOpen, setUserOpen]   = useState(false)
   const [loggingOut, setLoggingOut] = useState(false)
 
-  const isActive = (href: string) =>
+  const matchesPath = (href: string) =>
     pathname === href || pathname.startsWith(href + '/')
+
+  const isActive = (link: NavLink) =>
+    matchesPath(link.href) || (link.match?.some(matchesPath) ?? false)
 
   function switchLang(newLang: string) {
     // Tercih cookie'sini 1 yıllığına yaz — bir sonraki ziyarette IP otomatik dilini geçersiz kılar
@@ -78,7 +83,7 @@ export function NavBar({ links, email, lang }: Props) {
           {/* Desktop nav */}
           <nav className="hidden lg:flex items-center gap-0.5 flex-1 overflow-x-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
             {links.map((link) => {
-              const active = isActive(link.href)
+              const active = isActive(link)
               return (
                 <Link
                   key={link.href}
@@ -104,7 +109,7 @@ export function NavBar({ links, email, lang }: Props) {
           {/* Tablet nav — icon only */}
           <nav className="hidden md:flex lg:hidden items-center gap-0.5 flex-1">
             {links.map((link) => {
-              const active = isActive(link.href)
+              const active = isActive(link)
               return (
                 <Link
                   key={link.href}
@@ -258,7 +263,7 @@ export function NavBar({ links, email, lang }: Props) {
             {/* Links */}
             <nav className="flex-1 overflow-y-auto py-3 px-3">
               {links.map((link, i) => {
-                const active = isActive(link.href)
+                const active = isActive(link)
                 return (
                   <motion.div
                     key={link.href}

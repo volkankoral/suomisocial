@@ -2,6 +2,7 @@ import { createServiceClient } from '@/lib/supabase/service'
 import { getUserOrgId } from '@/lib/supabase/get-org'
 import { PostSyncButton } from './_components/PostSyncButton'
 import { translations, type Lang } from '@/lib/translations'
+import { SectionTabs } from '../_components/SectionTabs'
 
 export const dynamic = 'force-dynamic'
 
@@ -35,6 +36,8 @@ export default async function PostsPage({ params }: Props) {
 
   return (
     <div className="space-y-8">
+
+      <SectionTabs group="content" lang={lang} />
 
       {/* Header */}
       <div className="flex items-start justify-between gap-4 flex-wrap">
