@@ -114,7 +114,7 @@ export async function GET(request: NextRequest) {
     const msg = err instanceof Error ? err.message : String(err)
     console.error('Google Ads OAuth hatası:', msg)
     return NextResponse.redirect(
-      new URL(`/${lang}/ads?error=${encodeURIComponent(msg)}`, request.url)
+      new URL(`/${lang}/ads?error=google_ads_oauth_failed`, request.url)
     )
   }
 }

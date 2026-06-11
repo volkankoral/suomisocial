@@ -149,7 +149,6 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    console.log(`Meta OAuth: ${savedCount} hesap vault'a şifreli kaydedildi (org: ${orgId})`)
 
     if (savedCount === 0) {
       return NextResponse.redirect(
@@ -167,7 +166,7 @@ export async function GET(request: NextRequest) {
     const msg = err instanceof Error ? err.message : String(err)
     console.error('Meta OAuth callback hatası:', msg)
     return NextResponse.redirect(
-      new URL(`/${lang}/social?error=${encodeURIComponent(msg)}`, request.url),
+      new URL(`/${lang}/social?error=meta_oauth_failed`, request.url),
     )
   }
 }

@@ -9,6 +9,8 @@ import {
 } from '@/lib/email'
 import Stripe from 'stripe'
 
+const emailErr = (label: string) => (e: unknown) => console.error(`[webhook] ${label} email hatası:`, e)
+
 async function getRawBody(req: NextRequest): Promise<Buffer> {
   const reader = req.body?.getReader()
   if (!reader) return Buffer.alloc(0)
@@ -105,7 +107,7 @@ export async function POST(req: NextRequest) {
                 planName:       `${credits} AI Credits`,
                 amount:         `€${((session.amount_total ?? 0) / 100).toFixed(2)}`,
                 nextBillingDate: 'No expiry',
-              }).catch(console.error)
+              }).catch(emailErr('credit-topup-payment'))
             }
           }
           break
@@ -156,7 +158,7 @@ export async function POST(req: NextRequest) {
 
         if (email) {
           // Hoş geldin emaili (fire-and-forget, hata email gönderimini engellesin)
-          sendWelcomeEmail({ to: email, businessName: orgName }).catch(console.error)
+          sendWelcomeEmail({ to: email, businessName: orgName }).catch(emailErr('welcome'))
 
           sendPaymentSuccessEmail({
             to: email,
@@ -164,7 +166,7 @@ export async function POST(req: NextRequest) {
             planName: plan?.name ?? 'Starter',
             amount: `€${plan?.price_monthly ?? '–'}/month`,
             nextBillingDate: nextBilling,
-          }).catch(console.error)
+          }).catch(emailErr('new-subscription-payment'))
         }
         break
       }
@@ -217,7 +219,7 @@ export async function POST(req: NextRequest) {
               businessName: orgName,
               planName,
               accessUntil,
-            }).catch(console.error)
+            }).catch(emailErr('subscription-canceled'))
           }
         }
         break
@@ -250,7 +252,7 @@ export async function POST(req: NextRequest) {
               to: email,
               businessName: orgName,
               planName,
-            }).catch(console.error)
+            }).catch(emailErr('payment-failed'))
           }
         }
         break
@@ -297,7 +299,7 @@ export async function POST(req: NextRequest) {
               planName: plan?.name ?? 'Starter',
               amount: `€${plan?.price_monthly ?? '–'}/month`,
               nextBillingDate: nextBilling,
-            }).catch(console.error)
+            }).catch(emailErr('renewal-payment'))
           }
         }
         break

@@ -127,8 +127,6 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    console.log(`Google Business OAuth: ${savedCount} lokasyon kaydedildi (org: ${orgId})`)
-
     const response = NextResponse.redirect(
       new URL(`/${lang}/social?connected=google_business`, request.url),
     )
@@ -139,7 +137,7 @@ export async function GET(request: NextRequest) {
     const msg = err instanceof Error ? err.message : String(err)
     console.error('Google Business OAuth hatası:', msg)
     return NextResponse.redirect(
-      new URL(`/${lang}/social?error=${encodeURIComponent(msg)}`, request.url),
+      new URL(`/${lang}/social?error=google_business_oauth_failed`, request.url),
     )
   }
 }
