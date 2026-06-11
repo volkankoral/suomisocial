@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useTransition, useCallback } from 'react'
+import { useState, useTransition, useCallback, useRef } from 'react'
 import { useRouter, usePathname, useSearchParams } from 'next/navigation'
 import { useT } from '@/lib/useT'
 
@@ -302,6 +302,121 @@ function ReviewCard({
   )
 }
 
+// ─── Widget embed panel ───────────────────────────────────────────────────────
+
+function WidgetEmbedPanel({ orgId, settings }: { orgId: string; settings: Settings | null }) {
+  const [copied, setCopied] = useState(false)
+  const [theme, setTheme]   = useState<'dark' | 'light'>('dark')
+  const codeRef = useRef<HTMLElement>(null)
+
+  const snippet = `<!-- Occaly Reviews Widget -->
+<div id="occaly-reviews"></div>
+<script
+  src="https://occaly.com/widget/reviews.js"
+  data-org-id="${orgId}"
+  data-theme="${theme}"
+></script>`
+
+  function handleCopy() {
+    navigator.clipboard.writeText(snippet).then(() => {
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    })
+  }
+
+  const widgetEnabled = settings?.widget_enabled !== false
+
+  return (
+    <div className="rounded-xl border border-white/8 bg-white/[0.02] overflow-hidden">
+      {/* Header */}
+      <div className="flex items-center gap-3 px-5 py-4 border-b border-white/8">
+        <span className="text-xl">🔌</span>
+        <div className="flex-1">
+          <h3 className="text-sm font-semibold text-foreground">Web Sitesi Widget</h3>
+          <p className="text-xs text-muted-foreground mt-0.5">
+            Yüksek puanlı yorumları müşteri web sitenize gömün
+          </p>
+        </div>
+        <span className={`shrink-0 text-xs px-2.5 py-1 rounded-full border font-medium ${
+          widgetEnabled
+            ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/20'
+            : 'bg-zinc-500/15 text-zinc-400 border-zinc-500/20'
+        }`}>
+          {widgetEnabled ? '● Aktif' : '● Kapalı'}
+        </span>
+      </div>
+
+      <div className="px-5 py-4 space-y-4">
+        {/* Theme selector */}
+        <div className="flex items-center gap-3">
+          <span className="text-xs text-muted-foreground shrink-0">Tema:</span>
+          <div className="flex items-center gap-1 rounded-lg border border-white/10 bg-white/3 p-0.5">
+            {(['dark', 'light'] as const).map(th => (
+              <button
+                key={th}
+                onClick={() => setTheme(th)}
+                className={`px-3 py-1 rounded-md text-xs font-medium transition-colors ${
+                  theme === th
+                    ? 'bg-white/15 text-foreground'
+                    : 'text-muted-foreground hover:text-foreground'
+                }`}
+              >
+                {th === 'dark' ? '🌙 Dark' : '☀️ Light'}
+              </button>
+            ))}
+          </div>
+          {settings?.widget_min_rating && (
+            <span className="text-xs text-muted-foreground ml-auto">
+              Min. {settings.widget_min_rating}★ gösteriliyor
+            </span>
+          )}
+        </div>
+
+        {/* Code block */}
+        <div className="relative rounded-lg border border-white/8 bg-zinc-950 overflow-hidden">
+          <div className="flex items-center justify-between px-4 py-2 border-b border-white/8 bg-white/[0.02]">
+            <span className="text-[10px] text-muted-foreground/60 uppercase tracking-widest font-mono">HTML</span>
+            <button
+              onClick={handleCopy}
+              className={`flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-md font-medium transition-all ${
+                copied
+                  ? 'bg-emerald-500/20 text-emerald-400'
+                  : 'bg-white/5 text-muted-foreground hover:text-foreground hover:bg-white/10'
+              }`}
+            >
+              {copied ? '✓ Kopyalandı' : '⎘ Kopyala'}
+            </button>
+          </div>
+          <pre className="px-4 py-3 overflow-x-auto text-xs leading-relaxed">
+            <code ref={codeRef} className="text-zinc-300 font-mono whitespace-pre">
+              {snippet}
+            </code>
+          </pre>
+        </div>
+
+        {/* Instructions */}
+        <ol className="space-y-1.5 text-xs text-muted-foreground list-decimal list-inside">
+          <li>Yukarıdaki kodu kopyalayın</li>
+          <li>Yorumların görünmesini istediğiniz web sayfasına yapıştırın</li>
+          <li>Vitrin (⭐) butonuyla hangi yorumların gösterileceğini seçin</li>
+        </ol>
+
+        {/* API URL (for advanced users) */}
+        <details className="text-xs">
+          <summary className="text-muted-foreground/60 cursor-pointer hover:text-muted-foreground transition-colors">
+            Gelişmiş: JSON API endpoint'i
+          </summary>
+          <div className="mt-2 px-3 py-2 rounded-lg bg-white/3 border border-white/8">
+            <code className="text-primary/70 break-all font-mono">
+              {`https://occaly.com/api/widget/reviews/${orgId}`}
+            </code>
+          </div>
+        </details>
+      </div>
+    </div>
+  )
+}
+
 // ─── Filter bar ──────────────────────────────────────────────────────────────
 
 function FilterBar({ filters }: { filters: Filters }) {
@@ -476,25 +591,8 @@ export function ReviewsPage({
         </div>
       </div>
 
-      {/* Widget hint */}
-      {settings !== null && (
-        <div className="rounded-xl border border-white/8 bg-white/[0.02] px-4 py-3 flex items-center gap-3 text-sm">
-          <span className="text-xl">🔌</span>
-          <div className="flex-1 min-w-0">
-            <span className="text-foreground font-medium">Widget API: </span>
-            <code className="text-primary/80 text-xs break-all">
-              {`https://occaly.com/api/widget/reviews/${orgId}`}
-            </code>
-          </div>
-          <span className={`shrink-0 text-xs px-2 py-0.5 rounded-full border ${
-            settings.widget_enabled !== false
-              ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/20'
-              : 'bg-zinc-500/15 text-zinc-400 border-zinc-500/20'
-          }`}>
-            {settings.widget_enabled !== false ? '● Aktif' : '● Kapalı'}
-          </span>
-        </div>
-      )}
+      {/* Widget embed panel */}
+      <WidgetEmbedPanel orgId={orgId} settings={settings} />
 
       {/* Filters */}
       <FilterBar filters={filters} />
