@@ -603,8 +603,8 @@ export const translations = {
       },
       trust: {
         label: 'Her işletme için tek bir akıllı asistan',
-        s1num: '3 platform',
-        s1lbl: 'Instagram · Facebook · TikTok',
+        s1num: '4 platform',
+        s1lbl: 'Instagram · Facebook · TikTok · Google',
         s2num: 'Saniyeler',
         s2lbl: 'içinde hazır içerik',
         s3num: '50+',
@@ -635,6 +635,8 @@ export const translations = {
         f3Desc:   'Instagram, Facebook ve TikTok tek akışta. Her gönderi önce sana gelir, sen onaylarsın.',
         f4Title:  'Reklam optimizasyonu',
         f4Desc:   'Google Ads ve Meta Ads verilerini tek ekranda gör, AI bütçe önerileriyle getirini artır.',
+        f5Title:  'Google Yorum Yönetimi',
+        f5Desc:   'Google Business yorumlarını tek panelden takip et. AI cevap taslakları üretir, sen onaylarsın — itibarını kontrol altında tut.',
       },
       showcase: {
         label:       'Canlı örnek',
@@ -1275,8 +1277,8 @@ export const translations = {
       },
       trust: {
         label: 'Yksi älykäs apuri jokaiselle yritykselle',
-        s1num: '3 alustaa',
-        s1lbl: 'Instagram · Facebook · TikTok',
+        s1num: '4 alustaa',
+        s1lbl: 'Instagram · Facebook · TikTok · Google',
         s2num: 'Sekunneissa',
         s2lbl: 'valmista sisältöä',
         s3num: '50+',
@@ -1307,6 +1309,8 @@ export const translations = {
         f3Desc:   'Instagram, Facebook ja TikTok samassa virrassa. Jokainen julkaisu tulee ensin sinulle hyväksyttäväksi.',
         f4Title:  'Mainosten optimointi',
         f4Desc:   'Näe Google Ads- ja Meta Ads -tiedot yhdellä näytöllä ja kasvata tuottoa tekoälyn budjettiehdotuksilla.',
+        f5Title:  'Google-arvostelujen hallinta',
+        f5Desc:   'Seuraa Google Business -arvosteluja yhdestä paneelista. Tekoäly luo vastaausehdotukset, sinä hyväksyt — pidä maineesi hallinnassa.',
       },
       showcase: {
         label:       'Esimerkki',
@@ -1947,8 +1951,8 @@ export const translations = {
       },
       trust: {
         label: 'One smart assistant for every business',
-        s1num: '3 platforms',
-        s1lbl: 'Instagram · Facebook · TikTok',
+        s1num: '4 platforms',
+        s1lbl: 'Instagram · Facebook · TikTok · Google',
         s2num: 'Seconds',
         s2lbl: 'to ready-made content',
         s3num: '50+',
@@ -1979,6 +1983,8 @@ export const translations = {
         f3Desc:   'Instagram, Facebook and TikTok in one flow. Every post comes to you first for approval.',
         f4Title:  'Ad optimization',
         f4Desc:   'See Google Ads and Meta Ads data on one screen and grow your ROI with AI budget suggestions.',
+        f5Title:  'Google Review Management',
+        f5Desc:   'Track Google Business reviews from one dashboard. AI drafts reply suggestions, you approve — keep your reputation under control.',
       },
       showcase: {
         label:       'Live example',

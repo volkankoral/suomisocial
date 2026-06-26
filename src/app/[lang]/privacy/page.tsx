@@ -42,9 +42,10 @@ export default async function PrivacyPage({
           <Section title="1. Introduction">
             <p>
               Occaly (&quot;we&quot;, &quot;our&quot;, &quot;us&quot;) provides an AI-powered social media
-              automation platform for businesses operating in Finland. This Privacy Policy explains
+              management platform that helps businesses create, schedule, publish, and manage reviews
+              across social media channels and Google Business Profile. This Privacy Policy explains
               how we collect, use, store, and protect your information when you use our service at{' '}
-              <span className="text-primary font-mono">occaly.app</span>.
+              <span className="text-primary font-mono">occaly.com</span>.
             </p>
             <p>
               By using Occaly, you agree to the collection and use of information in
@@ -57,7 +58,7 @@ export default async function PrivacyPage({
             <ul className="list-disc list-inside space-y-1.5 text-zinc-400 mt-3">
               <li><strong className="text-zinc-200">Account information:</strong> Email address and password (hashed by Supabase Auth)</li>
               <li><strong className="text-zinc-200">Business information:</strong> Company name, logo, brand tone, and product descriptions you provide</li>
-              <li><strong className="text-zinc-200">Social media tokens:</strong> OAuth access tokens for Instagram and Facebook (see Section 4)</li>
+              <li><strong className="text-zinc-200">Social media tokens:</strong> OAuth access tokens for Instagram, Facebook, and Google Business Profile (see Section 4)</li>
               <li><strong className="text-zinc-200">Content data:</strong> AI-generated captions, images, and hashtags associated with your account</li>
               <li><strong className="text-zinc-200">Usage data:</strong> Pages visited, features used, and general analytics</li>
             </ul>
@@ -90,13 +91,23 @@ export default async function PrivacyPage({
             </div>
             <p>
               When you connect your Instagram or Facebook account, we receive an OAuth access token
-              from Meta. This token is immediately encrypted and stored in our vault. Even with full
-              database access, the raw token values cannot be read without the Supabase-managed
-              encryption key.
+              from Meta. When you connect your Google Business Profile, we receive an OAuth access
+              token from Google. All tokens are immediately encrypted and stored in our vault. Even
+              with full database access, the raw token values cannot be read without the
+              Supabase-managed encryption key.
+            </p>
+            <p className="mt-3">
+              <strong className="text-zinc-200">Google Business Profile data:</strong> Through the
+              Google Business Profile API, Occaly reads your business reviews (star rating, review
+              text, reviewer name) in order to display them in your dashboard and generate AI-assisted
+              reply suggestions. With your explicit approval, Occaly posts your reply back to Google
+              on your behalf. We do not share this data with any third party, use it for advertising,
+              or process it for any purpose other than providing the Occaly review management feature.
             </p>
             <p className="mt-3">
               When you disconnect an account, both the database record <strong>and</strong> the
-              encrypted vault entry are permanently deleted.
+              encrypted vault entry are permanently deleted. For Google accounts, we also revoke the
+              OAuth token via Google&apos;s token revocation endpoint.
             </p>
           </Section>
 
@@ -105,9 +116,10 @@ export default async function PrivacyPage({
             <div className="space-y-3 mt-3">
               {[
                 { name: 'Supabase', purpose: 'Database, authentication, and encrypted token storage', link: 'https://supabase.com/privacy' },
-                { name: 'Anthropic (Claude)', purpose: 'AI-generated captions and content', link: 'https://www.anthropic.com/privacy' },
+                { name: 'Anthropic (Claude)', purpose: 'AI-generated captions, content, and review reply suggestions', link: 'https://www.anthropic.com/privacy' },
                 { name: 'Pollinations.ai', purpose: 'AI image generation', link: 'https://pollinations.ai' },
                 { name: 'Meta (Facebook/Instagram)', purpose: 'Social media posting via official Graph API', link: 'https://www.facebook.com/privacy/policy/' },
+                { name: 'Google (Google Business Profile API)', purpose: 'Reading business reviews and posting reply responses via the official Google Business Profile API', link: 'https://policies.google.com/privacy' },
                 { name: 'Vercel', purpose: 'Application hosting and deployment', link: 'https://vercel.com/legal/privacy-policy' },
               ].map((s) => (
                 <div key={s.name} className="rounded-lg border border-white/8 bg-card px-4 py-3">
@@ -147,8 +159,8 @@ export default async function PrivacyPage({
             </ul>
             <p className="mt-3">
               To exercise any of these rights, contact us at{' '}
-              <a href="mailto:volkankoral@gmail.com" className="text-primary hover:underline">
-                volkankoral@gmail.com
+              <a href="mailto:privacy@occaly.com" className="text-primary hover:underline">
+                privacy@occaly.com
               </a>
               . We will respond within 30 days.
             </p>
@@ -189,8 +201,8 @@ export default async function PrivacyPage({
             <div className="rounded-xl border border-white/8 bg-card px-4 py-4 mt-3">
               <p className="text-foreground font-medium">Occaly</p>
               <p className="text-muted-foreground text-xs mt-1">Helsinki, Finland</p>
-              <a href="mailto:volkankoral@gmail.com" className="text-primary text-sm hover:underline mt-1 block">
-                volkankoral@gmail.com
+              <a href="mailto:privacy@occaly.com" className="text-primary text-sm hover:underline mt-1 block">
+                privacy@occaly.com
               </a>
             </div>
           </Section>

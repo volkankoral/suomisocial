@@ -13,7 +13,7 @@ export default async function TermsPage({
   const { lang } = await params
   const lastUpdated = '7 June 2026'
   const companyName = 'Occaly'
-  const companyEmail = 'legal@occaly.com'
+  const companyEmail = 'privacy@occaly.com'
 
   return (
     <div className="min-h-screen bg-background">

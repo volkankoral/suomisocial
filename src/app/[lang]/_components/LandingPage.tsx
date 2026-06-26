@@ -37,6 +37,9 @@ const ICONS: Record<string, React.ReactNode> = {
   chart: (
     <svg viewBox="0 0 24 24" fill="none" className="w-6 h-6"><path d="M4 20h16" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"/><path d="M7 20v-6M12 20V7M17 20v-9" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"/><path d="M5 11l4-4 3 2 5-5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/></svg>
   ),
+  star: (
+    <svg viewBox="0 0 24 24" fill="none" className="w-6 h-6"><path d="M12 2l2.4 7.4H22l-6.2 4.5 2.4 7.4L12 17l-6.2 4.3 2.4-7.4L2 9.4h7.6L12 2z" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round"/></svg>
+  ),
 }
 
 const fadeUp = {
@@ -53,6 +56,7 @@ export function LandingPage({ lang, plans = [] }: Props) {
     { icon: 'sparkles',  color: 'text-primary',     bg: 'from-primary/15 to-indigo-700/5',   title: L.features.f2Title, desc: L.features.f2Desc },
     { icon: 'broadcast', color: 'text-cyan-300',    bg: 'from-cyan-500/15 to-sky-700/5',     title: L.features.f3Title, desc: L.features.f3Desc },
     { icon: 'chart',     color: 'text-indigo-300',  bg: 'from-indigo-500/15 to-blue-700/5',  title: L.features.f4Title, desc: L.features.f4Desc },
+    { icon: 'star',      color: 'text-amber-300',   bg: 'from-amber-500/15 to-yellow-700/5', title: L.features.f5Title, desc: L.features.f5Desc },
   ]
 
   const steps = [
