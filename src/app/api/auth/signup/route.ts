@@ -1,7 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { authLimiter } from '@/lib/rate-limit'
 
 export async function POST(req: NextRequest) {
+  const ip =
+    req.headers.get('x-forwarded-for')?.split(',')[0].trim() ??
+    req.headers.get('x-real-ip') ??
+    'unknown'
+  const { ok: rlOk, retryAfter } = authLimiter.check(ip)
+  if (!rlOk) {
+    return NextResponse.json(
+      { error: 'Çok fazla istek. Lütfen bekleyin.' },
+      { status: 429, headers: { 'Retry-After': String(retryAfter ?? 60) } },
+    )
+  }
+
   const { email, password, businessName } = await req.json()
 
   if (!email || !password || !businessName) {
